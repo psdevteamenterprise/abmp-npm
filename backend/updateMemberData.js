@@ -1,17 +1,16 @@
 import { generateGeoHash } from './utils.js';
-import { ADDRESS_STATUS_TYPES } from 'public/constant.js';
 import {
+  ADDRESS_STATUS_TYPES,
   DEFAULT_MEMBER_DISPLAY_SETTINGS,
   MEMBER_ACTIONS,
-} from './constants.js';
+} from './consts.js';
 import {
-  addOptionalProperty,
   determineAddressDisplayStatus,
   isValidArray,
   processInterests,
   createFullName,
 } from './utils.js';
-import { findMemberById } from './dataAccess.js';
+import { findMemberById } from './utils.js';
 
 /**
  * Validates core member data requirements
@@ -172,7 +171,7 @@ export async function generateUpdatedMemberData(
   }
 
   try {
-    
+
     const existingDbMember = isVelo? await findMemberById(inputMemberData.memberid) : {};
 
     const updatedMemberData = createCoreMemberData(

@@ -25,7 +25,19 @@ const DEFAULT_MEMBER_DISPLAY_SETTINGS = {
     ALL: 'all',
     NONE: 'none',
   };
+
+  const COLLECTIONS = {
+    MEMBERS_DATA: 'MembersDataLatest',
+  };
   
+  
+
+  export const MEMBER_ACTIONS = {
+    UPDATE: 'update',
+    NEW: 'new',
+    DROP: 'drop',
+    NONE: 'none'
+};
   
   const PRECISION = 3;
   
@@ -34,5 +46,7 @@ const DEFAULT_MEMBER_DISPLAY_SETTINGS = {
     ADDRESS_STATUS_TYPES,
     ADDRESS_VISIBILITY_OPTIONS,
     PRECISION,
+    COLLECTIONS,
+    MEMBER_ACTIONS,
   };
   

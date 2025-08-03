@@ -1,6 +1,7 @@
 const {
     ADDRESS_STATUS_TYPES,
     ADDRESS_VISIBILITY_OPTIONS,
+    COLLECTIONS,
   } = require('./consts.js');
   
   /**
@@ -98,6 +99,27 @@ const {
       );
     return geohash && geohash.length > 0 ? geohash : [];
   }
+
+  /**
+ * Retrieves member data by member ID
+ * @param {string} memberId - The member ID to search for
+ * @returns {Promise<Object|null>} - Member data or null if not found
+ */
+const findMemberById = async (memberId) => {
+    if (!memberId) {
+        throw new Error('Member ID is required');
+    }
+
+    try {
+        const queryResult = await wixData.query(COLLECTIONS.MEMBERS_DATA)
+            .eq("memberId", memberId)
+            .find({ suppressAuth: true });
+        
+        return queryResult.items.length > 0 ? queryResult.items[0] : null;
+    } catch (error) {
+        throw new Error(`Failed to retrieve member data: ${error.message}`);
+    }
+}
   
   module.exports = {
     addOptionalProperty,
@@ -107,5 +129,6 @@ const {
     processInterests,
     createFullName,
     generateGeoHash,
+    findMemberById,
   };
   
