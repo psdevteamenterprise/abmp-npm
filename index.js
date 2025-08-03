@@ -1,5 +1,5 @@
-function helloNpm() {
-    return "hello NPM"
-  }
-  
-  module.exports = helloNpm
+module.exports = {
+  ...require('./public'),
+  ...require('./pages'),
+  ...require('./backend'),
+};
