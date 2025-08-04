@@ -32,7 +32,7 @@ const DEFAULT_MEMBER_DISPLAY_SETTINGS = {
   
   
 
-  export const MEMBER_ACTIONS = {
+   const MEMBER_ACTIONS = {
     UPDATE: 'update',
     NEW: 'new',
     DROP: 'drop',
