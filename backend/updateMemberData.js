@@ -173,7 +173,6 @@ export async function generateUpdatedMemberData(
   try {
 
     const existingDbMember = isVelo? await findMemberById(inputMemberData.memberid) : {};
-
     const updatedMemberData = createCoreMemberData(
       inputMemberData,
       existingDbMember,
