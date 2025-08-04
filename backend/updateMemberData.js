@@ -161,11 +161,11 @@ const enrichWithAddressData = (
  * @param {number} currentPageNumber - Current page number being processed
  * @returns {Promise<Object|null>} - Complete updated member data or null if validation fails
  */
-const generateUpdatedMemberData = async (
+async function generateUpdatedMemberData (
   inputMemberData,
   currentPageNumber,
   isVelo = false
-) => {
+) {
   if (!validateCoreMemberData(inputMemberData)) {
     throw new Error('Invalid member data: memberid, email (valid string), and memberships (array) are required');
   }
