@@ -17,7 +17,7 @@ import { findMemberById } from './utils.js';
  * @param {Object} inputMemberData - Raw member data from API to validate
  * @returns {boolean} - True if all required fields are valid, false otherwise
  */
-export const validateCoreMemberData = (inputMemberData) => {
+const validateCoreMemberData = (inputMemberData) => {
   // Check memberid
   if (!inputMemberData?.memberid) {
     console.warn('validateCoreMemberData: Missing required field - memberid is mandatory');
@@ -48,7 +48,7 @@ export const validateCoreMemberData = (inputMemberData) => {
  * @param {number} currentPageNumber - Current page number being processed
  * @returns {Object|null} - Structured base member data or null if required fields are missing
  */
-export const createCoreMemberData = (
+const createCoreMemberData = (
   inputMemberData,
   existingDbMember,
   currentPageNumber
@@ -90,7 +90,7 @@ export const createCoreMemberData = (
  * @param {Object} memberDataToUpdate - Member data object to enhance
  * @param {Object} migrationData - Migration data containing optional properties
  */
-export const enrichWithMigrationData = (memberDataToUpdate, migrationData) => {
+const enrichWithMigrationData = (memberDataToUpdate, migrationData) => {
   if (!migrationData) return;
 
   memberDataToUpdate.logoImage = migrationData.logo_url;
@@ -116,7 +116,7 @@ export const enrichWithMigrationData = (memberDataToUpdate, migrationData) => {
  * @param {Object} displayConfiguration - Address display configuration
  * @returns {Array} - Processed addresses with status information
  */
-export const processAddressesWithStatus = (
+const processAddressesWithStatus = (
   addressesList,
   displayConfiguration = {}
 ) => {
@@ -142,7 +142,7 @@ export const processAddressesWithStatus = (
  * @param {Array} addressesList - Array of address objects
  * @param {Object} addressDisplayInfo - Address visibility configuration
  */
-export const enrichWithAddressData = (
+const enrichWithAddressData = (
   memberDataToUpdate,
   addressesList,
   addressDisplayInfo
@@ -161,11 +161,11 @@ export const enrichWithAddressData = (
  * @param {number} currentPageNumber - Current page number being processed
  * @returns {Promise<Object|null>} - Complete updated member data or null if validation fails
  */
-export async function generateUpdatedMemberData(
+const generateUpdatedMemberData = async (
   inputMemberData,
   currentPageNumber,
   isVelo = false
-) {
+) => {
   if (!validateCoreMemberData(inputMemberData)) {
     throw new Error('Invalid member data: memberid, email (valid string), and memberships (array) are required');
   }
@@ -197,5 +197,14 @@ export async function generateUpdatedMemberData(
     throw error;
   }
 }
+
+module.exports = {
+  validateCoreMemberData,
+  createCoreMemberData,
+  enrichWithMigrationData,
+  processAddressesWithStatus,
+  enrichWithAddressData,
+  generateUpdatedMemberData,
+};
 
 
