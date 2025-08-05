@@ -3,6 +3,8 @@ const {
     ADDRESS_VISIBILITY_OPTIONS,
     COLLECTIONS,
   } = require('./consts.js');
+  const { items: wixData } = require('@wix/data');
+  const ngeohash = require('ngeohash');
   
   /**
    * Safely adds optional properties from source to target object
