@@ -202,7 +202,6 @@ async function generateUpdatedMemberData (
 }
 
 module.exports = {
-  validateCoreMemberData,
   createCoreMemberData,
   enrichWithMigrationData,
   processAddressesWithStatus,
