@@ -81,6 +81,9 @@ const createCoreMemberData = (
     isVisible: inputMemberData.action !== MEMBER_ACTIONS.DROP,
     url: inputMemberData.url,
     bookingUrl,
+    ...(inputMemberData.action === MEMBER_ACTIONS.NEW && {
+      showContactForm:true,
+    }),
     APIBookingUrl: inputMemberData.migrationData?.schedule_code,//keeping it as a ref if in future they want original
   };
 };
