@@ -1,11 +1,15 @@
 {
   "name": "abmp-npm",
-  "version": "1.0.0",
+  "version": "1.7.3",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@wix/data": "^1.0.270",
+    "ngeohash": "^0.6.3"
+  }
 }
