@@ -1,0 +1,5 @@
+# Dependencies
+node_modules
+
+# Husky auto-generated files
+.husky/_
