@@ -2,6 +2,7 @@ const { items: wixData } = require('@wix/data');
 
 const { COLLECTIONS } = require('../public');
 
+const { ELEVATED_QUERY_OPTIONS } = require('./consts');
 const { createSiteMember } = require('./members-area-methods');
 
 /**
@@ -14,9 +15,7 @@ async function findMemberByWixDataId(memberId) {
     throw new Error('Member ID is required');
   }
   try {
-    const member = await wixData.get(COLLECTIONS.MEMBERS_DATA, memberId, {
-      suppressAuth: true,
-    });
+    const member = await wixData.get(COLLECTIONS.MEMBERS_DATA, memberId, ELEVATED_QUERY_OPTIONS);
     return member;
   } catch (error) {
     throw new Error(`Failed to retrieve member data: ${error.message}`);
@@ -40,9 +39,11 @@ async function createContactAndMemberIfNew(memberData) {
       ...memberData,
       contactId,
     };
-    const updatedResult = await wixData.update(COLLECTIONS.MEMBERS_DATA, memberDataWithContactId, {
-      suppressAuth: true,
-    });
+    const updatedResult = await wixData.update(
+      COLLECTIONS.MEMBERS_DATA,
+      memberDataWithContactId,
+      ELEVATED_QUERY_OPTIONS
+    );
     memberDataWithContactId = {
       ...memberDataWithContactId,
       ...updatedResult,
