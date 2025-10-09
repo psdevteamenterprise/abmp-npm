@@ -25,6 +25,7 @@
     "prettier": "^3.3.3"
   },
   "dependencies": {
+    "@wix/automations": "^1.0.261",
     "@wix/crm": "^1.0.1061",
     "@wix/data": "^1.0.303",
     "@wix/essentials": "^0.1.28",

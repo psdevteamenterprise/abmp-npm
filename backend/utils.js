@@ -7,12 +7,12 @@ const { ELEVATED_QUERY_OPTIONS, CONFIG_KEYS } = require('./consts');
 /**
  * Retrieves site configuration values from the database
  * @param {string} [configKey] - The configuration key to retrieve. Must be one of:
- *   - 'TRIGGERED_EMAIL_TEMPLATE_ID' - Email template ID for triggered emails
+ *   - 'AUTOMATION_EMAIL_TRIGGER_ID' - Email template ID for triggered emails
  *   - 'SITE_ASSOCIATION' - Site association configuration
  * @returns {Promise<any>} The configuration value for the specified key, or all configs if no key provided
  * @example
  * // Get specific config
- * const emailTemplateId = await getSiteConfigs('TRIGGERED_EMAIL_TEMPLATE_ID');
+ * const emailTemplateId = await getSiteConfigs('AUTOMATION_EMAIL_TRIGGER_ID');
  *
  * // Get all configs
  * const allConfigs = await getSiteConfigs();

@@ -1,18 +1,18 @@
-const { triggeredEmails } = require('@wix/crm');
 const { items: wixData } = require('@wix/data');
 const { webMethod, Permissions } = require('@wix/web-methods');
 
 const { COLLECTIONS } = require('../public');
 
+const { triggerAutomation } = require('./automations-methods');
 const { CONFIG_KEYS, ELEVATED_QUERY_OPTIONS } = require('./consts');
 const { findMemberByWixDataId, createContactAndMemberIfNew } = require('./members-data-methods');
 const { getSiteConfigs } = require('./utils');
 
 const contactSubmission = webMethod(Permissions.Anyone, async (data, memberDataId) => {
   const { firstName, lastName, email, phone, message } = data;
-  const [memberData, triggeredEmailTemplateId] = await Promise.all([
+  const [memberData, automationEmailTriggerId] = await Promise.all([
     findMemberByWixDataId(memberDataId),
-    getSiteConfigs(CONFIG_KEYS.TRIGGERED_EMAIL_TEMPLATE_ID),
+    getSiteConfigs(CONFIG_KEYS.AUTOMATION_EMAIL_TRIGGER_ID),
   ]);
   if (!memberData.showContactForm) {
     console.log('Member contact form is not enabled for user, skipping contact submission!');
@@ -32,19 +32,13 @@ const contactSubmission = webMethod(Permissions.Anyone, async (data, memberDataI
     memberContactId = member.contactId;
   }
   console.log('memberContactId', memberContactId);
-  //TODO: change this call as there is no triggeredEmails backend method exposed from the SDK
-  const emailTriggered = await triggeredEmails.emailContact(
-    triggeredEmailTemplateId,
-    memberContactId,
-    {
-      variables: {
-        name: `${firstName} ${lastName}`,
-        email: email,
-        phone: phone,
-        message: message,
-      },
-    }
-  );
+  const emailTriggered = await triggerAutomation(automationEmailTriggerId, {
+    contactId: memberContactId,
+    name: `${firstName} ${lastName}`,
+    email: email,
+    phone: phone,
+    message: message,
+  });
   data = {
     ...data,
     phone: Number(data.phone),
