@@ -1,10 +1,10 @@
-const { items: wixData } = require('@wix/data');
 const { webMethod, Permissions } = require('@wix/web-methods');
 
 const { COLLECTIONS } = require('../public');
 
 const { triggerAutomation } = require('./automations-methods');
-const { CONFIG_KEYS, ELEVATED_QUERY_OPTIONS } = require('./consts');
+const { CONFIG_KEYS } = require('./consts');
+const { wixData } = require('./elevated-modules');
 const { findMemberByWixDataId, createContactAndMemberIfNew } = require('./members-data-methods');
 const { getSiteConfigs } = require('./utils');
 
@@ -45,7 +45,7 @@ const contactSubmission = webMethod(Permissions.Anyone, async (data, memberDataI
     memberContactId: memberContactId,
     memberEmail: memberData.contactFormEmail,
   };
-  await wixData.insert(COLLECTIONS.CONTACT_US_SUBMISSIONS, data, ELEVATED_QUERY_OPTIONS);
+  await wixData.insert(COLLECTIONS.CONTACT_US_SUBMISSIONS, data);
   return emailTriggered;
 });
 

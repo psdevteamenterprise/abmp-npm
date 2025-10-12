@@ -1,7 +1,3 @@
-const ELEVATED_QUERY_OPTIONS = {
-  suppressAuth: true,
-};
-
 /**
  * Valid configuration keys for getSiteConfigs function
  * @readonly
@@ -13,6 +9,5 @@ const CONFIG_KEYS = {
 };
 
 module.exports = {
-  ELEVATED_QUERY_OPTIONS,
   CONFIG_KEYS,
 };

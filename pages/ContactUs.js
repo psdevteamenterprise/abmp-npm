@@ -1,10 +1,10 @@
 const { lightbox } = require('@wix/site-window');
 const { phone } = require('phone');
 
-// const { contactSubmission } = require('../backend/forms-methods.web.js');
+const { contactSubmission } = require('../backend/forms-methods.web.js');
 const { VALIDATION_MESSAGES, REGEX } = require('../public');
 
-async function contactUsOnReady({ $w: _$w, contactSubmission }) {
+async function contactUsOnReady(_$w) {
   _$w('#submitButton').disable();
   const receivedData = await lightbox.getContext();
   const formFieldsSelectors = ['#firstName', '#lastName', '#email', '#phone', '#message'];
@@ -114,8 +114,6 @@ async function contactUsOnReady({ $w: _$w, contactSubmission }) {
         phone: _$w('#phone').value,
         message: _$w('#message').value,
       };
-      console.log('contactSubmission', contactSubmission);
-      console.log('typeof contactSubmission', typeof contactSubmission);
       await contactSubmission(formData, receivedData._id);
       await resetForm();
 

@@ -1,8 +1,7 @@
-const { items: wixData } = require('@wix/data');
-
 const { COLLECTIONS } = require('../public/consts');
 
-const { ELEVATED_QUERY_OPTIONS, CONFIG_KEYS } = require('./consts');
+const { CONFIG_KEYS } = require('./consts');
+const { wixData } = require('./elevated-modules');
 
 /**
  * Retrieves site configuration values from the database
@@ -23,11 +22,7 @@ const getSiteConfigs = async configKey => {
       `Invalid configKey: ${configKey}. Must be one of: ${Object.values(CONFIG_KEYS).join(', ')}`
     );
   }
-  const siteConfigs = await wixData.get(
-    COLLECTIONS.SITE_CONFIGS,
-    'SINGLE_ITEM_ID',
-    ELEVATED_QUERY_OPTIONS
-  );
+  const siteConfigs = await wixData.get(COLLECTIONS.SITE_CONFIGS, 'SINGLE_ITEM_ID');
   if (configKey) {
     return siteConfigs[configKey];
   }
