@@ -31,7 +31,6 @@
     "@wix/essentials": "^0.1.28",
     "@wix/members": "^1.0.330",
     "@wix/site-window": "^1.44.0",
-    "@wix/web-methods": "^1.0.11",
     "phone": "^3.1.67"
   }
 }

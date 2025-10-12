@@ -1,3 +1,3 @@
 module.exports = {
-  ...require('./forms-methods.web'),
+  ...require('./forms-methods'),
 };

@@ -1,5 +1,3 @@
-const { webMethod, Permissions } = require('@wix/web-methods');
-
 const { COLLECTIONS } = require('../public');
 
 const { triggerAutomation } = require('./automations-methods');
@@ -8,7 +6,7 @@ const { wixData } = require('./elevated-modules');
 const { findMemberByWixDataId, createContactAndMemberIfNew } = require('./members-data-methods');
 const { getSiteConfigs } = require('./utils');
 
-const contactSubmission = webMethod(Permissions.Anyone, async (data, memberDataId) => {
+const contactSubmission = async (data, memberDataId) => {
   const { firstName, lastName, email, phone, message } = data;
   const [memberData, automationEmailTriggerId] = await Promise.all([
     findMemberByWixDataId(memberDataId),
@@ -47,7 +45,7 @@ const contactSubmission = webMethod(Permissions.Anyone, async (data, memberDataI
   };
   await wixData.insert(COLLECTIONS.CONTACT_US_SUBMISSIONS, data);
   return emailTriggered;
-});
+};
 
 module.exports = {
   contactSubmission,
