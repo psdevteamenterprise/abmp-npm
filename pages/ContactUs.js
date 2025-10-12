@@ -114,7 +114,8 @@ async function contactUsOnReady({ $w: _$w, contactSubmission }) {
         phone: _$w('#phone').value,
         message: _$w('#message').value,
       };
-
+      console.log('contactSubmission', contactSubmission);
+      console.log('typeof contactSubmission', typeof contactSubmission);
       await contactSubmission(formData, receivedData._id);
       await resetForm();
 
