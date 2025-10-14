@@ -29,6 +29,17 @@ const getSiteConfigs = async configKey => {
   return siteConfigs;
 };
 
+const retrieveAllItems = async collectionName => {
+  let results = await wixData.query(collectionName).limit(1000).find();
+  let allItems = results.items;
+  while (results.hasNext()) {
+    results = await results.next();
+    allItems = allItems.concat(results.items);
+  }
+  return allItems;
+};
+
 module.exports = {
   getSiteConfigs,
+  retrieveAllItems,
 };

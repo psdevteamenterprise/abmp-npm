@@ -54,7 +54,13 @@ module.exports = [
           alphabetize: { order: 'asc', caseInsensitive: true },
         },
       ],
-      'import/no-unresolved': 'error',
+      'import/no-unresolved': [
+        'error',
+        {
+          commonjs: true,
+          caseSensitive: true,
+        },
+      ],
       'import/no-duplicates': 'error',
       'import/no-commonjs': 'off',
       'import/no-dynamic-require': 'off',
@@ -88,6 +94,7 @@ module.exports = [
       'import/resolver': {
         node: {
           extensions: ['.js', '.jsx', '.ts', '.tsx'],
+          moduleDirectory: ['node_modules', 'public', 'backend', 'pages'],
         },
       },
     },
