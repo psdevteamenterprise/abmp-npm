@@ -4,27 +4,8 @@ const { window: wixWindow } = require('@wix/site-window');
 const { withWarmUpData } = require('psdev-utils/frontend');
 
 const { ADDRESS_STATUS_TYPES, DEFAULT_FILTER, DROPDOWN_OPTIONS } = require('../public/consts.js');
-const {
-  getParamsMapping,
-  handlePagination,
-  getFiltersSelectors,
-  onChangeMultiCheckbox,
-  setDefaultCity,
-  setDefaultState,
-  setDefaultFilterOption,
-  prepareOptionsFunction,
-  getAndSetUserLocation,
-  setDefaultDropdownState,
-  toggleDropdownFunctionality,
-  showFiltersOnDesktop,
-  filterOptionsFunction,
-} = require('../public/Utils/homePage.js');
-const {
-  parseAndValidateQueryParams,
-  updateUrlParams,
-  noSearchCriteria,
-  search,
-} = require('../public/Utils/searchUtils');
+const { createHomepageUtils } = require('../public/Utils/homePage.js');
+const { createSearchUtils } = require('../public/Utils/searchUtils');
 const {
   getMainAddress,
   formatPracticeAreasForDisplay,
@@ -54,6 +35,23 @@ const homePageOnReady = async ({
   getNonCompiledFiltersOptions,
   filterProfiles,
 }) => {
+  const {
+    getParamsMapping,
+    handlePagination,
+    getFiltersSelectors,
+    onChangeMultiCheckbox,
+    setDefaultCity,
+    setDefaultState,
+    setDefaultFilterOption,
+    prepareOptionsFunction,
+    getAndSetUserLocation,
+    setDefaultDropdownState,
+    toggleDropdownFunctionality,
+    showFiltersOnDesktop,
+    filterOptionsFunction,
+  } = createHomepageUtils(_$w);
+  const { parseAndValidateQueryParams, updateUrlParams, noSearchCriteria, search } =
+    createSearchUtils(_$w, filterProfiles);
   const baseUrl = await wixLocation.baseUrl();
   detectMobile();
   initPageUI();
@@ -83,11 +81,11 @@ const homePageOnReady = async ({
      * PAGINATION CODE
      */
     _$w('#previousPage').onClick(() => {
-      handlePagination({ _$w, delta: -1, pagination, searchResults, filter });
+      handlePagination({ delta: -1, pagination, searchResults, filter });
     });
 
     _$w('#nextPage').onClick(() => {
-      handlePagination({ _$w, delta: 1, pagination, searchResults, filter });
+      handlePagination({ delta: 1, pagination, searchResults, filter });
     });
 
     _$w(
@@ -97,7 +95,6 @@ const homePageOnReady = async ({
       const pageNumber = Number(label) - 1;
       if (pageNumber === pagination.currentPage) return;
       handlePagination({
-        _$w,
         delta:
           pageNumber > pagination.currentPage
             ? pageNumber - pagination.currentPage
@@ -149,7 +146,7 @@ const homePageOnReady = async ({
 
       // Update URL params with current filter state before searching
       updateFiltersState();
-      updateUrlParams(filter, pagination);
+      await updateUrlParams(filter, pagination);
       await updateResults('zeroTimeout');
     });
 
@@ -266,12 +263,10 @@ const homePageOnReady = async ({
   }
 
   async function handleUrlParams() {
-    const { isDefaultStateParams, filter: newFilter } = await parseAndValidateQueryParams({
-      _$w,
+    const { isDefaultStateParams, filter: newFilter } = await parseAndValidateQueryParams(
       filter,
-      pagination,
-      filterProfiles,
-    });
+      pagination
+    );
     filter = newFilter;
     await applyFilterToUI(isDefaultStateParams);
   }
@@ -280,8 +275,8 @@ const homePageOnReady = async ({
     const setFilterFromParams = async (isInitializeValue = true) => {
       const params = await wixLocation.query();
       console.log('params inside setFilterFromParams ', params);
-      const paramsMapping = getParamsMapping({ _$w, filter, pagination });
-      Object.entries(paramsMapping).forEach(([param, { setValue, setUI }]) => {
+      const paramsMapping = getParamsMapping(filter, pagination);
+      Object.entries(paramsMapping).forEach(async ([param, { setValue, setUI }]) => {
         const value = params[param];
         if (value !== undefined && value !== null && value !== '') {
           try {
@@ -293,13 +288,13 @@ const homePageOnReady = async ({
             } else {
               console.log('setting ui value ', value, ' for param ', param);
               setUI &&
-                setUI({
+                (await setUI({
                   value: String(value),
                   dropDownOptions,
                   stateNameCodeMap,
                   sidePanelFilterData,
                   stateCityMap,
-                });
+                }));
             }
           } catch (error) {
             console.error(`Error setting parameter ${param}:`, error);
@@ -323,7 +318,6 @@ const homePageOnReady = async ({
               debounceTimeout,
               timeoutType: 'searchTimeout',
               isSearchingNearby: _$w('#nearBy').checked,
-              filterProfiles,
             }).then(result => {
               searchResults = result;
             })
@@ -354,9 +348,8 @@ const homePageOnReady = async ({
       timeoutType,
       isSearchingNearby: _$w('#nearBy').checked,
       preservePagination,
-      filterProfiles,
     });
-    !preservePagination && updateUrlParams(filter, pagination);
+    !preservePagination && (await updateUrlParams(filter, pagination));
     return searchResults;
   }
 
@@ -409,9 +402,8 @@ const homePageOnReady = async ({
       debounceTimeout,
       timeoutType,
       isSearchingNearby: _$w('#nearBy').checked,
-      filterProfiles,
     });
-    updateUrlParams(filter, pagination);
+    await updateUrlParams(filter, pagination);
   }
   // NEAR BY FILTER
   async function nearByHandler(preservePagination = false) {
@@ -438,7 +430,7 @@ const homePageOnReady = async ({
 
     // If location is not selected, change state to "resultsState"
     if (!isSearchingNearby) {
-      if (noSearchCriteria()) {
+      if (await noSearchCriteria()) {
         console.log('no search criteria and no near by');
         multiStateBoxSelector.changeState('noSearchCriteria');
         // 4. Re-enable nearby input
@@ -506,8 +498,8 @@ const homePageOnReady = async ({
   // LOAD THE CONSTRUCTED OPTIONS TO RESPECTIVE DROPDOWNS
 
   function loadDefaultCheckBoxOptions(filterName) {
-    setDefaultDropdownState({ _$w, filterName, filter });
-    toggleDropdownFunctionality({ _$w, filterName, enable: true });
+    setDefaultDropdownState(filterName, filter);
+    toggleDropdownFunctionality(filterName, true);
     const options = prepareOptionsFunction({
       filterName,
       sidePanelFilterData,
@@ -584,7 +576,7 @@ const homePageOnReady = async ({
       clearSearchButtonSelector,
       toggleOptionListButtonSelector,
       multiCheckBoxSelector,
-    } = getFiltersSelectors(_$w, filterName);
+    } = getFiltersSelectors(filterName);
 
     // Set up event handlers
     // Clear search button handler
@@ -592,7 +584,6 @@ const homePageOnReady = async ({
     clearSearchButtonSelector.onClick(async () => {
       searchTextInputSelector.value = undefined;
       setDefaultState({
-        _$w,
         filterName,
         withSelectedOptions: false,
         filter,
@@ -602,7 +593,6 @@ const homePageOnReady = async ({
       });
       if (filterName === 'state') {
         setDefaultCity({
-          _$w,
           filter,
           dropDownOptions,
           sidePanelFilterData,
@@ -686,8 +676,7 @@ const homePageOnReady = async ({
     // Checkbox selection handler
 
     multiCheckBoxSelector.onChange(async event => {
-      onChangeMultiCheckbox({
-        _$w,
+      await onChangeMultiCheckbox({
         filterName,
         selectedOptions: event.target.value,
         dropDownOptions,
@@ -709,7 +698,7 @@ const homePageOnReady = async ({
   }
   function handleSearchTextInput(filterName, input) {
     const { checkBoxContainerSelector, clearSearchButtonSelector, multiCheckBoxSelector } =
-      getFiltersSelectors(_$w, filterName);
+      getFiltersSelectors(filterName);
     const tofilterOnValue = !input.includes('selected') ? input : '';
     // Toggle clear button visibility
     !input || input.length === 0
@@ -733,7 +722,7 @@ const homePageOnReady = async ({
         return;
       }
 
-      const { searchTextInputSelector } = getFiltersSelectors(_$w, filterName);
+      const { searchTextInputSelector } = getFiltersSelectors(filterName);
       // Update results based on selection
       filter[`${filterName}Search`] = isUserInput ? searchTextInputSelector.value : '';
 
@@ -744,9 +733,8 @@ const homePageOnReady = async ({
           debounceTimeout,
           timeoutType: 'searchTimeout',
           isSearchingNearby: _$w('#nearBy').checked,
-          filterProfiles,
         });
-        updateUrlParams(filter, pagination);
+        await updateUrlParams(filter, pagination);
       } else {
         await updateResults('filterTimeout');
       }
@@ -758,7 +746,7 @@ const homePageOnReady = async ({
 
   function resetSearch(filterName) {
     const { searchTextInputSelector, clearSearchButtonSelector, multiCheckBoxSelector } =
-      getFiltersSelectors(_$w, filterName);
+      getFiltersSelectors(filterName);
     clearSearchButtonSelector.collapse();
     multiCheckBoxSelector.options = [];
     searchTextInputSelector.value = '';
