@@ -88,7 +88,7 @@ async function getMembersStateList() {
       .query(COLLECTIONS.MEMBERS_DATA)
       .fields('addresses')
       .limit(1000)
-      .find({ suppressAuth: true });
+      .find();
 
     // Extract all state codes from addresses
     const allStates = new Set();

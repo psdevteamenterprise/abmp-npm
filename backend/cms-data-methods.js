@@ -5,7 +5,7 @@ const { findMainAddress } = require('../public/Utils/sharedUtils.js');
 const { calculateDistance, shuffleArray } = require('../public/Utils/sharedUtils.js');
 
 const { PRECISION, MAX__MEMBERS_SEARCH_RESULTS, WIX_QUERY_MAX_LIMIT } = require('./consts.js');
-const wixData = require('./elevated-modules');
+const { wixData } = require('./elevated-modules');
 
 function buildMembersSearchQuery(data) {
   console.log('data: ', JSON.stringify(data));
@@ -119,12 +119,12 @@ function buildMembersSearchQuery(data) {
         if (isSearchingNearby) {
           return fetchAllItemsInParallel(baseQuery);
         }
-        const totalCount = await query.count({ suppressAuth: true });
+        const totalCount = await query.count();
         const randomSkip = getRandomSkip(totalCount);
         const result = await query
           .skip(randomSkip)
           .limit(MAX__MEMBERS_SEARCH_RESULTS)
-          .find({ suppressAuth: true, omitTotalCount: true });
+          .find({ omitTotalCount: true });
 
         // Shuffle the result items for additional randomization
         return {
@@ -170,7 +170,7 @@ async function fetchAllItemsInParallel(query) {
   const batchSize = WIX_QUERY_MAX_LIMIT;
   const allItems = [];
 
-  const firstResult = await query.skip(0).limit(batchSize).find({ suppressAuth: true });
+  const firstResult = await query.skip(0).limit(batchSize).find();
 
   const totalBatches = firstResult.totalPages;
   allItems.push(...firstResult.items);
@@ -183,7 +183,7 @@ async function fetchAllItemsInParallel(query) {
       const promise = query
         .skip(skip)
         .limit(batchSize)
-        .find({ suppressAuth: true })
+        .find()
         .then(result => result.items);
       batchPromises.push(promise);
     }
