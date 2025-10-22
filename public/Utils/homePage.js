@@ -523,7 +523,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       newFilter.longitude !== 0 &&
       !isSearchingNearby
     ) {
-      wixQueryParams().add({ nearby: 'true', page: '1' });
+      wixQueryParams.add({ nearby: 'true', page: '1' });
       return { isDefaultStateParams: true, filter: newFilter };
     }
 
@@ -590,7 +590,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       }
     }
 
-    wixQueryParams().add(queryParams);
+    wixQueryParams.add(queryParams);
   }
 
   async function updateUrlParams(filter, pagination) {
@@ -600,7 +600,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     // Remove all existing parameters that we manage
     Object.keys(paramsMapping).forEach(param => {
       if (currentParams[param]) {
-        wixQueryParams().remove([param]);
+        wixQueryParams.remove([param]);
       }
     });
 
@@ -611,20 +611,20 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       if (param !== 'page') {
         if (value !== null && value !== undefined && value !== '') {
           addedParams++;
-          wixQueryParams().add({ [param]: value.toString() });
+          wixQueryParams.add({ [param]: value.toString() });
         }
       }
     });
     if (addedParams === 1) {
       // Only add page URL parameter, if nearby is true when there's exactly one filter
       if (paramsMapping.nearby.getValue() === 'true') {
-        wixQueryParams().add({
+        wixQueryParams.add({
           page: paramsMapping.page.getValue().toString(),
         });
       }
     } else if (addedParams > 1) {
       // Always add page when there are multiple filters
-      wixQueryParams().add({
+      wixQueryParams.add({
         page: paramsMapping.page.getValue().toString(),
       });
     }
