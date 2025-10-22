@@ -43,7 +43,6 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       }) => {
         const states = value.split(',');
         await onChangeMultiCheckbox({
-          _$w,
           filterName: 'state',
           selectedOptions: states,
           dropDownOptions,
@@ -70,7 +69,6 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       }) => {
         const cities = value.split(',');
         await onChangeMultiCheckbox({
-          _$w,
           filterName: 'city',
           selectedOptions: cities,
           dropDownOptions,
@@ -97,7 +95,6 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       }) => {
         const practices = value.split(',');
         await onChangeMultiCheckbox({
-          _$w,
           filterName: 'practiceAreas',
           selectedOptions: practices,
           dropDownOptions,
@@ -128,8 +125,8 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     newPage === 9 ? _$w('#nextPage').disable() : _$w('#nextPage').enable();
     pagination.currentPage = newPage;
 
-    paginateSearchResults({ _$w, searchResults, pagination });
-    await updateUrlParams({ _$w, filter, pagination });
+    paginateSearchResults(searchResults, pagination);
+    await updateUrlParams(filter, pagination);
   }
 
   async function onChangeMultiCheckbox({
@@ -203,7 +200,6 @@ const createHomepageUtils = (_$w, filterProfiles) => {
         } else {
           // if no city options are selected, set default city
           setDefaultCity({
-            _$w,
             filter,
             dropDownOptions,
             sidePanelFilterData,
@@ -217,7 +213,6 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       } else {
         _$w('#cityTextInput').disable();
         setDefaultCity({
-          _$w,
           filter,
           dropDownOptions,
           sidePanelFilterData,
@@ -227,7 +222,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     }
 
     if (!isMobile) {
-      await updateUrlParams({ _$w, filter, pagination });
+      await updateUrlParams(filter, pagination);
     }
   }
 
@@ -485,7 +480,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     _$w('#nextPage').enable();
   }
   function paginateSearchResults(searchResults, pagination) {
-    updatePaginationUI(_$w, pagination);
+    updatePaginationUI(pagination);
     handleNumberOfResults(pagination, searchResults.length);
     const currentPageData = searchResults.slice(
       pagination.currentPage * pagination.pageSize,
@@ -713,7 +708,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
         pagination.currentPage = 0;
       }
       pagination.totalPages = Math.ceil(totalCount / pagination.pageSize);
-      paginateSearchResults({ _$w, searchResults: response.items, pagination });
+      paginateSearchResults(response.items, pagination);
       multiStateBoxSelector.changeState('resultsState');
       return response.items;
     };
