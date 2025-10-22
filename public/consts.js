@@ -55,6 +55,25 @@ const DEBOUNCE_DELAY = {
   filterTimeout: 300,
   zeroTimeout: 0,
 };
+const MEMBERS_FIELDS = {
+  _id: '_id',
+  profileImage: 'profileImage',
+  fullName: 'fullName',
+  addresses: 'addresses',
+  aboutService: 'aboutService',
+  showBookingUrl: 'showBookingUrl',
+  bookingUrl: 'bookingUrl',
+  areasOfPractices: 'areasOfPractices',
+  url: 'url',
+  phones: 'phones',
+  toShowPhone: 'toShowPhone',
+  showContactForm: 'showContactForm',
+  website: 'website',
+  showWixUrl: 'showWixUrl',
+  memberships: 'memberships',
+  showWebsite: 'showWebsite',
+  addressDisplayOption: 'addressDisplayOption',
+};
 module.exports = {
   REGEX,
   COLLECTIONS,
@@ -62,4 +81,5 @@ module.exports = {
   DEFAULT_FILTER,
   DROPDOWN_OPTIONS,
   DEBOUNCE_DELAY,
+  MEMBERS_FIELDS,
 };
