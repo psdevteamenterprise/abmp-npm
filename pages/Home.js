@@ -5,7 +5,6 @@ const { withWarmUpData } = require('psdev-utils/frontend');
 
 const { ADDRESS_STATUS_TYPES, DEFAULT_FILTER, DROPDOWN_OPTIONS } = require('../public/consts.js');
 const { createHomepageUtils } = require('../public/Utils/homePage.js');
-const { createSearchUtils } = require('../public/Utils/searchUtils');
 const {
   getMainAddress,
   formatPracticeAreasForDisplay,
@@ -49,9 +48,11 @@ const homePageOnReady = async ({
     toggleDropdownFunctionality,
     showFiltersOnDesktop,
     filterOptionsFunction,
-  } = createHomepageUtils(_$w);
-  const { parseAndValidateQueryParams, updateUrlParams, noSearchCriteria, search } =
-    createSearchUtils(_$w, filterProfiles);
+    parseAndValidateQueryParams,
+    updateUrlParams,
+    noSearchCriteria,
+    search,
+  } = createHomepageUtils(_$w, filterProfiles);
   const baseUrl = await wixLocation.baseUrl();
   detectMobile();
   initPageUI();
