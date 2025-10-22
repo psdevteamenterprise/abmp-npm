@@ -1,4 +1,4 @@
-const { location: wixLocation } = require('@wix/site-location');
+const { location: wixLocation, queryParams: wixQueryParams } = require('@wix/site-location');
 const { window: wixWindow } = require('@wix/site-window');
 
 const { DEFAULT_FILTER } = require('../consts.js');
@@ -523,7 +523,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       newFilter.longitude !== 0 &&
       !isSearchingNearby
     ) {
-      wixLocation.queryParams.add({ nearby: 'true', page: '1' });
+      wixQueryParams().add({ nearby: 'true', page: '1' });
       return { isDefaultStateParams: true, filter: newFilter };
     }
 
@@ -590,7 +590,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       }
     }
 
-    wixLocation.queryParams.add(queryParams);
+    wixQueryParams().add(queryParams);
   }
 
   async function updateUrlParams(filter, pagination) {
@@ -600,7 +600,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     // Remove all existing parameters that we manage
     Object.keys(paramsMapping).forEach(param => {
       if (currentParams[param]) {
-        wixLocation.queryParams.remove([param]);
+        wixQueryParams().remove([param]);
       }
     });
 
@@ -611,20 +611,20 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       if (param !== 'page') {
         if (value !== null && value !== undefined && value !== '') {
           addedParams++;
-          wixLocation.queryParams.add({ [param]: value.toString() });
+          wixQueryParams().add({ [param]: value.toString() });
         }
       }
     });
     if (addedParams === 1) {
       // Only add page URL parameter, if nearby is true when there's exactly one filter
       if (paramsMapping.nearby.getValue() === 'true') {
-        wixLocation.queryParams.add({
+        wixQueryParams().add({
           page: paramsMapping.page.getValue().toString(),
         });
       }
     } else if (addedParams > 1) {
       // Always add page when there are multiple filters
-      wixLocation.queryParams.add({
+      wixQueryParams().add({
         page: paramsMapping.page.getValue().toString(),
       });
     }
