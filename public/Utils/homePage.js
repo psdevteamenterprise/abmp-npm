@@ -518,7 +518,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       newFilter.longitude !== 0 &&
       !isSearchingNearby
     ) {
-      wixQueryParams.add({ nearby: 'true', page: '1' });
+      await wixQueryParams.add({ nearby: 'true', page: '1' });
       return { isDefaultStateParams: true, filter: newFilter };
     }
 
@@ -572,7 +572,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     return { isDefaultStateParams, filter: newFilter };
   }
 
-  function updateUrlQuery(filters, defaultFilters) {
+  async function updateUrlQuery(filters, defaultFilters) {
     const queryParams = {};
 
     for (const key in filters) {
@@ -585,7 +585,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       }
     }
 
-    wixQueryParams.add(queryParams);
+    await wixQueryParams.add(queryParams);
   }
 
   async function updateUrlParams(filter, pagination) {
@@ -593,33 +593,33 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     // Get current query parameters
     const currentParams = await wixLocation.query();
     // Remove all existing parameters that we manage
-    Object.keys(paramsMapping).forEach(param => {
+    Object.keys(paramsMapping).forEach(async param => {
       if (currentParams[param]) {
-        wixQueryParams.remove([param]);
+        await wixQueryParams.remove([param]);
       }
     });
 
     // Add new parameters only if they have values
     let addedParams = 0;
-    Object.entries(paramsMapping).forEach(([param, { getValue }]) => {
+    Object.entries(paramsMapping).forEach(async ([param, { getValue }]) => {
       const value = getValue();
       if (param !== 'page') {
         if (value !== null && value !== undefined && value !== '') {
           addedParams++;
-          wixQueryParams.add({ [param]: value.toString() });
+          await wixQueryParams.add({ [param]: value.toString() });
         }
       }
     });
     if (addedParams === 1) {
       // Only add page URL parameter, if nearby is true when there's exactly one filter
       if (paramsMapping.nearby.getValue() === 'true') {
-        wixQueryParams.add({
+        await wixQueryParams.add({
           page: paramsMapping.page.getValue().toString(),
         });
       }
     } else if (addedParams > 1) {
       // Always add page when there are multiple filters
-      wixQueryParams.add({
+      await wixQueryParams.add({
         page: paramsMapping.page.getValue().toString(),
       });
     }
