@@ -304,7 +304,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     }
   }
 
-  function prepareOptionsFunction(filterName, sidePanelFilterData, stateCityMap, filter) {
+  function prepareOptionsFunction({ filterName, sidePanelFilterData, stateCityMap, filter }) {
     let options = [];
 
     if (filterName === 'state' || filterName === 'practiceAreas') {
