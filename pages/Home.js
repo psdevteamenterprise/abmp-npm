@@ -107,8 +107,8 @@ const homePageOnReady = async ({
     _$w('#resetFilter').onClick(resetFilter);
     _$w('#clearButton').onClick(resetFilter);
 
-    _$w('#searchDesktop').onInput(async event => await searchProfilesOnSearchText(event));
-    _$w('#searchTabletMobile').onInput(async event => await searchProfilesOnSearchText(event));
+    _$w('#searchDesktop').onInput(event => searchProfilesOnSearchText(event));
+    _$w('#searchTabletMobile').onInput(event => searchProfilesOnSearchText(event));
     // Use onChange for the switch and onClick for the retry button
     _$w('#nearBy').onChange(() => {
       updateFiltersState();
@@ -123,7 +123,7 @@ const homePageOnReady = async ({
     });
 
     // ZIP CODE FILTER
-    _$w('#zipcode').onInput(async event => {
+    _$w('#zipcode').onInput(event => {
       const zipcode = event.target.value.trim();
       zipcode === '' ? (filter.postalcode = null) : (filter.postalcode = zipcode);
       updateFiltersState();
@@ -132,7 +132,7 @@ const homePageOnReady = async ({
         return;
       }
 
-      await updateResults('filterTimeout');
+      updateResults('filterTimeout');
     });
 
     _$w('#filterButton').onClick(() => {
@@ -302,7 +302,7 @@ const homePageOnReady = async ({
         }
       });
     };
-    setFilterFromParams(true);
+    await setFilterFromParams(true);
     if (isDefaultStateParams) {
       console.log('default state set for nearby');
       await Promise.all([fetchFilterData(), nearByHandler(true)]);
