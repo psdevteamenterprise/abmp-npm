@@ -56,7 +56,7 @@ const homePageOnReady = async ({
   detectMobile();
   initPageUI();
   attachEventListeners();
-  // await handleUrlParams();
+  await handleUrlParams();
 
   async function detectMobile() {
     try {
