@@ -421,8 +421,8 @@ const homePageOnReady = async ({
     console.log('filter inside nearByHandler', filter);
     console.log('success inside nearByHandler', success);
     if (!success) {
-      console.log('not success inside nearByHandler, changing to nearby state');
-      multiStateBoxSelector.changeState('nearByState');
+      console.log('not success inside nearByHandler');
+      multiStateBoxSelector.changeState('loadingState');
       _$w('#nearBy').checked = false;
       updateFiltersState();
       // 4. Re-enable nearby input
