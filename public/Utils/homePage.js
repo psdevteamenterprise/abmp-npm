@@ -366,6 +366,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
         },
       };
       location = await wixWindow.getCurrentGeolocation();
+      console.log('location inside getAndSetUserLocation', location);
       const userLat = location.coords?.latitude ?? 0;
       const userLong = location.coords?.longitude ?? 0;
       filter = {

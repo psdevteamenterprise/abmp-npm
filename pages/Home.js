@@ -418,7 +418,8 @@ const homePageOnReady = async ({
     // 3. Do the query
     const { success, filter: newFilter } = await getAndSetUserLocation(isSearchingNearby, filter);
     filter = newFilter;
-
+    console.log('filter inside nearByHandler', filter);
+    console.log('success inside nearByHandler', success);
     if (!success) {
       multiStateBoxSelector.changeState('nearByState');
       _$w('#nearBy').checked = false;
