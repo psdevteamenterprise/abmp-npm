@@ -53,7 +53,6 @@ const homePageOnReady = async ({
     noSearchCriteria,
     search,
   } = createHomepageUtils(_$w, filterProfiles);
-  const baseUrl = await wixLocation.baseUrl();
   detectMobile();
   initPageUI();
   attachEventListeners();
@@ -77,7 +76,7 @@ const homePageOnReady = async ({
     showFiltersOnDesktop();
   }
 
-  function attachEventListeners() {
+  async function attachEventListeners() {
     /**
      * PAGINATION CODE
      */
@@ -179,7 +178,7 @@ const homePageOnReady = async ({
 
       await updateResults('zeroTimeout');
     });
-
+    const baseUrl = await wixLocation.baseUrl();
     _$w('#profileRepeater').onItemReady(($item, itemData) => {
       // 1) safely default to arrays
       const addresses = Array.isArray(itemData.addresses) ? itemData.addresses : [];
