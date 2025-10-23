@@ -421,6 +421,7 @@ const homePageOnReady = async ({
     console.log('filter inside nearByHandler', filter);
     console.log('success inside nearByHandler', success);
     if (!success) {
+      console.log('not success inside nearByHandler, changing to nearby state');
       multiStateBoxSelector.changeState('nearByState');
       _$w('#nearBy').checked = false;
       updateFiltersState();
