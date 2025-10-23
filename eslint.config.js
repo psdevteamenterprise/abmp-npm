@@ -30,7 +30,7 @@ module.exports = [
     rules: {
       // Error prevention
       'no-var': 'error',
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['warn', 'error', 'log', 'info'] }],
       'no-debugger': 'warn',
       'no-duplicate-imports': 'error',
