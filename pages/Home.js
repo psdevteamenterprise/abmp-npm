@@ -459,6 +459,9 @@ const homePageOnReady = async ({
           () => getCompiledFiltersOptions(),
           console.log
         );
+      console.log('COMPILED_STATE_LIST', COMPILED_STATE_LIST);
+      console.log('COMPILED_AREAS_OF_PRACTICES', COMPILED_AREAS_OF_PRACTICES);
+      console.log('COMPILED_STATE_CITY_MAP', COMPILED_STATE_CITY_MAP);
       completeStateList = COMPILED_STATE_LIST;
       areasOfPracticesList = COMPILED_AREAS_OF_PRACTICES;
       stateCityMapList = COMPILED_STATE_CITY_MAP;
