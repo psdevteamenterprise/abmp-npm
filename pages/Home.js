@@ -1,6 +1,6 @@
 //home page code
 const { location: wixLocation } = require('@wix/site-location');
-const { window: wixWindow } = require('@wix/site-window');
+const { window: wixWindow, rendering } = require('@wix/site-window');
 const { withWarmUpData } = require('psdev-utils/frontend');
 
 const { ADDRESS_STATUS_TYPES, DEFAULT_FILTER, DROPDOWN_OPTIONS } = require('../public/consts.js');
@@ -33,6 +33,7 @@ const homePageOnReady = async ({
   getCompiledFiltersOptions,
   getNonCompiledFiltersOptions,
   filterProfiles,
+  logMessage,
 }) => {
   const {
     getParamsMapping,
@@ -421,7 +422,8 @@ const homePageOnReady = async ({
     console.log('filter inside nearByHandler', filter);
     console.log('success inside nearByHandler', success);
     if (!success) {
-      console.log('not success inside nearByHandler');
+      const renderingEnv = await rendering.env();
+      logMessage(`not success inside nearByHandler in ${renderingEnv}`);
       multiStateBoxSelector.changeState('nearByState');
       _$w('#nearBy').checked = false;
       updateFiltersState();
@@ -459,7 +461,7 @@ const homePageOnReady = async ({
         await withWarmUpData(
           'getCompiledFiltersOptions',
           () => getCompiledFiltersOptions(),
-          console.log
+          logMessage
         );
       completeStateList = COMPILED_STATE_LIST;
       areasOfPracticesList = COMPILED_AREAS_OF_PRACTICES;
@@ -475,7 +477,7 @@ const homePageOnReady = async ({
       } = await withWarmUpData(
         'getNonCompiledFiltersOptions',
         () => getNonCompiledFiltersOptions(),
-        console.log
+        logMessage
       );
       completeStateList = _completeStateList;
       areasOfPracticesList = _areasOfPracticesList;
