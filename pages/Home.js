@@ -34,6 +34,7 @@ const homePageOnReady = async ({
   getNonCompiledFiltersOptions,
   filterProfiles,
   logMessage,
+  veloGetCurrentGeolocation,
 }) => {
   const {
     getParamsMapping,
@@ -53,7 +54,7 @@ const homePageOnReady = async ({
     updateUrlParams,
     noSearchCriteria,
     search,
-  } = createHomepageUtils(_$w, filterProfiles);
+  } = createHomepageUtils(_$w, filterProfiles, veloGetCurrentGeolocation, logMessage);
   detectMobile();
   initPageUI();
   attachEventListeners();

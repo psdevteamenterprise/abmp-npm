@@ -1,11 +1,11 @@
 const { location: wixLocation, queryParams: wixQueryParams } = require('@wix/site-location');
-const { window: wixWindow } = require('@wix/site-window');
+const { window: wixWindow, rendering } = require('@wix/site-window');
 
 const { DEFAULT_FILTER } = require('../consts.js');
 
 const { debouncedFunction } = require('./sharedUtils.js');
 
-const createHomepageUtils = (_$w, filterProfiles) => {
+const createHomepageUtils = (_$w, filterProfiles, veloGetCurrentGeolocation, logMessage) => {
   const getFiltersSelectors = filterName => ({
     checkBoxContainerSelector: _$w(`#${filterName}CheckBoxContainer`),
     searchTextInputSelector: _$w(`#${filterName}TextInput`),
@@ -366,6 +366,12 @@ const createHomepageUtils = (_$w, filterProfiles) => {
         },
       };
       location = await wixWindow.getCurrentGeolocation();
+      const renderingEnv = await rendering.env();
+
+      logMessage(`SDK location inside getAndSetUserLocation in ${renderingEnv}`, location);
+
+      const veloLocation = await veloGetCurrentGeolocation();
+      logMessage(`veloLocation inside getAndSetUserLocation in ${renderingEnv}`, veloLocation);
       console.log('location inside getAndSetUserLocation', location);
       const userLat = location.coords?.latitude ?? 0;
       const userLong = location.coords?.longitude ?? 0;
@@ -381,6 +387,8 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       };
       return { success: true, filter };
     } catch (error) {
+      const renderingEnv = await rendering.env();
+      logMessage(`error inside getAndSetUserLocation in ${renderingEnv}`, error);
       console.warn('Failed to get user location in getAndSetUserLocation', error);
       return { success: false, filter };
     }
