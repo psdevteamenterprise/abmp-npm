@@ -433,7 +433,7 @@ const homePageOnReady = async ({
         multiStateBoxSelector.changeState('nearByState');
       }
       logMessage(
-        `nearByHandler continued, multiStateBoxSelector.currentState: ${multiStateBoxSelector.currentState}`
+        `nearByHandler continued, multiStateBoxSelector.currentState: ${multiStateBoxSelector.currentState.id}`
       );
       _$w('#nearBy').checked = false;
       updateFiltersState();
