@@ -427,8 +427,14 @@ const homePageOnReady = async ({
     if (!success) {
       logMessage(`nearByHandler Failed to get user location in ${renderingEnv}`);
       if (renderingEnv !== 'backend') {
+        logMessage(
+          `nearByHandler Failed to get user location in ${renderingEnv}, changing to nearByState`
+        );
         multiStateBoxSelector.changeState('nearByState');
       }
+      logMessage(
+        `nearByHandler continued, multiStateBoxSelector.currentState: ${multiStateBoxSelector.currentState}`
+      );
       _$w('#nearBy').checked = false;
       updateFiltersState();
       // 4. Re-enable nearby input
@@ -440,11 +446,13 @@ const homePageOnReady = async ({
     if (!isSearchingNearby) {
       if (await noSearchCriteria()) {
         console.log('no search criteria and no near by');
+        logMessage(`nearByHandler no search criteria and no near by, changing to noSearchCriteria`);
         multiStateBoxSelector.changeState('noSearchCriteria');
         // 4. Re-enable nearby input
         _$w('#nearBy').enable();
         return;
       }
+      logMessage(`nearByHandler search criteria and no near by, changing to resultsState`);
       multiStateBoxSelector.changeState('resultsState');
     }
 
