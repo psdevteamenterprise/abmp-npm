@@ -423,8 +423,8 @@ const homePageOnReady = async ({
     filter = newFilter;
     console.log('filter inside nearByHandler', filter);
     console.log('success inside nearByHandler', success);
-    if (!success) {
-      const renderingEnv = await rendering.env();
+    const renderingEnv = await rendering.env();
+    if (!success && renderingEnv !== 'backend') {
       logMessage(`not success inside nearByHandler in ${renderingEnv}`);
       multiStateBoxSelector.changeState('nearByState');
       _$w('#nearBy').checked = false;
