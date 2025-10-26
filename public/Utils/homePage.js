@@ -368,10 +368,10 @@ const createHomepageUtils = (_$w, filterProfiles, veloGetCurrentGeolocation, log
       location = await wixWindow.getCurrentGeolocation();
       const renderingEnv = await rendering.env();
 
-      logMessage(`SDK location inside getAndSetUserLocation in ${renderingEnv}`, location);
+      logMessage(`SDK location inside getAndSetUserLocation in ${renderingEnv}` + location);
 
       const veloLocation = await veloGetCurrentGeolocation();
-      logMessage(`veloLocation inside getAndSetUserLocation in ${renderingEnv}`, veloLocation);
+      logMessage(`veloLocation inside getAndSetUserLocation in ${renderingEnv}` + veloLocation);
       console.log('location inside getAndSetUserLocation', location);
       const userLat = location.coords?.latitude ?? 0;
       const userLong = location.coords?.longitude ?? 0;
@@ -388,7 +388,7 @@ const createHomepageUtils = (_$w, filterProfiles, veloGetCurrentGeolocation, log
       return { success: true, filter };
     } catch (error) {
       const renderingEnv = await rendering.env();
-      logMessage(`error inside getAndSetUserLocation in ${renderingEnv}`, error);
+      logMessage(`error inside getAndSetUserLocation in ${renderingEnv}` + error);
       console.warn('Failed to get user location in getAndSetUserLocation', error);
       return { success: false, filter };
     }
