@@ -33,8 +33,6 @@ const homePageOnReady = async ({
   getCompiledFiltersOptions,
   getNonCompiledFiltersOptions,
   filterProfiles,
-  logMessage,
-  veloGetCurrentGeolocation,
 }) => {
   const {
     getParamsMapping,
@@ -54,7 +52,7 @@ const homePageOnReady = async ({
     updateUrlParams,
     noSearchCriteria,
     search,
-  } = createHomepageUtils(_$w, filterProfiles, veloGetCurrentGeolocation, logMessage);
+  } = createHomepageUtils(_$w, filterProfiles);
   detectMobile();
   initPageUI();
   attachEventListeners();
@@ -306,7 +304,6 @@ const homePageOnReady = async ({
     };
     await setFilterFromParams(true);
     if (isDefaultStateParams) {
-      logMessage('[applyFilterToUI] default state set for nearby');
       console.log('default state set for nearby');
       await Promise.all([fetchFilterData(), nearByHandler(true)]);
       return;
@@ -422,19 +419,11 @@ const homePageOnReady = async ({
     const { success, filter: newFilter } = await getAndSetUserLocation(isSearchingNearby, filter);
     filter = newFilter;
     console.log('filter inside nearByHandler', filter);
-    console.log('success inside nearByHandler', success);
     const renderingEnv = await rendering.env();
     if (!success) {
-      logMessage(`[nearByHandler] Failed to get user location in ${renderingEnv}`);
       if (renderingEnv !== 'backend') {
-        logMessage(
-          `[nearByHandler] Failed to get user location in ${renderingEnv}, changing to nearByState`
-        );
         multiStateBoxSelector.changeState('nearByState');
       }
-      logMessage(
-        `[nearByHandler] continued, multiStateBoxSelector.currentState: ${multiStateBoxSelector.currentState.id}`
-      );
       _$w('#nearBy').checked = false;
       updateFiltersState();
       // 4. Re-enable nearby input
@@ -446,15 +435,11 @@ const homePageOnReady = async ({
     if (!isSearchingNearby) {
       if (await noSearchCriteria()) {
         console.log('no search criteria and no near by');
-        logMessage(
-          `[nearByHandler] no search criteria and no near by, changing to noSearchCriteria`
-        );
         multiStateBoxSelector.changeState('noSearchCriteria');
         // 4. Re-enable nearby input
         _$w('#nearBy').enable();
         return;
       }
-      logMessage(`[nearByHandler] search criteria and no near by, changing to resultsState`);
       multiStateBoxSelector.changeState('resultsState');
     }
 
@@ -475,7 +460,7 @@ const homePageOnReady = async ({
         await withWarmUpData(
           'getCompiledFiltersOptions',
           () => getCompiledFiltersOptions(),
-          logMessage
+          console.log
         );
       completeStateList = COMPILED_STATE_LIST;
       areasOfPracticesList = COMPILED_AREAS_OF_PRACTICES;
@@ -491,7 +476,7 @@ const homePageOnReady = async ({
       } = await withWarmUpData(
         'getNonCompiledFiltersOptions',
         () => getNonCompiledFiltersOptions(),
-        logMessage
+        console.log
       );
       completeStateList = _completeStateList;
       areasOfPracticesList = _areasOfPracticesList;
