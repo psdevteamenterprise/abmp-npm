@@ -513,6 +513,7 @@ const createHomepageUtils = (_$w, filterProfiles, veloGetCurrentGeolocation, log
     const {
       siteRevision: _siteRevision,
       branchId: _branchId,
+      ssrOnly: _ssrOnly,
       ...withoutPreviewParams
     } = params || {};
     const isSearchingNearby = params.nearby === 'true';

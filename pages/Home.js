@@ -306,6 +306,7 @@ const homePageOnReady = async ({
     };
     await setFilterFromParams(true);
     if (isDefaultStateParams) {
+      logMessage('default state set for nearby');
       console.log('default state set for nearby');
       await Promise.all([fetchFilterData(), nearByHandler(true)]);
       return;
