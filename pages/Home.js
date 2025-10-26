@@ -422,6 +422,7 @@ const homePageOnReady = async ({
     const renderingEnv = await rendering.env();
     if (!success) {
       if (renderingEnv !== 'backend') {
+        //on Backend environment, geolocation API don't work, so makes no sense to change state for near by
         multiStateBoxSelector.changeState('nearByState');
       }
       _$w('#nearBy').checked = false;
