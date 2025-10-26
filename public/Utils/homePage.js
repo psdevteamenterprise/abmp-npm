@@ -676,6 +676,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
         }
       }
       const renderingEnv = await rendering.env();
+      //Don't run setTimeout on SSR
       const funcPromise =
         renderingEnv === 'backend'
           ? () => filterProfiles({ filter, isSearchingNearby })
