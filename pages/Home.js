@@ -424,9 +424,11 @@ const homePageOnReady = async ({
     console.log('filter inside nearByHandler', filter);
     console.log('success inside nearByHandler', success);
     const renderingEnv = await rendering.env();
-    if (!success && renderingEnv !== 'backend') {
-      logMessage(`not success inside nearByHandler in ${renderingEnv}`);
-      multiStateBoxSelector.changeState('nearByState');
+    if (!success) {
+      logMessage(`nearByHandler Failed to get user location in ${renderingEnv}`);
+      if (renderingEnv !== 'backend') {
+        multiStateBoxSelector.changeState('nearByState');
+      }
       _$w('#nearBy').checked = false;
       updateFiltersState();
       // 4. Re-enable nearby input
