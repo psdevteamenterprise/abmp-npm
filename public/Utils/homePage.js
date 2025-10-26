@@ -1,5 +1,5 @@
 const { location: wixLocation, queryParams: wixQueryParams } = require('@wix/site-location');
-const { window: wixWindow } = require('@wix/site-window');
+const { window: wixWindow, rendering } = require('@wix/site-window');
 
 const { DEFAULT_FILTER } = require('../consts.js');
 
@@ -675,12 +675,18 @@ const createHomepageUtils = (_$w, filterProfiles) => {
           return [];
         }
       }
-      const { success, response, error } = await debouncedFunction({
-        func: filterProfiles,
-        debounceTimeout,
-        timeoutType,
-        args: { filter, isSearchingNearby },
-      });
+      const renderingEnv = await rendering.env();
+      const funcPromise =
+        renderingEnv === 'backend'
+          ? () => filterProfiles({ filter, isSearchingNearby })
+          : () =>
+              debouncedFunction({
+                func: filterProfiles,
+                debounceTimeout,
+                timeoutType,
+                args: { filter, isSearchingNearby },
+              });
+      const { success, response, error } = await funcPromise();
       if (!success) {
         _$w('#numberOfResults').text = '';
         console.error('[search] failed with error:', error);
