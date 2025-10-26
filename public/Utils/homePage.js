@@ -682,7 +682,7 @@ const createHomepageUtils = (_$w, filterProfiles, veloGetCurrentGeolocation, log
             longitude: 0,
           }) === JSON.stringify(DEFAULT_FILTER)
         ) {
-          logMessage(`search no search criteria, changing to noSearchCriteria`);
+          logMessage(`[search] no search criteria, changing to noSearchCriteria`);
           multiStateBoxSelector.changeState('noSearchCriteria');
 
           return [];
