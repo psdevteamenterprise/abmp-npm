@@ -533,13 +533,8 @@ const createHomepageUtils = (_$w, filterProfiles, veloGetCurrentGeolocation, log
     }
 
     if (isNoParams) {
-      search({
-        filter,
-        pagination,
-        debounceTimeout: 0,
-        timeoutType: 'search',
-        isSearchingNearby: false,
-      });
+      // Don't search yet - let the caller decide what to do
+      // The search will be handled in applyFilterToUI
       return { isDefaultStateParams: true, filter: newFilter };
     }
     let autoAdjustFilters = false;
