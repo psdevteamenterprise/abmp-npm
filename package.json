@@ -26,6 +26,7 @@
     "prettier": "^3.3.3"
   },
   "dependencies": {
+    "@hisense-staging/velo-npm": "3.0.24",
     "@wix/automations": "^1.0.261",
     "@wix/crm": "^1.0.1061",
     "@wix/data": "^1.0.303",

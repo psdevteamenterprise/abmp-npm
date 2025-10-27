@@ -1,7 +1,7 @@
 //home page code
+const { withWarmUpData } = require('@hisense-staging/velo-npm');
 const { location: wixLocation } = require('@wix/site-location');
 const { window: wixWindow, rendering } = require('@wix/site-window');
-const { withWarmUpData } = require('psdev-utils/frontend');
 
 const { ADDRESS_STATUS_TYPES, DEFAULT_FILTER, DROPDOWN_OPTIONS } = require('../public/consts.js');
 const { createHomepageUtils } = require('../public/Utils/homePage.js');
