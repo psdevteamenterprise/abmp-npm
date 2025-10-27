@@ -355,6 +355,14 @@ const homePageOnReady = async ({
       logMessage(`[updateResults][${renderingEnv}] clearing timeout type ${timeoutType}`);
       clearTimeout(debounceTimeout[timeoutType]);
     }
+    if (renderingEnv === 'backend') {
+      //TODO: remove this workaround to fix issue with SSR showing invalid results
+      logMessage(
+        `[updateResults][${renderingEnv}] backend environment, changing state to loadingState`
+      );
+      multiStateBoxSelector.changeState('loadingState');
+      return;
+    }
     searchResults = await search({
       filter,
       pagination,
