@@ -335,7 +335,8 @@ const homePageOnReady = async ({
     try {
       await Promise.all([
         fetchFilterData().then(() => setFilterFromParams(false)),
-        searchPromise(),
+        //TODO: remove this workaround to fix issue with SSR showing invalid results
+        renderingEnv === 'backend' ? Promise.resolve() : searchPromise(),
       ]);
     } catch (error) {
       logMessage(`[applyFilterToUI][${renderingEnv}] failed with error:`, error);
@@ -354,14 +355,6 @@ const homePageOnReady = async ({
     if (debounceTimeout[timeoutType]) {
       logMessage(`[updateResults][${renderingEnv}] clearing timeout type ${timeoutType}`);
       clearTimeout(debounceTimeout[timeoutType]);
-    }
-    if (renderingEnv === 'backend') {
-      //TODO: remove this workaround to fix issue with SSR showing invalid results
-      logMessage(
-        `[updateResults][${renderingEnv}] backend environment, changing state to loadingState`
-      );
-      multiStateBoxSelector.changeState('loadingState');
-      return;
     }
     searchResults = await search({
       filter,
