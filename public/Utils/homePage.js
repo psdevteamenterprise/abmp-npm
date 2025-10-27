@@ -536,6 +536,13 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
         `[parseAndValidateQueryParams][${renderingEnv}] isNoParams`,
         JSON.stringify(params)
       );
+      // search({
+      //   filter,
+      //   pagination,
+      //   debounceTimeout: 0,
+      //   timeoutType: 'search',
+      //   isSearchingNearby: false,
+      // });
       // Don't search yet - let the caller decide what to do
       // The search will be handled in applyFilterToUI
       return { isDefaultStateParams: true, filter: newFilter };
@@ -708,7 +715,7 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
         }
       }
       logMessage(
-        `[runSearchAndUpdateUI][${renderingEnv}] !isSearchingNearby, isSearchingNearby is true , filter`,
+        `[runSearchAndUpdateUI][${renderingEnv}] isSearchingNearby is true , filter`,
         JSON.stringify({ filter })
       );
       //Don't run setTimeout on SSR

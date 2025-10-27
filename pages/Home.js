@@ -283,7 +283,7 @@ const homePageOnReady = async ({
       logMessage(`[setFilterFromParams][${renderingEnv}] params`, JSON.stringify(params));
       console.log('params inside setFilterFromParams ', params);
       const paramsMapping = getParamsMapping(filter, pagination);
-      Object.entries(paramsMapping).forEach(async ([param, { setValue, setUI }]) => {
+      for (const [param, { setValue, setUI }] of Object.entries(paramsMapping)) {
         const value = params[param];
         if (value !== undefined && value !== null && value !== '') {
           try {
@@ -307,7 +307,7 @@ const homePageOnReady = async ({
             console.error(`Error setting parameter ${param}:`, error);
           }
         }
-      });
+      }
     };
     await setFilterFromParams(true);
     if (isDefaultStateParams) {
