@@ -721,10 +721,18 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
         `[runSearchAndUpdateUI][${renderingEnv}] isSearchingNearby is true , filter`,
         JSON.stringify({ filter })
       );
+      const nonDebouncedFilterProfiles = async () => {
+        try {
+          const result = await filterProfiles({ filter, isSearchingNearby });
+          return { success: true, response: result };
+        } catch (error) {
+          return { success: false, error };
+        }
+      };
       //Don't run setTimeout on SSR
       const funcPromise =
         renderingEnv === 'backend'
-          ? () => filterProfiles({ filter, isSearchingNearby })
+          ? () => nonDebouncedFilterProfiles()
           : () =>
               debouncedFunction({
                 func: filterProfiles,
