@@ -77,7 +77,7 @@ const homePageOnReady = async ({
     showFiltersOnDesktop();
   }
 
-  async function attachEventListeners() {
+  function attachEventListeners() {
     /**
      * PAGINATION CODE
      */
@@ -108,8 +108,8 @@ const homePageOnReady = async ({
     _$w('#resetFilter').onClick(resetFilter);
     _$w('#clearButton').onClick(resetFilter);
 
-    _$w('#searchDesktop').onInput(event => searchProfilesOnSearchText(event));
-    _$w('#searchTabletMobile').onInput(event => searchProfilesOnSearchText(event));
+    _$w('#searchDesktop').onInput(async event => await searchProfilesOnSearchText(event));
+    _$w('#searchTabletMobile').onInput(async event => await searchProfilesOnSearchText(event));
     // Use onChange for the switch and onClick for the retry button
     _$w('#nearBy').onChange(() => {
       updateFiltersState();
@@ -124,7 +124,7 @@ const homePageOnReady = async ({
     });
 
     // ZIP CODE FILTER
-    _$w('#zipcode').onInput(event => {
+    _$w('#zipcode').onInput(async event => {
       const zipcode = event.target.value.trim();
       zipcode === '' ? (filter.postalcode = null) : (filter.postalcode = zipcode);
       updateFiltersState();
@@ -133,7 +133,7 @@ const homePageOnReady = async ({
         return;
       }
 
-      updateResults('filterTimeout');
+      await updateResults('filterTimeout');
     });
 
     _$w('#filterButton').onClick(() => {
@@ -179,8 +179,8 @@ const homePageOnReady = async ({
 
       await updateResults('zeroTimeout');
     });
-    const baseUrl = await wixLocation.baseUrl();
-    _$w('#profileRepeater').onItemReady(($item, itemData) => {
+
+    _$w('#profileRepeater').onItemReady(async ($item, itemData) => {
       // 1) safely default to arrays
       const addresses = Array.isArray(itemData.addresses) ? itemData.addresses : [];
       const areasOfPractices = Array.isArray(itemData.areasOfPractices)
@@ -200,6 +200,7 @@ const homePageOnReady = async ({
         if (itemData.showWebsite) {
           $item('#website').link = itemData.website;
         } else {
+          const baseUrl = await wixLocation.baseUrl();
           $item('#website').link = `${baseUrl}/profile/${itemData.url}`;
         }
         $item('#website').target = '_blank';
@@ -264,23 +265,17 @@ const homePageOnReady = async ({
   }
 
   async function handleUrlParams() {
-    const renderingEnv = await rendering.env();
     const { isDefaultStateParams, filter: newFilter } = await parseAndValidateQueryParams(
       filter,
       pagination
     );
-    logMessage(`[handleUrlParams][${renderingEnv}] isDefaultStateParams`, isDefaultStateParams);
     filter = newFilter;
-    logMessage(`[handleUrlParams][${renderingEnv}] filter`, JSON.stringify(filter));
     await applyFilterToUI(isDefaultStateParams);
   }
 
   async function applyFilterToUI(isDefaultStateParams) {
-    const renderingEnv = await rendering.env();
-    logMessage(`[applyFilterToUI][${renderingEnv}] isDefaultStateParams`, isDefaultStateParams);
     const setFilterFromParams = async (isInitializeValue = true) => {
       const params = await wixLocation.query();
-      logMessage(`[setFilterFromParams][${renderingEnv}] params`, JSON.stringify(params));
       console.log('params inside setFilterFromParams ', params);
       const paramsMapping = getParamsMapping(filter, pagination);
       for (const [param, { setValue, setUI }] of Object.entries(paramsMapping)) {
@@ -312,12 +307,10 @@ const homePageOnReady = async ({
     await setFilterFromParams(true);
     if (isDefaultStateParams) {
       console.log('default state set for nearby');
-      logMessage(`[applyFilterToUI][${renderingEnv}] default state set for nearby`);
       await Promise.all([fetchFilterData(), nearByHandler(true)]);
       return;
     }
     console.log('not default state');
-    logMessage(`[applyFilterToUI][${renderingEnv}] not default state`);
     const searchPromise =
       filter.searchText && filter.searchText.length > 0
         ? () =>
@@ -338,7 +331,6 @@ const homePageOnReady = async ({
         searchPromise(),
       ]);
     } catch (error) {
-      logMessage(`[applyFilterToUI][${renderingEnv}] failed with error:`, error);
       console.error('[applyFilterToUI] failed with error:', error);
       multiStateBoxSelector.changeState('errorState');
     }
@@ -348,11 +340,7 @@ const homePageOnReady = async ({
    * UPDATE PROFILES BASED ON APPLIED/DEFAULT FILTER
    */
   async function updateResults(timeoutType, preservePagination = false) {
-    const renderingEnv = await rendering.env();
-    logMessage(`[updateResults][${renderingEnv}] timeoutType`, timeoutType);
-    logMessage(`[updateResults][${renderingEnv}] preservePagination`, preservePagination);
     if (debounceTimeout[timeoutType]) {
-      logMessage(`[updateResults][${renderingEnv}] clearing timeout type ${timeoutType}`);
       clearTimeout(debounceTimeout[timeoutType]);
     }
     searchResults = await search({
@@ -363,7 +351,6 @@ const homePageOnReady = async ({
       isSearchingNearby: _$w('#nearBy').checked,
       preservePagination,
     });
-    logMessage(`[updateResults][${renderingEnv}] searchResults`, JSON.stringify(searchResults));
     !preservePagination && (await updateUrlParams(filter, pagination));
     return searchResults;
   }
@@ -423,8 +410,7 @@ const homePageOnReady = async ({
   // NEAR BY FILTER
   async function nearByHandler(preservePagination = false) {
     const isSearchingNearby = _$w('#nearBy').checked;
-    const renderingEnv = await rendering.env();
-    logMessage(`[nearByHandler][${renderingEnv}] isSearchingNearby`, isSearchingNearby);
+
     // 1. Disable nearby input while processing
     _$w('#nearBy').disable();
 
@@ -434,10 +420,8 @@ const homePageOnReady = async ({
     // 3. Do the query
     const { success, filter: newFilter } = await getAndSetUserLocation(isSearchingNearby, filter);
     filter = newFilter;
-    logMessage(`[nearByHandler][${renderingEnv}] filter`, JSON.stringify(filter));
-    console.log('filter inside nearByHandler', filter);
+    const renderingEnv = await rendering.env();
     if (!success) {
-      logMessage(`[nearByHandler][${renderingEnv}] failed to get user location`);
       if (renderingEnv !== 'backend') {
         //on Backend environment, geolocation API don't work, so makes no sense to change state for near by
         multiStateBoxSelector.changeState('nearByState');
@@ -451,9 +435,8 @@ const homePageOnReady = async ({
 
     // If location is not selected, change state to "resultsState"
     if (!isSearchingNearby) {
-      logMessage(`[nearByHandler][${renderingEnv}] !isSearchingNearby, is`);
       if (await noSearchCriteria()) {
-        logMessage(`[nearByHandler][${renderingEnv}] no search criteria and no near by`);
+        console.log('no search criteria and no near by');
         multiStateBoxSelector.changeState('noSearchCriteria');
         // 4. Re-enable nearby input
         _$w('#nearBy').enable();
@@ -461,7 +444,7 @@ const homePageOnReady = async ({
       }
       multiStateBoxSelector.changeState('resultsState');
     }
-    logMessage(`[nearByHandler][${renderingEnv}] !isSearchingNearby, isSearchingNearby is true`);
+
     await updateResults('zeroTimeout', preservePagination);
 
     // 4. Re-enable nearby input when done
@@ -479,20 +462,14 @@ const homePageOnReady = async ({
         await withWarmUpData(
           'getCompiledFiltersOptions',
           () => getCompiledFiltersOptions(),
-          logMessage
+          console.log
         );
-      const renderingEnv = await rendering.env();
-      logMessage(`[fetchFilterData][${renderingEnv}] fetched compiled filters`);
       completeStateList = COMPILED_STATE_LIST;
       areasOfPracticesList = COMPILED_AREAS_OF_PRACTICES;
       stateCityMapList = COMPILED_STATE_CITY_MAP;
     } catch (error) {
-      const renderingEnv = await rendering.env();
-      logMessage(
-        `[fetchFilterData][${renderingEnv}] failed to get compiled filters list, falling back to non compiled version with error: ${error}`
-      );
       console.error(
-        `Failed to get compiled filters list, falling back to non compiled version with error: ${error}`
+        `Failed to get compiled filters list, falling back to non compiled version: ${error}`
       );
       const {
         completeStateList: _completeStateList,
@@ -507,7 +484,7 @@ const homePageOnReady = async ({
       areasOfPracticesList = _areasOfPracticesList;
       stateCityMapList = _stateCityMapList;
     }
-    sidePanelFilterData.set('state', completeStateList);
+    await sidePanelFilterData.set('state', completeStateList);
     multiSelectFilter('state');
     sidePanelFilterData.set('practiceAreas', areasOfPracticesList);
     multiSelectFilter('practiceAreas');
@@ -767,9 +744,7 @@ const homePageOnReady = async ({
         await updateResults('filterTimeout');
       }
     } catch (error) {
-      const renderingEnv = await rendering.env();
-      console.error(`[handleFilterChanged][${renderingEnv}] failed with error:`, error);
-      logMessage(`[handleFilterChanged][${renderingEnv}] failed with error:`, error);
+      console.error('Error in multiSelectFilter:', error);
       multiStateBoxSelector.changeState('errorState');
     }
   }
@@ -785,7 +760,6 @@ const homePageOnReady = async ({
     filter[`${filterName}Search`] = '';
   }
 };
-
 module.exports = {
   homePageOnReady,
 };

@@ -368,8 +368,8 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
       location = await wixWindow.getCurrentGeolocation();
 
       console.log('location inside getAndSetUserLocation', location);
-      const userLat = location?.coords?.latitude ?? 0;
-      const userLong = location?.coords?.longitude ?? 0;
+      const userLat = location.coords?.latitude ?? 0;
+      const userLong = location.coords?.longitude ?? 0;
       filter = {
         ...filter,
         postalcode: isSearchingNearby ? null : filter.postalcode,
@@ -536,13 +536,13 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
         `[parseAndValidateQueryParams][${renderingEnv}] isNoParams`,
         JSON.stringify(params)
       );
-      // search({
-      //   filter,
-      //   pagination,
-      //   debounceTimeout: 0,
-      //   timeoutType: 'search',
-      //   isSearchingNearby: false,
-      // });
+      search({
+        filter,
+        pagination,
+        debounceTimeout: 0,
+        timeoutType: 'search',
+        isSearchingNearby: false,
+      });
       // Don't search yet - let the caller decide what to do
       // The search will be handled in applyFilterToUI
       return { isDefaultStateParams: true, filter: newFilter };
