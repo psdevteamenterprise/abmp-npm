@@ -511,6 +511,9 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
       ssrOnly: _ssrOnly,
       ...withoutPreviewParams
     } = params || {};
+    logMessage(
+      `[parseAndValidateQueryParams][${renderingEnv}] nearby: ${params.nearby}, type of nearby: ${typeof params.nearby}`
+    );
     const isSearchingNearby = params.nearby === 'true';
     const isNoParams = !withoutPreviewParams || Object.keys(withoutPreviewParams).length === 0;
     const { success, filter: newFilter } = await getAndSetUserLocation(isSearchingNearby, filter);
@@ -536,13 +539,13 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
         `[parseAndValidateQueryParams][${renderingEnv}] isNoParams`,
         JSON.stringify(params)
       );
-      search({
-        filter,
-        pagination,
-        debounceTimeout: 0,
-        timeoutType: 'search',
-        isSearchingNearby: false,
-      });
+      // search({
+      //   filter,
+      //   pagination,
+      //   debounceTimeout: 0,
+      //   timeoutType: 'search',
+      //   isSearchingNearby: false,
+      // });
       // Don't search yet - let the caller decide what to do
       // The search will be handled in applyFilterToUI
       return { isDefaultStateParams: true, filter: newFilter };
