@@ -368,8 +368,8 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
       location = await wixWindow.getCurrentGeolocation();
 
       console.log('location inside getAndSetUserLocation', location);
-      const userLat = location.coords?.latitude ?? 0;
-      const userLong = location.coords?.longitude ?? 0;
+      const userLat = location?.coords?.latitude ?? 0;
+      const userLong = location?.coords?.longitude ?? 0;
       filter = {
         ...filter,
         postalcode: isSearchingNearby ? null : filter.postalcode,
