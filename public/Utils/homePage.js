@@ -5,7 +5,7 @@ const { DEFAULT_FILTER } = require('../consts.js');
 
 const { debouncedFunction } = require('./sharedUtils.js');
 
-const createHomepageUtils = (_$w, filterProfiles) => {
+const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
   const getFiltersSelectors = filterName => ({
     checkBoxContainerSelector: _$w(`#${filterName}CheckBoxContainer`),
     searchTextInputSelector: _$w(`#${filterName}TextInput`),
@@ -502,6 +502,8 @@ const createHomepageUtils = (_$w, filterProfiles) => {
   }
   async function parseAndValidateQueryParams(filter, pagination) {
     const params = await wixLocation.query();
+    const renderingEnv = await rendering.env();
+    logMessage(`[parseAndValidateQueryParams][${renderingEnv}] params`, JSON.stringify(params));
     const paramsMapping = getParamsMapping(filter, pagination);
     const {
       siteRevision: _siteRevision,
@@ -521,15 +523,24 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       newFilter.longitude !== 0 &&
       !isSearchingNearby
     ) {
+      logMessage(
+        `[parseAndValidateQueryParams][${renderingEnv}] Auto-enable nearby`,
+        JSON.stringify(params)
+      );
       await wixQueryParams.add({ nearby: 'true', page: '1' });
       return { isDefaultStateParams: true, filter: newFilter };
     }
 
     if (isNoParams) {
+      logMessage(
+        `[parseAndValidateQueryParams][${renderingEnv}] isNoParams`,
+        JSON.stringify(params)
+      );
       // Don't search yet - let the caller decide what to do
       // The search will be handled in applyFilterToUI
       return { isDefaultStateParams: true, filter: newFilter };
     }
+    logMessage(`[parseAndValidateQueryParams][${renderingEnv}] continued`, JSON.stringify(params));
     let autoAdjustFilters = false;
     const validatePageValue = value => {
       if (!value || isNaN(Number(value)) || Number(value) < 1 || Number(value) > 10) {
@@ -540,10 +551,18 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     };
     const pageValidationResult = validatePageValue(params.page);
     if (!pageValidationResult.valid) {
+      logMessage(
+        `[parseAndValidateQueryParams][${renderingEnv}] pageValidationResult not valid`,
+        JSON.stringify(params)
+      );
       paramsMapping.page.setValue({ value: pageValidationResult.value });
       autoAdjustFilters = true;
     }
     if (isSearchingNearby) {
+      logMessage(
+        `[parseAndValidateQueryParams][${renderingEnv}] isSearchingNearby`,
+        JSON.stringify(params)
+      );
       //if nearby is true only city,state,zip should be reset, others should be preserved and taken from query params
       const paramsToPreserve = ['practiceAreas', 'searchText', 'page'];
       paramsToPreserve.forEach(paramName => {
@@ -559,6 +578,10 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       autoAdjustFilters = true;
     }
     if (autoAdjustFilters) {
+      logMessage(
+        `[parseAndValidateQueryParams][${renderingEnv}] autoAdjustFilters`,
+        JSON.stringify(params)
+      );
       await updateUrlParams(filter, pagination);
     }
     const isNearbyFilter =
@@ -590,6 +613,8 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     const paramsMapping = getParamsMapping(filter, pagination);
     // Get current query parameters
     const currentParams = await wixLocation.query();
+    const renderingEnv = await rendering.env();
+    logMessage(`[updateUrlParams][${renderingEnv}] currentParams`, JSON.stringify(currentParams));
     // Remove all existing parameters that we manage
     Object.keys(paramsMapping).forEach(async param => {
       if (currentParams[param]) {
@@ -651,6 +676,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     preservePagination = false,
   }) {
     const multiStateBoxSelector = _$w('#resultsStateBox');
+    const renderingEnv = await rendering.env();
     const initSearchResultsUI = () => {
       JSON.stringify(filter) === JSON.stringify(DEFAULT_FILTER)
         ? _$w('#resetFilter').hide()
@@ -663,6 +689,10 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     };
     const runSearchAndUpdateUI = async (filter, isSearchingNearby) => {
       if (!isSearchingNearby) {
+        logMessage(
+          `[runSearchAndUpdateUI][${renderingEnv}] !isSearchingNearby, filter`,
+          JSON.stringify(filter)
+        );
         if (
           JSON.stringify({
             ...filter,
@@ -671,11 +701,16 @@ const createHomepageUtils = (_$w, filterProfiles) => {
           }) === JSON.stringify(DEFAULT_FILTER)
         ) {
           multiStateBoxSelector.changeState('noSearchCriteria');
-
+          logMessage(
+            `[runSearchAndUpdateUI][${renderingEnv}] !isSearchingNearby, no search criteria`
+          );
           return [];
         }
       }
-      const renderingEnv = await rendering.env();
+      logMessage(
+        `[runSearchAndUpdateUI][${renderingEnv}] !isSearchingNearby, isSearchingNearby is true , filter`,
+        JSON.stringify({ filter })
+      );
       //Don't run setTimeout on SSR
       const funcPromise =
         renderingEnv === 'backend'
@@ -689,6 +724,10 @@ const createHomepageUtils = (_$w, filterProfiles) => {
               });
       const { success, response, error } = await funcPromise();
       if (!success) {
+        logMessage(
+          `[runSearchAndUpdateUI][${renderingEnv}] !isSearchingNearby, failed to get search results`,
+          error
+        );
         _$w('#numberOfResults').text = '';
         console.error('[search] failed with error:', error);
         multiStateBoxSelector.changeState('errorState');
@@ -702,6 +741,10 @@ const createHomepageUtils = (_$w, filterProfiles) => {
             ? `'${filter.searchText}' did not match any search. Please try again.`
             : 'No results found for the selected filters. Please adjust your filters and try again'
         }`;
+        logMessage(
+          `[runSearchAndUpdateUI][${renderingEnv}] !isSearchingNearby, no results found`,
+          JSON.stringify({ filter })
+        );
         multiStateBoxSelector.changeState('noResultsState');
         return [];
       }
