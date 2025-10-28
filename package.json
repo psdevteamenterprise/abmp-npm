@@ -1,6 +1,6 @@
 {
   "name": "abmp-npm",
-  "version": "1.1.8",
+  "version": "1.1.50",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -17,6 +17,7 @@
     "@eslint/js": "^9.12.0",
     "eslint": "^9.12.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-node": "^0.3.9",
     "eslint-plugin-import": "^2.30.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-promise": "^7.1.0",
@@ -30,7 +31,10 @@
     "@wix/data": "^1.0.303",
     "@wix/essentials": "^0.1.28",
     "@wix/members": "^1.0.330",
+    "@wix/site-location": "^1.31.0",
     "@wix/site-window": "^1.44.0",
-    "phone": "^3.1.67"
+    "ngeohash": "^0.6.3",
+    "phone": "^3.1.67",
+    "psdev-utils": "1.1.1"
   }
 }

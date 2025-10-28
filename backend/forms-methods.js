@@ -1,4 +1,4 @@
-const { COLLECTIONS } = require('../public');
+const { COLLECTIONS } = require('../public/consts');
 
 const { triggerAutomation } = require('./automations-methods');
 const { CONFIG_KEYS } = require('./consts');

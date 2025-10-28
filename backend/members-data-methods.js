@@ -1,4 +1,4 @@
-const { COLLECTIONS } = require('../public');
+const { COLLECTIONS } = require('../public/consts');
 
 const { wixData } = require('./elevated-modules');
 const { createSiteMember } = require('./members-area-methods');
