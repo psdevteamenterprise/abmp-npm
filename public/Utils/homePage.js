@@ -5,7 +5,7 @@ const { DEFAULT_FILTER } = require('../consts.js');
 
 const { debouncedFunction } = require('./sharedUtils.js');
 
-const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
+const createHomepageUtils = (_$w, filterProfiles) => {
   const getFiltersSelectors = filterName => ({
     checkBoxContainerSelector: _$w(`#${filterName}CheckBoxContainer`),
     searchTextInputSelector: _$w(`#${filterName}TextInput`),
@@ -502,8 +502,6 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
   }
   async function parseAndValidateQueryParams(filter, pagination) {
     const params = await wixLocation.query();
-    const renderingEnv = await rendering.env();
-    logMessage(`[parseAndValidateQueryParams][${renderingEnv}] params`, JSON.stringify(params));
     const paramsMapping = getParamsMapping(filter, pagination);
     const {
       siteRevision: _siteRevision,
@@ -511,9 +509,6 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
       ssrOnly: _ssrOnly,
       ...withoutPreviewParams
     } = params || {};
-    logMessage(
-      `[parseAndValidateQueryParams][${renderingEnv}] nearby: ${params.nearby}, type of nearby: ${typeof params.nearby}`
-    );
     const isSearchingNearby = params.nearby === 'true';
     const isNoParams = !withoutPreviewParams || Object.keys(withoutPreviewParams).length === 0;
     const { success, filter: newFilter } = await getAndSetUserLocation(isSearchingNearby, filter);
@@ -526,19 +521,11 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
       newFilter.longitude !== 0 &&
       !isSearchingNearby
     ) {
-      logMessage(
-        `[parseAndValidateQueryParams][${renderingEnv}] Auto-enable nearby`,
-        JSON.stringify(params)
-      );
       await wixQueryParams.add({ nearby: 'true', page: '1' });
       return { isDefaultStateParams: true, filter: newFilter };
     }
 
     if (isNoParams) {
-      logMessage(
-        `[parseAndValidateQueryParams][${renderingEnv}] isNoParams`,
-        JSON.stringify(params)
-      );
       // search({
       //   filter,
       //   pagination,
@@ -550,7 +537,6 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
       // The search will be handled in applyFilterToUI
       return { isDefaultStateParams: true, filter: newFilter };
     }
-    logMessage(`[parseAndValidateQueryParams][${renderingEnv}] continued`, JSON.stringify(params));
     let autoAdjustFilters = false;
     const validatePageValue = value => {
       if (!value || isNaN(Number(value)) || Number(value) < 1 || Number(value) > 10) {
@@ -561,18 +547,10 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
     };
     const pageValidationResult = validatePageValue(params.page);
     if (!pageValidationResult.valid) {
-      logMessage(
-        `[parseAndValidateQueryParams][${renderingEnv}] pageValidationResult not valid`,
-        JSON.stringify(params)
-      );
       paramsMapping.page.setValue({ value: pageValidationResult.value });
       autoAdjustFilters = true;
     }
     if (isSearchingNearby) {
-      logMessage(
-        `[parseAndValidateQueryParams][${renderingEnv}] isSearchingNearby`,
-        JSON.stringify(params)
-      );
       //if nearby is true only city,state,zip should be reset, others should be preserved and taken from query params
       const paramsToPreserve = ['practiceAreas', 'searchText', 'page'];
       paramsToPreserve.forEach(paramName => {
@@ -588,10 +566,6 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
       autoAdjustFilters = true;
     }
     if (autoAdjustFilters) {
-      logMessage(
-        `[parseAndValidateQueryParams][${renderingEnv}] autoAdjustFilters`,
-        JSON.stringify(params)
-      );
       await updateUrlParams(filter, pagination);
     }
     const isNearbyFilter =
@@ -623,8 +597,6 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
     const paramsMapping = getParamsMapping(filter, pagination);
     // Get current query parameters
     const currentParams = await wixLocation.query();
-    const renderingEnv = await rendering.env();
-    logMessage(`[updateUrlParams][${renderingEnv}] currentParams`, JSON.stringify(currentParams));
     // Remove all existing parameters that we manage
     Object.keys(paramsMapping).forEach(async param => {
       if (currentParams[param]) {
@@ -699,10 +671,6 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
     };
     const runSearchAndUpdateUI = async (filter, isSearchingNearby) => {
       if (!isSearchingNearby) {
-        logMessage(
-          `[runSearchAndUpdateUI][${renderingEnv}] !isSearchingNearby, filter`,
-          JSON.stringify(filter)
-        );
         if (
           JSON.stringify({
             ...filter,
@@ -711,16 +679,9 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
           }) === JSON.stringify(DEFAULT_FILTER)
         ) {
           multiStateBoxSelector.changeState('noSearchCriteria');
-          logMessage(
-            `[runSearchAndUpdateUI][${renderingEnv}] !isSearchingNearby, no search criteria`
-          );
           return [];
         }
       }
-      logMessage(
-        `[runSearchAndUpdateUI][${renderingEnv}] isSearchingNearby is true , filter`,
-        JSON.stringify({ filter })
-      );
       const nonDebouncedFilterProfiles = async () => {
         try {
           const result = await filterProfiles({ filter, isSearchingNearby });
@@ -742,10 +703,6 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
               });
       const { success, response, error } = await funcPromise();
       if (!success) {
-        logMessage(
-          `[runSearchAndUpdateUI][${renderingEnv}] !isSearchingNearby, failed to get search results`,
-          error
-        );
         _$w('#numberOfResults').text = '';
         console.error('[search] failed with error:', error);
         multiStateBoxSelector.changeState('errorState');
@@ -759,10 +716,6 @@ const createHomepageUtils = (_$w, filterProfiles, logMessage) => {
             ? `'${filter.searchText}' did not match any search. Please try again.`
             : 'No results found for the selected filters. Please adjust your filters and try again'
         }`;
-        logMessage(
-          `[runSearchAndUpdateUI][${renderingEnv}] !isSearchingNearby, no results found`,
-          JSON.stringify({ filter })
-        );
         multiStateBoxSelector.changeState('noResultsState');
         return [];
       }

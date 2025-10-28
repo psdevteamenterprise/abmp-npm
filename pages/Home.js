@@ -1,7 +1,7 @@
 //home page code
-const { withWarmUpData } = require('@hisense-staging/velo-npm');
 const { location: wixLocation } = require('@wix/site-location');
 const { window: wixWindow, rendering } = require('@wix/site-window');
+const { withWarmUpData } = require('psdev-utils/frontend');
 
 const { ADDRESS_STATUS_TYPES, DEFAULT_FILTER, DROPDOWN_OPTIONS } = require('../public/consts.js');
 const { createHomepageUtils } = require('../public/Utils/homePage.js');
@@ -33,7 +33,6 @@ const homePageOnReady = async ({
   getCompiledFiltersOptions,
   getNonCompiledFiltersOptions,
   filterProfiles,
-  logMessage,
 }) => {
   const {
     getParamsMapping,
@@ -53,7 +52,7 @@ const homePageOnReady = async ({
     updateUrlParams,
     noSearchCriteria,
     search,
-  } = createHomepageUtils(_$w, filterProfiles, logMessage);
+  } = createHomepageUtils(_$w, filterProfiles);
   detectMobile();
   initPageUI();
   attachEventListeners();
@@ -264,23 +263,18 @@ const homePageOnReady = async ({
   }
 
   async function handleUrlParams() {
-    const renderingEnv = await rendering.env();
     const { isDefaultStateParams, filter: newFilter } = await parseAndValidateQueryParams(
       filter,
       pagination
     );
-    logMessage(`[handleUrlParams][${renderingEnv}] isDefaultStateParams`, isDefaultStateParams);
     filter = newFilter;
-    logMessage(`[handleUrlParams][${renderingEnv}] filter`, JSON.stringify(filter));
     await applyFilterToUI(isDefaultStateParams);
   }
 
   async function applyFilterToUI(isDefaultStateParams) {
     const renderingEnv = await rendering.env();
-    logMessage(`[applyFilterToUI][${renderingEnv}] isDefaultStateParams`, isDefaultStateParams);
     const setFilterFromParams = async (isInitializeValue = true) => {
       const params = await wixLocation.query();
-      logMessage(`[setFilterFromParams][${renderingEnv}] params`, JSON.stringify(params));
       console.log('params inside setFilterFromParams ', params);
       const paramsMapping = getParamsMapping(filter, pagination);
       for (const [param, { setValue, setUI }] of Object.entries(paramsMapping)) {
@@ -312,12 +306,10 @@ const homePageOnReady = async ({
     await setFilterFromParams(true);
     if (isDefaultStateParams) {
       console.log('default state set for nearby');
-      logMessage(`[applyFilterToUI][${renderingEnv}] default state set for nearby`);
       await Promise.all([fetchFilterData(), nearByHandler(true)]);
       return;
     }
     console.log('not default state');
-    logMessage(`[applyFilterToUI][${renderingEnv}] not default state`);
     const searchPromise =
       filter.searchText && filter.searchText.length > 0
         ? () =>
@@ -339,7 +331,6 @@ const homePageOnReady = async ({
         renderingEnv === 'backend' ? Promise.resolve() : searchPromise(),
       ]);
     } catch (error) {
-      logMessage(`[applyFilterToUI][${renderingEnv}] failed with error:`, error);
       console.error('[applyFilterToUI] failed with error:', error);
       multiStateBoxSelector.changeState('errorState');
     }
@@ -349,11 +340,7 @@ const homePageOnReady = async ({
    * UPDATE PROFILES BASED ON APPLIED/DEFAULT FILTER
    */
   async function updateResults(timeoutType, preservePagination = false) {
-    const renderingEnv = await rendering.env();
-    logMessage(`[updateResults][${renderingEnv}] timeoutType`, timeoutType);
-    logMessage(`[updateResults][${renderingEnv}] preservePagination`, preservePagination);
     if (debounceTimeout[timeoutType]) {
-      logMessage(`[updateResults][${renderingEnv}] clearing timeout type ${timeoutType}`);
       clearTimeout(debounceTimeout[timeoutType]);
     }
     searchResults = await search({
@@ -364,7 +351,6 @@ const homePageOnReady = async ({
       isSearchingNearby: _$w('#nearBy').checked,
       preservePagination,
     });
-    logMessage(`[updateResults][${renderingEnv}] searchResults`, JSON.stringify(searchResults));
     !preservePagination && (await updateUrlParams(filter, pagination));
     return searchResults;
   }
@@ -425,7 +411,6 @@ const homePageOnReady = async ({
   async function nearByHandler(preservePagination = false) {
     const isSearchingNearby = _$w('#nearBy').checked;
     const renderingEnv = await rendering.env();
-    logMessage(`[nearByHandler][${renderingEnv}] isSearchingNearby`, isSearchingNearby);
     // 1. Disable nearby input while processing
     _$w('#nearBy').disable();
 
@@ -435,10 +420,8 @@ const homePageOnReady = async ({
     // 3. Do the query
     const { success, filter: newFilter } = await getAndSetUserLocation(isSearchingNearby, filter);
     filter = newFilter;
-    logMessage(`[nearByHandler][${renderingEnv}] filter`, JSON.stringify(filter));
     console.log('filter inside nearByHandler', filter);
     if (!success) {
-      logMessage(`[nearByHandler][${renderingEnv}] failed to get user location`);
       if (renderingEnv !== 'backend') {
         //on Backend environment, geolocation API don't work, so makes no sense to change state for near by
         multiStateBoxSelector.changeState('nearByState');
@@ -452,9 +435,7 @@ const homePageOnReady = async ({
 
     // If location is not selected, change state to "resultsState"
     if (!isSearchingNearby) {
-      logMessage(`[nearByHandler][${renderingEnv}] !isSearchingNearby, is`);
       if (await noSearchCriteria()) {
-        logMessage(`[nearByHandler][${renderingEnv}] no search criteria and no near by`);
         multiStateBoxSelector.changeState('noSearchCriteria');
         // 4. Re-enable nearby input
         _$w('#nearBy').enable();
@@ -462,7 +443,6 @@ const homePageOnReady = async ({
       }
       multiStateBoxSelector.changeState('resultsState');
     }
-    logMessage(`[nearByHandler][${renderingEnv}] !isSearchingNearby, isSearchingNearby is true`);
     await updateResults('zeroTimeout', preservePagination);
 
     // 4. Re-enable nearby input when done
@@ -480,18 +460,12 @@ const homePageOnReady = async ({
         await withWarmUpData(
           'getCompiledFiltersOptions',
           () => getCompiledFiltersOptions(),
-          logMessage
+          console.log
         );
-      const renderingEnv = await rendering.env();
-      logMessage(`[fetchFilterData][${renderingEnv}] fetched compiled filters`);
       completeStateList = COMPILED_STATE_LIST;
       areasOfPracticesList = COMPILED_AREAS_OF_PRACTICES;
       stateCityMapList = COMPILED_STATE_CITY_MAP;
     } catch (error) {
-      const renderingEnv = await rendering.env();
-      logMessage(
-        `[fetchFilterData][${renderingEnv}] failed to get compiled filters list, falling back to non compiled version with error: ${error}`
-      );
       console.error(
         `Failed to get compiled filters list, falling back to non compiled version with error: ${error}`
       );
@@ -768,9 +742,7 @@ const homePageOnReady = async ({
         await updateResults('filterTimeout');
       }
     } catch (error) {
-      const renderingEnv = await rendering.env();
-      console.error(`[handleFilterChanged][${renderingEnv}] failed with error:`, error);
-      logMessage(`[handleFilterChanged][${renderingEnv}] failed with error:`, error);
+      console.error(`[handleFilterChanged]failed with error: ${error}`);
       multiStateBoxSelector.changeState('errorState');
     }
   }
