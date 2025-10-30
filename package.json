@@ -30,11 +30,13 @@
     "@wix/crm": "^1.0.1061",
     "@wix/data": "^1.0.303",
     "@wix/essentials": "^0.1.28",
-    "@wix/members": "^1.0.330",
+    "@wix/members": "^1.0.365",
+    "@wix/secrets": "^1.0.62",
     "@wix/site-location": "^1.31.0",
     "@wix/site-window": "^1.44.0",
     "ngeohash": "^0.6.3",
     "phone": "^3.1.67",
+    "psdev-task-manager": "1.1.7",
     "psdev-utils": "1.1.1"
   }
 }
