@@ -1,14 +1,14 @@
 const { taskManager } = require('psdev-task-manager');
 
 const { TASKS_NAMES } = require('../consts');
-const { getMembers } = require('../pac-api-methods');
+const { fetchPACMembers } = require('../pac-api-methods');
 
 const { bulkProcessAndSaveMemberData } = require('./bulk-process-methods');
 const { isUpdatedMember, isABMPMember } = require('./utils');
 
 async function syncMembersDataPerAction(action) {
   try {
-    const firstPageResponse = await getMembers(1, action);
+    const firstPageResponse = await fetchPACMembers(1, action);
 
     if (
       !firstPageResponse ||
@@ -73,7 +73,7 @@ async function syncMembersDataPerAction(action) {
 async function synchronizeSinglePage(taskObject) {
   const { pageNumber, action } = taskObject.data;
   try {
-    const memberDataResponse = await getMembers(pageNumber, action);
+    const memberDataResponse = await fetchPACMembers(pageNumber, action);
 
     if (
       !memberDataResponse ||
