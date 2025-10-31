@@ -1,7 +1,7 @@
 const { location: wixLocation } = require('@wix/site-location');
 const { window: wixWindow } = require('@wix/site-window');
 
-const { generateId, prepareText } = require('../public/utils');
+const { generateId, formatPracticeAreasForDisplay } = require('../public/Utils/sharedUtils');
 
 const TESTIMONIALS_PER_PAGE_CONFIG = {
   DESKTOP: 4,
@@ -206,7 +206,7 @@ async function profileOnReady({ $w: _$w }) {
   }
 
   function bindAreasOfPractice() {
-    const areasText = prepareText(profileData.areasOfPractices);
+    const areasText = formatPracticeAreasForDisplay(profileData.areasOfPractices);
 
     if (areasText) {
       _$w('#areaOfPracticesText').text = areasText;
