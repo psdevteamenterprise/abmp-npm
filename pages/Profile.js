@@ -1,3 +1,8 @@
+const { location: wixLocation } = require('@wix/site-location');
+const { window: wixWindow } = require('@wix/site-window');
+
+const { generateId, prepareText } = require('../public/utils');
+
 const TESTIMONIALS_PER_PAGE_CONFIG = {
   DESKTOP: 4,
   TABLET: 2,
@@ -9,19 +14,12 @@ const BREAKPOINTS = {
   TABLET: 750,
 };
 
-function profileOnReady({
-  $w: _$w,
-  profileData,
-  openLightbox,
-  getBoundingRect,
-  wixLocation,
-  generateId,
-  prepareText,
-}) {
+async function profileOnReady({ $w: _$w }) {
+  const profileData = await wixWindow.getRouterData();
+  console.log('profileData', profileData);
+
   let testimonialsPerPage = TESTIMONIALS_PER_PAGE_CONFIG.TABLET;
   let currentTestimonialPage = 0;
-
-  console.log('profileData', profileData);
 
   if (!profileData) {
     wixLocation.to(`${wixLocation.baseUrl}/404`);
@@ -147,7 +145,7 @@ function profileOnReady({
 
   function bindContactForm() {
     if (profileData.showContactForm) {
-      _$w('#contactButton').onClick(() => openLightbox('Contact Us', profileData));
+      _$w('#contactButton').onClick(() => wixWindow.openLightbox('Contact Us', profileData));
     } else {
       _$w('#contactButton').collapse();
     }
@@ -244,12 +242,12 @@ function profileOnReady({
 
   // Responsive testimonials setup
   async function setupResponsiveTestimonials() {
-    const { window } = await getBoundingRect();
+    const { window } = await wixWindow.getBoundingRect();
     testimonialsPerPage = getTestimonialsPerPage(window.width);
 
     // Monitor window resize
     setInterval(async () => {
-      const { window: win } = await getBoundingRect();
+      const { window: win } = await wixWindow.getBoundingRect();
       const newTestimonialsPerPage = getTestimonialsPerPage(win.width);
 
       if (newTestimonialsPerPage !== testimonialsPerPage) {
