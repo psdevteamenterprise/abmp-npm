@@ -74,6 +74,23 @@ const MEMBERS_FIELDS = {
   showWebsite: 'showWebsite',
   addressDisplayOption: 'addressDisplayOption',
 };
+
+const LIGHTBOX_NAMES = {
+  SAVE_ALERT: 'Save Alert',
+  LOGIN_ERROR_ALERT: 'loginError',
+  DELETE_CONFIRM: 'deleteConfirm',
+  SELECT_BANNER_IMAGES: 'Select Banner Images',
+};
+
+const ABMP_MEMBERS_HOME_URL = 'https://www.abmp.com/members';
+
+const FREE_WEBSITE_TEXT_STATES = {
+  ENABLED: 'This is the default and will auto-populate with the information entered on this page.',
+  DISABLED: 'To deactivate, please opt in via Personal Details.',
+};
+
+const DEFAULT_BUSINESS_NAME_TEXT = 'Business name not provided';
+
 module.exports = {
   REGEX,
   COLLECTIONS,
@@ -82,4 +99,8 @@ module.exports = {
   DROPDOWN_OPTIONS,
   DEBOUNCE_DELAY,
   MEMBERS_FIELDS,
+  LIGHTBOX_NAMES,
+  ABMP_MEMBERS_HOME_URL,
+  FREE_WEBSITE_TEXT_STATES,
+  DEFAULT_BUSINESS_NAME_TEXT,
 };
