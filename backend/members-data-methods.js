@@ -1,4 +1,5 @@
 const { contacts } = require('@wix/crm');
+const { auth } = require('@wix/essentials');
 
 const { COLLECTIONS } = require('../public/consts');
 
@@ -12,6 +13,8 @@ const {
   generateGeoHash,
   urlExists,
 } = require('./utils');
+
+const elevatedUpdateContact = auth.elevate(contacts.updateContact);
 
 /**
  * Retrieves member data by member ID
@@ -145,10 +148,11 @@ async function updateContactInfo(contactId, updateInfoCallback, operationName) {
 
   try {
     const contact = await contacts.getContact(contactId);
+    console.log('contact from updateContactInfo', contact);
     const currentInfo = contact.info;
     const updatedInfo = updateInfoCallback(currentInfo);
 
-    await contacts.updateContact(contactId, { info: updatedInfo });
+    await elevatedUpdateContact(contactId, { info: updatedInfo });
   } catch (error) {
     console.error(`Error in ${operationName}:`, error);
     throw new Error(`Failed to ${operationName}: ${error.message}`);
