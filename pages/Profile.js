@@ -1,6 +1,7 @@
 const { location: wixLocation } = require('@wix/site-location');
 const { window: wixWindow } = require('@wix/site-window');
 
+const { DEFAULT_PROFILE_IMAGE, LIGHTBOX_NAMES } = require('../public/consts');
 const { generateId, formatPracticeAreasForDisplay } = require('../public/Utils/sharedUtils');
 
 const TESTIMONIALS_PER_PAGE_CONFIG = {
@@ -119,8 +120,7 @@ async function profileOnReady({ $w: _$w }) {
     if (profileData.profileImage) {
       _$w('#profileImage').src = profileData.profileImage;
     } else {
-      _$w('#profileImage').src =
-        'https://static.wixstatic.com/media/1d7134_e052e9b1d0a543d0980650e16dd6d374~mv2.jpg';
+      _$w('#profileImage').src = DEFAULT_PROFILE_IMAGE;
     }
   }
 
@@ -145,7 +145,9 @@ async function profileOnReady({ $w: _$w }) {
 
   function bindContactForm() {
     if (profileData.showContactForm) {
-      _$w('#contactButton').onClick(() => wixWindow.openLightbox('Contact Us', profileData));
+      _$w('#contactButton').onClick(() =>
+        wixWindow.openLightbox(LIGHTBOX_NAMES.CONTACT_US, profileData)
+      );
     } else {
       _$w('#contactButton').collapse();
     }
