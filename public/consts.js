@@ -80,6 +80,7 @@ const LIGHTBOX_NAMES = {
   LOGIN_ERROR_ALERT: 'loginError',
   DELETE_CONFIRM: 'deleteConfirm',
   SELECT_BANNER_IMAGES: 'Select Banner Images',
+  CONTACT_US: 'Contact Us',
 };
 
 const ABMP_MEMBERS_HOME_URL = 'https://www.abmp.com/members';
@@ -91,6 +92,8 @@ const FREE_WEBSITE_TEXT_STATES = {
 
 const DEFAULT_BUSINESS_NAME_TEXT = 'Business name not provided';
 
+const DEFAULT_PROFILE_IMAGE =
+  'https://static.wixstatic.com/media/1d7134_e052e9b1d0a543d0980650e16dd6d374~mv2.jpg';
 module.exports = {
   REGEX,
   COLLECTIONS,
@@ -103,4 +106,5 @@ module.exports = {
   ABMP_MEMBERS_HOME_URL,
   FREE_WEBSITE_TEXT_STATES,
   DEFAULT_BUSINESS_NAME_TEXT,
+  DEFAULT_PROFILE_IMAGE,
 };
