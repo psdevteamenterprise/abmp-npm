@@ -1,7 +1,6 @@
 const { auth } = require('@wix/essentials');
 const { members } = require('@wix/members');
 const elevatedCreateMember = auth.elevate(members.createMember);
-const elevatedGetCurrentMember = auth.elevate(members.getCurrentMember);
 
 function prepareContactData(partner) {
   const phones = Array.isArray(partner.phones) ? partner.phones : []; //some users don't have phones
@@ -33,7 +32,7 @@ const createSiteMember = async memberDetails => {
 };
 
 const getCurrentMember = async () => {
-  const member = await elevatedGetCurrentMember();
+  const member = await members.getCurrentMember();
   return member;
 };
 
