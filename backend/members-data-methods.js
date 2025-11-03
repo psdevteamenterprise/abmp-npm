@@ -157,10 +157,35 @@ async function getMemberBySlug({
   }
 }
 
+async function getMemberByContactId(contactId) {
+  if (!contactId) {
+    throw new Error('Contact ID is required');
+  }
+  try {
+    const members = await wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .eq('contactId', contactId)
+      .limit(2)
+      .find()
+      .then(res => res.items);
+    if (members.length > 1) {
+      throw new Error(
+        `[getMemberByContactId] Multiple members found with contactId ${contactId} membersIds are : [${members.map(member => member.memberId).join(', ')}]`
+      );
+    }
+    return members[0] || null;
+  } catch (error) {
+    throw new Error(
+      `[getMemberByContactId] Failed to retrieve member by contactId ${contactId} data: ${error.message}`
+    );
+  }
+}
+
 module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
   bulkSaveMembers,
   findMemberById,
   getMemberBySlug,
+  getMemberByContactId,
 };

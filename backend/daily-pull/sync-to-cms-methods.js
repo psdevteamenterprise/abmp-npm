@@ -1,10 +1,11 @@
 const { taskManager } = require('psdev-task-manager');
 
-const { TASKS_NAMES } = require('../consts');
+const { TASKS_NAMES, CONFIG_KEYS } = require('../consts');
 const { fetchPACMembers } = require('../pac-api-methods');
+const { getSiteConfigs } = require('../utils');
 
 const { bulkProcessAndSaveMemberData } = require('./bulk-process-methods');
-const { isUpdatedMember, isABMPMember } = require('./utils');
+const { isUpdatedMember, isSiteAssociatedMember } = require('./utils');
 
 async function syncMembersDataPerAction(action) {
   try {
@@ -73,8 +74,10 @@ async function syncMembersDataPerAction(action) {
 async function synchronizeSinglePage(taskObject) {
   const { pageNumber, action } = taskObject.data;
   try {
-    const memberDataResponse = await fetchPACMembers(pageNumber, action);
-
+    const [siteAssociation, memberDataResponse] = await Promise.all([
+      getSiteConfigs(CONFIG_KEYS.SITE_ASSOCIATION),
+      fetchPACMembers(pageNumber, action),
+    ]);
     if (
       !memberDataResponse ||
       !memberDataResponse.results ||
@@ -83,7 +86,7 @@ async function synchronizeSinglePage(taskObject) {
       throw new Error(`No data found for page ${pageNumber}`);
     }
     const toSyncMembers = memberDataResponse.results.filter(
-      member => isUpdatedMember(member) && isABMPMember(member)
+      member => isUpdatedMember(member) && isSiteAssociatedMember(member, siteAssociation)
     );
     if (toSyncMembers.length === 0) {
       return {
@@ -91,7 +94,7 @@ async function synchronizeSinglePage(taskObject) {
         pageNumber,
         totalPageSize: memberDataResponse.results.length,
         filteredPageSize: toSyncMembers.length,
-        message: 'No to be updated, or ABMP members found',
+        message: `No to be updated, or members of association: '${siteAssociation}' found`,
       };
     }
     const result = await bulkProcessAndSaveMemberData(toSyncMembers, pageNumber);

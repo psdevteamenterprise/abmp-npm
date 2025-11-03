@@ -1,5 +1,3 @@
-const PAC_API_URL = 'https://members.abmp.com/eweb/api/Wix';
-
 const MEMBER_ACTIONS = {
   UPDATE: 'update',
   NEW: 'new',
@@ -30,5 +28,4 @@ module.exports = {
   MEMBER_ACTIONS,
   ADDRESS_VISIBILITY_OPTIONS,
   DEFAULT_MEMBER_DISPLAY_SETTINGS,
-  PAC_API_URL,
 };
