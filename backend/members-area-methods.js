@@ -33,8 +33,7 @@ const createSiteMember = async memberDetails => {
 
 const getCurrentMember = async () => {
   const member = await members.getCurrentMember();
-  console.log('member from getCurrentMember', member);
-  return member;
+  return member.member;
 };
 
 module.exports = {

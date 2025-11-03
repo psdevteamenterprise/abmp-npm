@@ -65,7 +65,6 @@ async function validateMemberToken(memberIdInput) {
 
   try {
     const member = await getCurrentMember();
-    console.log('member', member);
     if (!member || !member._id) {
       console.log(
         'member not found from members.getCurrentMember() for memberIdInput',
