@@ -9,7 +9,7 @@ const {
   FREE_WEBSITE_TEXT_STATES,
   LIGHTBOX_NAMES,
 } = require('../public/consts');
-const { handleOnCustomValidation, isNotValidUrl } = require('../public/Utils/profilePageUtils');
+const { handleOnCustomValidation, isNotValidUrl } = require('../public/Utils/personalDetailsUtils');
 const { generateId } = require('../public/Utils/sharedUtils');
 
 const MAX_PHONES_COUNT = 10;
