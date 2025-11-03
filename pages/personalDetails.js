@@ -85,6 +85,8 @@ async function personalDetailsOnReady({
     ERROR: 'There was an error. Please try again.',
   };
 
+  _$w('#mainMultiStateBox').changeState(MAIN_STATE_BOX_STATES.LOADING_STATE);
+
   // Set up handler functions with access to closures
   FORM_SECTION_HANDLER_MAP.PERSONAL.handler = () => checkPersonalDataChanged();
   FORM_SECTION_HANDLER_MAP.BUSINESS_SERVICES.handler = () => checkBusinessDataChanged();
