@@ -8,7 +8,6 @@ const CONFIG_KEYS = {
   SITE_ASSOCIATION: 'SITE_ASSOCIATION',
 };
 
-const PRECISION = 3;
 const MAX__MEMBERS_SEARCH_RESULTS = 120;
 const WIX_QUERY_MAX_LIMIT = 1000;
 
@@ -24,10 +23,19 @@ const MEMBER_ACTIONS = {
   NONE: 'none',
 };
 
+const TASKS_NAMES = {
+  ScheduleDailyMembersDataSync: 'ScheduleDailyMembersDataSync',
+  ScheduleMembersDataPerAction: 'ScheduleMembersDataPerAction',
+  SyncMembers: 'SyncMembers',
+};
+
+const GEO_HASH_PRECISION = 3;
+
 module.exports = {
   CONFIG_KEYS,
-  PRECISION,
   MAX__MEMBERS_SEARCH_RESULTS,
   WIX_QUERY_MAX_LIMIT,
   MEMBER_ACTIONS,
+  TASKS_NAMES,
+  GEO_HASH_PRECISION,
 };

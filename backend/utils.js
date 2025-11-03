@@ -2,7 +2,7 @@ const { encode } = require('ngeohash');
 
 const { COLLECTIONS } = require('../public/consts');
 
-const { CONFIG_KEYS, PRECISION } = require('./consts');
+const { CONFIG_KEYS, GEO_HASH_PRECISION } = require('./consts');
 const { wixData } = require('./elevated-modules');
 
 /**
@@ -82,43 +82,6 @@ function getAddressDisplayOptions(member) {
 }
 
 /**
- * Get all interests from the database
- * @returns {Promise<Array<string>>} Array of interest titles sorted alphabetically
- */
-async function getInterestAll() {
-  try {
-    let res = await wixData.query('interests').limit(1000).find();
-
-    let interests = res.items.map(x => x.title);
-
-    while (res.hasNext()) {
-      res = await res.next();
-      interests.push(...res.items.map(x => x.title));
-    }
-
-    // Sort the interests alphabetically (case-insensitive)
-    interests = interests.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-
-    return interests;
-  } catch (e) {
-    console.error('Error in getInterestAll:', e);
-    throw e;
-  }
-}
-
-/**
- * Generate geohash from addresses
- * @param {Array} addresses - Array of address objects with latitude and longitude
- * @returns {Array} Array of geohash strings
- */
-function generateGeoHash(addresses) {
-  const geohash = addresses
-    ?.filter(address => (isNaN(address?.latitude) && isNaN(address?.longitude) ? false : address))
-    ?.map(address => encode(address.latitude, address.longitude, PRECISION));
-  return geohash && geohash.length > 0 ? geohash : [];
-}
-
-/**
  * Checks if a URL already exists in the database for a different member (case-insensitive)
  * @param {string} url - The URL to check
  * @param {string|number} excludeMemberId - Member ID to exclude from the check
@@ -147,14 +110,84 @@ async function urlExists(url, excludeMemberId) {
     return false;
   }
 }
+const queryAllItems = async query => {
+  console.log('start query');
+  let oldResults = await query.find();
+  console.log(`found items: ${oldResults.items.length}`);
+  const allItems = oldResults.items;
+  while (oldResults.hasNext()) {
+    oldResults = await oldResults.next();
+    allItems.push(...oldResults.items);
+  }
+  console.log(`all items: ${allItems.length}`);
+  return allItems;
+};
+/**
+ * Batches large arrays into smaller chunks for processing
+ * @param {Array} array - Array to batch
+ * @param {number} batchSize - Size of each batch
+ * @returns {Array} - Array of batches
+ */
+const createBatches = (array, batchSize = 50) => {
+  const batches = [];
+  for (let i = 0; i < array.length; i += batchSize) {
+    batches.push(array.slice(i, i + batchSize));
+  }
+  return batches;
+};
+
+const generateGeoHash = addresses => {
+  const geohash = addresses
+    ?.filter(address => (isNaN(address?.latitude) && isNaN(address?.longitude) ? false : address))
+    ?.map(address => encode(address.latitude, address.longitude, GEO_HASH_PRECISION));
+  return geohash && geohash.length > 0 ? geohash : [];
+};
+
+/**
+ * Validates if input is a non-empty array
+ * @param {*} input - Input to validate
+ * @returns {boolean} - True if input is a non-empty array
+ */
+const isValidArray = input => Array.isArray(input) && input.length > 0;
+
+const normalizeUrlForComparison = url => {
+  if (!url) return url;
+  // Remove trailing pattern like "-1", "-2", etc.
+  return url.toLowerCase().replace(/-\d+$/, '');
+};
+
+/**
+ * Checks URL uniqueness for a member
+ * @param {string} url - The URL to check
+ * @param {string} memberId - The member ID to exclude from the check
+ * @returns {Promise<Object>} Result object with isUnique boolean
+ */
+async function checkUrlUniqueness(url, memberId) {
+  if (!url || !memberId) {
+    throw new Error('Missing required parameters: url and memberId are required');
+  }
+
+  try {
+    const trimmedUrl = url.trim();
+    const exists = await urlExists(trimmedUrl, memberId);
+
+    return { isUnique: !exists };
+  } catch (error) {
+    console.error('Error checking URL uniqueness:', error);
+    throw new Error(`Failed to check URL uniqueness: ${error.message}`);
+  }
+}
 
 module.exports = {
   getSiteConfigs,
   retrieveAllItems,
+  createBatches,
+  generateGeoHash,
+  isValidArray,
+  normalizeUrlForComparison,
+  queryAllItems,
+  checkUrlUniqueness,
   formatDateToMonthYear,
   isStudent,
   getAddressDisplayOptions,
-  getInterestAll,
-  generateGeoHash,
-  urlExists,
 };

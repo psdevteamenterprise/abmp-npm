@@ -4,7 +4,11 @@ const { COLLECTIONS, MEMBERS_FIELDS } = require('../public/consts.js');
 const { findMainAddress } = require('../public/Utils/sharedUtils.js');
 const { calculateDistance, shuffleArray } = require('../public/Utils/sharedUtils.js');
 
-const { PRECISION, MAX__MEMBERS_SEARCH_RESULTS, WIX_QUERY_MAX_LIMIT } = require('./consts.js');
+const {
+  GEO_HASH_PRECISION,
+  MAX__MEMBERS_SEARCH_RESULTS,
+  WIX_QUERY_MAX_LIMIT,
+} = require('./consts.js');
 const { wixData } = require('./elevated-modules');
 
 function buildMembersSearchQuery(data) {
@@ -92,7 +96,7 @@ function buildMembersSearchQuery(data) {
         query = applyFilterToQuery(query, config, filter);
       });
       if (isUserLocationEnabled && isSearchingNearby) {
-        const userGeohash = geohash.encode(filter.latitude, filter.longitude, PRECISION);
+        const userGeohash = geohash.encode(filter.latitude, filter.longitude, GEO_HASH_PRECISION);
         const neighborGeohashes = geohash.neighbors(userGeohash);
         const geohashList = [userGeohash, ...neighborGeohashes];
         query = query.hasSome('locHash', geohashList);

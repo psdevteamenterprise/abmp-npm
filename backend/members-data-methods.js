@@ -1,22 +1,19 @@
-const { contacts } = require('@wix/crm');
-const { auth } = require('@wix/essentials');
-
 const { COLLECTIONS } = require('../public/consts');
 
 const { MEMBER_ACTIONS } = require('./consts');
+const { updateMemberContactInfo } = require('./contacts-methods');
 const { wixData } = require('./elevated-modules');
 const { createSiteMember, getCurrentMember } = require('./members-area-methods');
 const {
+  createBatches,
+  normalizeUrlForComparison,
+  queryAllItems,
   formatDateToMonthYear,
   getAddressDisplayOptions,
   isStudent,
-  generateGeoHash,
   urlExists,
+  generateGeoHash,
 } = require('./utils');
-
-const elevatedGetContact = auth.elevate(contacts.getContact);
-const elevatedUpdateContact = auth.elevate(contacts.updateContact);
-
 /**
  * Retrieves member data by member ID
  * @param {string} memberId - The member ID to search for
@@ -136,145 +133,110 @@ async function validateMemberToken(memberIdInput) {
   }
 }
 
-/**
- * Generic contact update helper function
- * @param {string} contactId - The contact ID in Wix CRM
- * @param {function} updateInfoCallback - Function that returns the updated info object
- * @param {string} operationName - Name of the operation for logging
+/** Performs bulk save operation for member data
+ * @param { Array } memberDataList - Array of member data objects to save
+ * @returns { Promise < Object >} - Bulk save operation result
  */
-async function updateContactInfo(contactId, updateInfoCallback, operationName) {
-  if (!contactId) {
-    throw new Error('Contact ID is required');
+async function bulkSaveMembers(memberDataList) {
+  if (!Array.isArray(memberDataList) || memberDataList.length === 0) {
+    throw new Error('Invalid member data list provided for bulk save');
   }
 
   try {
-    const contact = await elevatedGetContact(contactId);
-    const currentInfo = contact.info;
-    const updatedInfo = updateInfoCallback(currentInfo);
-
-    await elevatedUpdateContact(contactId, { info: updatedInfo }, contact.revision);
+    // bulkSave all with batches of 1000 items as this is the Velo limit for bulkSave
+    const batches = createBatches(memberDataList, 1000);
+    return await Promise.all(
+      batches.map(batch => wixData.bulkSave(COLLECTIONS.MEMBERS_DATA, batch))
+    );
   } catch (error) {
-    console.error(`Error in ${operationName}:`, error);
-    throw new Error(`Failed to ${operationName}: ${error.message}`);
+    console.error('Error bulk saving members:', error);
+    throw new Error(`Bulk save failed: ${error.message}`);
   }
 }
 
 /**
- * Updates contact email in Wix CRM
- * @param {string} contactId - The contact ID in Wix CRM
- * @param {string} newEmail - The new email address
+ * Retrieves member data by member ID
+ * @param {string} memberId - The member ID to search for
+ * @returns {Promise<Object|null>} - Member data or null if not found
  */
-async function updateContactEmail(contactId, newEmail) {
-  if (!newEmail) {
-    throw new Error('New email is required');
-  }
-
-  return await updateContactInfo(
-    contactId,
-    currentInfo => ({
-      ...currentInfo,
-      emails: {
-        items: [
-          {
-            email: newEmail,
-            primary: true,
-          },
-        ],
-      },
-    }),
-    'update contact email'
-  );
-}
-
-/**
- * Updates contact names in Wix CRM
- * @param {string} contactId - The contact ID in Wix CRM
- * @param {string} firstName - The new first name
- * @param {string} lastName - The new last name
- */
-async function updateContactNames(contactId, firstName, lastName) {
-  if (!firstName && !lastName) {
-    throw new Error('At least one name field is required');
-  }
-
-  return await updateContactInfo(
-    contactId,
-    currentInfo => ({
-      ...currentInfo,
-      name: {
-        first: firstName || currentInfo?.name?.first || '',
-        last: lastName || currentInfo?.name?.last || '',
-      },
-    }),
-    'update contact names'
-  );
-}
-
-/**
- * Update fields if they have changed
- * @param {Array} existingValues - Current values for comparison
- * @param {Array} newValues - New values to compare against
- * @param {Function} updater - Function to call if values changed
- * @param {Function} argsBuilder - Function to build arguments for updater
- */
-const updateIfChanged = (existingValues, newValues, updater, argsBuilder) => {
-  const hasChanged = existingValues.some((val, idx) => val !== newValues[idx]);
-  if (!hasChanged) return null;
-  return updater(...argsBuilder(newValues));
-};
-
-/**
- * Updates member contact information in CRM if fields have changed
- * @param {string} id - Member ID
- * @param {Object} data - New member data
- */
-const updateMemberContactInfo = async (id, data) => {
-  const existing = await findMemberByWixDataId(id);
-  const { contactId } = existing;
-
-  const updateConfig = [
-    {
-      fields: ['contactFormEmail'],
-      updater: updateContactEmail,
-      args: ([email]) => [contactId, email],
-    },
-    {
-      fields: ['firstName', 'lastName'],
-      updater: updateContactNames,
-      args: ([firstName, lastName]) => [contactId, firstName, lastName],
-    },
-  ];
-
-  const updatePromises = updateConfig
-    .map(({ fields, updater, args }) => {
-      const existingValues = fields.map(field => existing[field]);
-      const newValues = fields.map(field => data[field]);
-      return updateIfChanged(existingValues, newValues, updater, args);
-    })
-    .filter(Boolean);
-
-  await Promise.all(updatePromises);
-};
-
-/**
- * Checks URL uniqueness for a member
- * @param {string} url - The URL to check
- * @param {string} memberId - The member ID to exclude from the check
- * @returns {Promise<Object>} Result object with isUnique boolean
- */
-async function checkUrlUniqueness(url, memberId) {
-  if (!url || !memberId) {
-    throw new Error('Missing required parameters: url and memberId are required');
+async function findMemberById(memberId) {
+  if (!memberId) {
+    throw new Error('Member ID is required');
   }
 
   try {
-    const trimmedUrl = url.trim();
-    const exists = await urlExists(trimmedUrl, memberId);
+    const queryResult = await wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .eq('memberId', memberId)
+      .find();
 
-    return { isUnique: !exists };
+    return queryResult.items.length > 0 ? queryResult.items[0] : null;
   } catch (error) {
-    console.error('Error checking URL uniqueness:', error);
-    throw new Error(`Failed to check URL uniqueness: ${error.message}`);
+    throw new Error(`Failed to retrieve member data: ${error.message}`);
+  }
+}
+
+/**
+ * Method to get member by slug with flexible filtering options
+ * @param {Object} options - Query options
+ * @param {string} options.slug - The slug to search for
+ * @param {boolean} options.excludeDropped - Whether to exclude dropped members (default: true)
+ * @param {boolean} options.excludeSearchedMember - Whether to exclude a specific member (default: false)
+ * @param {string|number} [options.memberId] - Member ID to exclude when excludeSearchedMember is true (optional)
+ * @param {boolean} [options.queryAllMatches=false] - Whether to query all matches or just the first one (default: false)
+ * @returns {Promise<Object|null>} - Member data or null if not found
+ */
+async function getMemberBySlug({
+  slug,
+  excludeDropped = true,
+  excludeSearchedMember = false,
+  memberId = null,
+  queryAllMatches = false,
+}) {
+  if (!slug) return null;
+
+  try {
+    let query = wixData.query(COLLECTIONS.MEMBERS_DATA).contains('url', slug);
+
+    if (excludeDropped) {
+      query = query.ne('action', 'drop');
+    }
+
+    if (excludeSearchedMember && memberId) {
+      query = query.ne('memberId', memberId);
+    }
+    let membersList;
+    if (queryAllMatches) {
+      query = query.limit(1000);
+      membersList = await queryAllItems(query);
+    } else {
+      membersList = await query.find().then(res => res.items);
+    }
+    let matchingMembers = membersList.filter(
+      item => item.url && item.url.toLowerCase() === slug.toLowerCase()
+    );
+    if (queryAllMatches) {
+      matchingMembers = membersList
+        .filter(
+          //remove trailing "-1", "-2", etc.
+          item => item.url && normalizeUrlForComparison(item.url) === slug.toLowerCase()
+        )
+        .sort((a, b) => b.url.toLowerCase().localeCompare(a.url.toLowerCase()));
+    }
+    if (matchingMembers.length > 1) {
+      const queryResultMsg = `Multiple members found with same slug ${slug} membersIds are : [${matchingMembers
+        .map(member => member.memberId)
+        .join(', ')}]`;
+      if (!queryAllMatches) {
+        throw new Error(queryResultMsg);
+      } else {
+        console.log(queryResultMsg);
+      }
+    }
+    return matchingMembers[0] || null;
+  } catch (error) {
+    console.error('Error getting member by slug:', error);
+    throw error;
   }
 }
 
@@ -325,6 +287,8 @@ module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
   validateMemberToken,
-  checkUrlUniqueness,
   saveRegistrationData,
+  bulkSaveMembers,
+  findMemberById,
+  getMemberBySlug,
 };
