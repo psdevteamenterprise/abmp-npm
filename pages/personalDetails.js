@@ -105,10 +105,10 @@ async function personalDetailsOnReady({
   console.log('memberTokenId', memberTokenId);
   console.log('baseUrl', baseUrl);
 
-  const memberTokenIdAPI = await wixLocation.query.then(query => query.token);
+  const memberTokenIdAPI = await wixLocation.query();
   console.log('memberTokenIdAPI with await', memberTokenIdAPI);
 
-  const baseUrlAPI = await wixLocation.baseUrl;
+  const baseUrlAPI = await wixLocation.baseUrl();
   console.log('baseUrlAPI with await', baseUrlAPI);
 
   if (!memberTokenId) {
