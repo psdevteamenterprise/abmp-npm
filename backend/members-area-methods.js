@@ -31,6 +31,11 @@ const createSiteMember = async memberDetails => {
   }
 };
 
+const getCurrentMember = async () => {
+  const member = await members.getCurrentMember();
+  return member.member;
+};
+
 /**
  * Updates Wix member login email if the member has a contactId (registered Wix member)
  * @param {Object} member - Member object with contactId and email
@@ -79,5 +84,6 @@ async function updateWixMemberLoginEmail(member, result = {}) {
 
 module.exports = {
   createSiteMember,
+  getCurrentMember,
   updateWixMemberLoginEmail,
 };

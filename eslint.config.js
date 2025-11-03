@@ -31,7 +31,7 @@ module.exports = [
       // Error prevention
       'no-var': 'error',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      'no-console': ['warn', { allow: ['warn', 'error', 'log', 'info'] }],
+      'no-console': ['warn', { allow: ['warn', 'error', 'log', 'info', 'group', 'groupEnd'] }],
       'no-debugger': 'warn',
       'no-duplicate-imports': 'error',
       'no-unused-expressions': ['error', { allowShortCircuit: true, allowTernary: true }],

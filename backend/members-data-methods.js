@@ -1,8 +1,18 @@
 const { COLLECTIONS } = require('../public/consts');
 
+const { updateMemberContactInfo } = require('./contacts-methods');
+const { MEMBER_ACTIONS } = require('./daily-pull');
 const { wixData } = require('./elevated-modules');
-const { createSiteMember } = require('./members-area-methods');
-const { createBatches, normalizeUrlForComparison, queryAllItems } = require('./utils');
+const { createSiteMember, getCurrentMember } = require('./members-area-methods');
+const {
+  createBatches,
+  normalizeUrlForComparison,
+  queryAllItems,
+  formatDateToMonthYear,
+  getAddressDisplayOptions,
+  isStudent,
+  generateGeoHash,
+} = require('./utils');
 
 /**
  * Retrieves member data by member ID
@@ -51,9 +61,81 @@ async function createContactAndMemberIfNew(memberData) {
 }
 
 /**
- * Performs bulk save operation for member data
- * @param {Array} memberDataList - Array of member data objects to save
- * @returns {Promise<Object>} - Bulk save operation result
+ * Validates member token and retrieves member data
+ * @param {string} memberIdInput - The member ID to validate
+ * @returns {Promise<{memberData: Object|null, isValid: boolean}>} Validation result with member data
+ */
+async function validateMemberToken(memberIdInput) {
+  const invalidTokenResponse = { memberData: null, isValid: false };
+
+  if (!memberIdInput) {
+    return invalidTokenResponse;
+  }
+
+  try {
+    const member = await getCurrentMember();
+    if (!member || !member._id) {
+      console.log(
+        'member not found from members.getCurrentMember() for memberIdInput',
+        memberIdInput
+      );
+      return invalidTokenResponse;
+    }
+
+    // Query member data using elevated permissions (suppressAuth equivalent)
+    const { items } = await wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .eq('contactId', member._id)
+      .find();
+
+    console.log('items', items[0]);
+    console.log('member._id', member._id);
+
+    if (!items[0]?._id) {
+      const errorMessage = `No record found in DB for logged in Member [Corrupted Data - Duplicate Members? ] - There is no match in DB for currentMember: ${JSON.stringify(
+        { memberIdInput, currentMemberId: member._id }
+      )}`;
+      console.error(errorMessage);
+      throw new Error('CORRUPTED_MEMBER_DATA');
+    }
+
+    console.log(`Id found in DB for memberIdInput :${memberIdInput} is ${items[0]?._id}`);
+
+    const memberData = items[0];
+
+    // Format membership dates
+    memberData.memberships = memberData.memberships.map(membership => ({
+      ...membership,
+      membersince: formatDateToMonthYear(membership.membersince),
+    }));
+
+    const savedMemberId = memberData?._id;
+    const isValid = savedMemberId === memberIdInput;
+
+    if (!savedMemberId || !isValid) {
+      return invalidTokenResponse;
+    }
+
+    // Check if member is dropped
+    if (memberData.action === MEMBER_ACTIONS.DROP) {
+      return invalidTokenResponse;
+    }
+
+    // Add computed properties
+    memberData.addressDisplayOption = getAddressDisplayOptions(memberData);
+    console.log('memberData', memberData);
+    memberData.isStudent = isStudent(memberData);
+
+    return { memberData, isValid };
+  } catch (error) {
+    console.error('Error in validateMemberToken:', error);
+    throw error;
+  }
+}
+
+/** Performs bulk save operation for member data
+ * @param { Array } memberDataList - Array of member data objects to save
+ * @returns { Promise < Object >} - Bulk save operation result
  */
 async function bulkSaveMembers(memberDataList) {
   if (!Array.isArray(memberDataList) || memberDataList.length === 0) {
@@ -71,6 +153,7 @@ async function bulkSaveMembers(memberDataList) {
     throw new Error(`Bulk save failed: ${error.message}`);
   }
 }
+
 /**
  * Retrieves member data by member ID
  * @param {string} memberId - The member ID to search for
@@ -157,9 +240,89 @@ async function getMemberBySlug({
   }
 }
 
+/**
+ * Saves member registration data
+ * @param {Object} data - Member data to save
+ * @param {string} id - Member ID
+ * @returns {Promise<Object>} Result object with type and data/error
+ */
+async function saveRegistrationData(data, id) {
+  try {
+    console.log(' saveRegistrationData data._id', data._id);
+    console.log(' saveRegistrationData id', id);
+    if (data._id !== id) return { type: 'notAuthorized' };
+
+    if (data.url) {
+      const isDuplicate = await urlExists(data.url, data.memberId);
+
+      if (isDuplicate) {
+        return {
+          type: 'error',
+          error: 'URL slug is already taken. Please choose a different one.',
+        };
+      }
+    }
+
+    if (data.addresses && Array.isArray(data.addresses)) {
+      data.locHash = generateGeoHash(data.addresses);
+    }
+
+    const existingMemberData = await findMemberByWixDataId(id);
+
+    await updateMemberContactInfo(data, existingMemberData);
+
+    const saveData = await wixData.update(COLLECTIONS.MEMBERS_DATA, data);
+    return {
+      type: 'success',
+      saveData,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      type: 'error',
+      error,
+    };
+  }
+}
+
+/**
+ * Checks if a URL already exists in the database for a different member (case-insensitive)
+ * @param {string} url - The URL to check
+ * @param {string|number} excludeMemberId - Member ID to exclude from the check
+ * @returns {Promise<boolean>} - True if URL exists for another member
+ */
+async function urlExists(url, excludeMemberId) {
+  if (!url) return false;
+
+  try {
+    let query = wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .contains('url', url)
+      .ne('action', MEMBER_ACTIONS.DROP);
+
+    if (excludeMemberId) {
+      query = query.ne('memberId', excludeMemberId);
+    }
+
+    const { items } = await query.find();
+
+    // Case-insensitive comparison
+    const matchingMembers = items.filter(
+      item => item.url && item.url.toLowerCase() === url.toLowerCase()
+    );
+
+    return matchingMembers.length > 0;
+  } catch (error) {
+    console.error('Error checking URL existence:', error);
+    return false;
+  }
+}
+
 module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
+  validateMemberToken,
+  saveRegistrationData,
   bulkSaveMembers,
   findMemberById,
   getMemberBySlug,

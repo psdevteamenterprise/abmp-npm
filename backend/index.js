@@ -7,4 +7,5 @@ module.exports = {
   ...require('./pac-api-methods'), //TODO: remove it once we finish NPM movement
   ...require('./members-area-methods'), //TODO: remove it once we finish NPM movement
   ...require('./members-data-methods'), //TODO: remove it once we finish NPM movement
+  ...require('./cms-data-methods'), //TODO: remove it once we finish NPM movement
 };

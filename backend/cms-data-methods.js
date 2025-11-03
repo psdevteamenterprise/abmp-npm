@@ -207,7 +207,33 @@ async function fetchAllItemsInParallel(query) {
   };
 }
 
+/**
+ * Get all interests from the database
+ * @returns {Promise<Array<string>>} Array of interest titles sorted alphabetically
+ */
+async function getInterestAll() {
+  try {
+    let res = await wixData.query(COLLECTIONS.INTERESTS).limit(1000).find();
+
+    let interests = res.items.map(x => x.title);
+
+    while (res.hasNext()) {
+      res = await res.next();
+      interests.push(...res.items.map(x => x.title));
+    }
+
+    // Sort the interests alphabetically (case-insensitive)
+    interests = interests.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+    return interests;
+  } catch (e) {
+    console.error('Error in getInterestAll:', e);
+    throw e;
+  }
+}
+
 module.exports = {
   buildMembersSearchQuery,
   fetchAllItemsInParallel,
+  getInterestAll,
 };
