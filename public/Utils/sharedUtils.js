@@ -150,6 +150,14 @@ function calculateDistance(location1, location2) {
   return distance;
 }
 
+/**
+ * Generate a unique ID
+ * @returns {string} Unique identifier
+ */
+function generateId() {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
 module.exports = {
   checkAddressIsVisible,
   formatPracticeAreasForDisplay,
@@ -159,4 +167,5 @@ module.exports = {
   shuffleArray,
   calculateDistance,
   toRadians,
+  generateId,
 };

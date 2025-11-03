@@ -74,6 +74,11 @@ const MEMBERS_FIELDS = {
   showWebsite: 'showWebsite',
   addressDisplayOption: 'addressDisplayOption',
 };
+const DEFAULT_PROFILE_IMAGE =
+  'https://static.wixstatic.com/media/1d7134_e052e9b1d0a543d0980650e16dd6d374~mv2.jpg';
+const LIGHTBOX_NAMES = {
+  CONTACT_US: 'Contact Us',
+};
 module.exports = {
   REGEX,
   COLLECTIONS,
@@ -82,4 +87,6 @@ module.exports = {
   DROPDOWN_OPTIONS,
   DEBOUNCE_DELAY,
   MEMBERS_FIELDS,
+  DEFAULT_PROFILE_IMAGE,
+  LIGHTBOX_NAMES,
 };
