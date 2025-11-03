@@ -11,18 +11,6 @@ const CONFIG_KEYS = {
 const MAX__MEMBERS_SEARCH_RESULTS = 120;
 const WIX_QUERY_MAX_LIMIT = 1000;
 
-/**
- * Member action types
- * @readonly
- * @enum {string}
- */
-const MEMBER_ACTIONS = {
-  UPDATE: 'update',
-  NEW: 'new',
-  DROP: 'drop',
-  NONE: 'none',
-};
-
 const TASKS_NAMES = {
   ScheduleDailyMembersDataSync: 'ScheduleDailyMembersDataSync',
   ScheduleMembersDataPerAction: 'ScheduleMembersDataPerAction',
@@ -35,7 +23,6 @@ module.exports = {
   CONFIG_KEYS,
   MAX__MEMBERS_SEARCH_RESULTS,
   WIX_QUERY_MAX_LIMIT,
-  MEMBER_ACTIONS,
   TASKS_NAMES,
   GEO_HASH_PRECISION,
 };

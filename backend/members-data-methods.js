@@ -1,7 +1,7 @@
 const { COLLECTIONS } = require('../public/consts');
 
-const { MEMBER_ACTIONS } = require('./consts');
 const { updateMemberContactInfo } = require('./contacts-methods');
+const { MEMBER_ACTIONS } = require('./daily-pull');
 const { wixData } = require('./elevated-modules');
 const { createSiteMember, getCurrentMember } = require('./members-area-methods');
 const {
@@ -11,9 +11,9 @@ const {
   formatDateToMonthYear,
   getAddressDisplayOptions,
   isStudent,
-  urlExists,
   generateGeoHash,
 } = require('./utils');
+
 /**
  * Retrieves member data by member ID
  * @param {string} memberId - The member ID to search for
@@ -280,6 +280,39 @@ async function saveRegistrationData(data, id) {
       type: 'error',
       error,
     };
+  }
+}
+
+/**
+ * Checks if a URL already exists in the database for a different member (case-insensitive)
+ * @param {string} url - The URL to check
+ * @param {string|number} excludeMemberId - Member ID to exclude from the check
+ * @returns {Promise<boolean>} - True if URL exists for another member
+ */
+async function urlExists(url, excludeMemberId) {
+  if (!url) return false;
+
+  try {
+    let query = wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .contains('url', url)
+      .ne('action', MEMBER_ACTIONS.DROP);
+
+    if (excludeMemberId) {
+      query = query.ne('memberId', excludeMemberId);
+    }
+
+    const { items } = await query.find();
+
+    // Case-insensitive comparison
+    const matchingMembers = items.filter(
+      item => item.url && item.url.toLowerCase() === url.toLowerCase()
+    );
+
+    return matchingMembers.length > 0;
+  } catch (error) {
+    console.error('Error checking URL existence:', error);
+    return false;
   }
 }
 

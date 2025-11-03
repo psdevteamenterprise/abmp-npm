@@ -4,6 +4,7 @@ const { COLLECTIONS } = require('../public/consts');
 
 const { CONFIG_KEYS, GEO_HASH_PRECISION } = require('./consts');
 const { wixData } = require('./elevated-modules');
+const { urlExists } = require('./members-data-methods');
 
 /**
  * Retrieves site configuration values from the database
@@ -81,35 +82,6 @@ function getAddressDisplayOptions(member) {
   return displayOptions;
 }
 
-/**
- * Checks if a URL already exists in the database for a different member (case-insensitive)
- * @param {string} url - The URL to check
- * @param {string|number} excludeMemberId - Member ID to exclude from the check
- * @returns {Promise<boolean>} - True if URL exists for another member
- */
-async function urlExists(url, excludeMemberId) {
-  if (!url) return false;
-
-  try {
-    let query = wixData.query(COLLECTIONS.MEMBERS_DATA).contains('url', url).ne('action', 'drop');
-
-    if (excludeMemberId) {
-      query = query.ne('memberId', excludeMemberId);
-    }
-
-    const { items } = await query.find();
-
-    // Case-insensitive comparison
-    const matchingMembers = items.filter(
-      item => item.url && item.url.toLowerCase() === url.toLowerCase()
-    );
-
-    return matchingMembers.length > 0;
-  } catch (error) {
-    console.error('Error checking URL existence:', error);
-    return false;
-  }
-}
 const queryAllItems = async query => {
   console.log('start query');
   let oldResults = await query.find();
