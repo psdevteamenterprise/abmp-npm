@@ -103,6 +103,7 @@ async function personalDetailsOnReady({
 
   // Main initialization
   console.log('memberTokenId', memberTokenId);
+  console.log('baseUrl', baseUrl);
 
   if (!memberTokenId) {
     showUnauthorizedState();
