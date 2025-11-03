@@ -1,6 +1,8 @@
+const { encode } = require('ngeohash');
+
 const { COLLECTIONS } = require('../public/consts');
 
-const { CONFIG_KEYS } = require('./consts');
+const { CONFIG_KEYS, GEO_HASH_PRECISION } = require('./consts');
 const { wixData } = require('./elevated-modules');
 
 /**
@@ -39,7 +41,58 @@ const retrieveAllItems = async collectionName => {
   return allItems;
 };
 
+const queryAllItems = async query => {
+  console.log('start query');
+  let oldResults = await query.find();
+  console.log(`found items: ${oldResults.items.length}`);
+  const allItems = oldResults.items;
+  while (oldResults.hasNext()) {
+    oldResults = await oldResults.next();
+    allItems.push(...oldResults.items);
+  }
+  console.log(`all items: ${allItems.length}`);
+  return allItems;
+};
+/**
+ * Batches large arrays into smaller chunks for processing
+ * @param {Array} array - Array to batch
+ * @param {number} batchSize - Size of each batch
+ * @returns {Array} - Array of batches
+ */
+const createBatches = (array, batchSize = 50) => {
+  const batches = [];
+  for (let i = 0; i < array.length; i += batchSize) {
+    batches.push(array.slice(i, i + batchSize));
+  }
+  return batches;
+};
+
+const generateGeoHash = addresses => {
+  const geohash = addresses
+    ?.filter(address => (isNaN(address?.latitude) && isNaN(address?.longitude) ? false : address))
+    ?.map(address => encode(address.latitude, address.longitude, GEO_HASH_PRECISION));
+  return geohash && geohash.length > 0 ? geohash : [];
+};
+
+/**
+ * Validates if input is a non-empty array
+ * @param {*} input - Input to validate
+ * @returns {boolean} - True if input is a non-empty array
+ */
+const isValidArray = input => Array.isArray(input) && input.length > 0;
+
+const normalizeUrlForComparison = url => {
+  if (!url) return url;
+  // Remove trailing pattern like "-1", "-2", etc.
+  return url.toLowerCase().replace(/-\d+$/, '');
+};
+
 module.exports = {
   getSiteConfigs,
   retrieveAllItems,
+  createBatches,
+  generateGeoHash,
+  isValidArray,
+  normalizeUrlForComparison,
+  queryAllItems,
 };
