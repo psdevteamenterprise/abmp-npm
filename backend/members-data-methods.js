@@ -14,6 +14,7 @@ const {
   urlExists,
 } = require('./utils');
 
+const elevatedGetContact = auth.elevate(contacts.getContact);
 const elevatedUpdateContact = auth.elevate(contacts.updateContact);
 
 /**
@@ -147,7 +148,7 @@ async function updateContactInfo(contactId, updateInfoCallback, operationName) {
   }
 
   try {
-    const contact = await contacts.getContact(contactId);
+    const contact = await elevatedGetContact(contactId);
     console.log('contact from updateContactInfo', contact);
     const currentInfo = contact.info;
     const updatedInfo = updateInfoCallback(currentInfo);
