@@ -1,5 +1,5 @@
 const { auth } = require('@wix/essentials');
-const { currentMember } = require('@wix/members');
+const { members } = require('@wix/members');
 
 const { COLLECTIONS } = require('../public/consts');
 
@@ -8,8 +8,8 @@ const { wixData } = require('./elevated-modules');
 const { createSiteMember } = require('./members-area-methods');
 const { formatDateToMonthYear, getAddressDisplayOptions, isStudent } = require('./utils');
 
-// Elevate currentMember.getMember to bypass permissions
-const elevatedGetMember = auth.elevate(currentMember.getMember);
+// Elevate members.getCurrentMember to bypass permissions
+const elevatedGetCurrentMember = auth.elevate(members.getCurrentMember);
 
 /**
  * Retrieves member data by member ID
@@ -71,10 +71,10 @@ async function validateMemberToken(memberIdInput) {
 
   try {
     // Get current logged-in member using elevated permissions
-    const member = await elevatedGetMember();
+    const member = await elevatedGetCurrentMember();
     if (!member || !member._id) {
       console.log(
-        'member not found from currentMember.getMember() for memberIdInput',
+        'member not found from members.getCurrentMember() for memberIdInput',
         memberIdInput
       );
       return invalidTokenResponse;
