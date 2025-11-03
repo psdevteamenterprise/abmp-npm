@@ -149,7 +149,6 @@ async function updateContactInfo(contactId, updateInfoCallback, operationName) {
 
   try {
     const contact = await elevatedGetContact(contactId);
-    console.log('contact from updateContactInfo', contact);
     const currentInfo = contact.info;
     const updatedInfo = updateInfoCallback(currentInfo);
 
@@ -258,6 +257,28 @@ const updateMemberContactInfo = async (id, data) => {
 };
 
 /**
+ * Checks URL uniqueness for a member
+ * @param {string} url - The URL to check
+ * @param {string} memberId - The member ID to exclude from the check
+ * @returns {Promise<Object>} Result object with isUnique boolean
+ */
+async function checkUrlUniqueness(url, memberId) {
+  if (!url || !memberId) {
+    throw new Error('Missing required parameters: url and memberId are required');
+  }
+
+  try {
+    const trimmedUrl = url.trim();
+    const exists = await urlExists(trimmedUrl, memberId);
+
+    return { isUnique: !exists };
+  } catch (error) {
+    console.error('Error checking URL uniqueness:', error);
+    throw new Error(`Failed to check URL uniqueness: ${error.message}`);
+  }
+}
+
+/**
  * Saves member registration data
  * @param {Object} data - Member data to save
  * @param {string} id - Member ID
@@ -304,5 +325,6 @@ module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
   validateMemberToken,
+  checkUrlUniqueness,
   saveRegistrationData,
 };
