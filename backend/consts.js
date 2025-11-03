@@ -12,9 +12,22 @@ const PRECISION = 3;
 const MAX__MEMBERS_SEARCH_RESULTS = 120;
 const WIX_QUERY_MAX_LIMIT = 1000;
 
+/**
+ * Member action types
+ * @readonly
+ * @enum {string}
+ */
+const MEMBER_ACTIONS = {
+  UPDATE: 'update',
+  NEW: 'new',
+  DROP: 'drop',
+  NONE: 'none',
+};
+
 module.exports = {
   CONFIG_KEYS,
   PRECISION,
   MAX__MEMBERS_SEARCH_RESULTS,
   WIX_QUERY_MAX_LIMIT,
+  MEMBER_ACTIONS,
 };

@@ -99,13 +99,12 @@ async function personalDetailsOnReady({
 
   let memberData, isValid, isStudent;
 
-  // Main initialization - Get from wixLocation
+  // Main initialization
   const queryParams = await wixLocation.query();
   const memberTokenId = queryParams.token;
   const baseUrl = await wixLocation.baseUrl();
 
   console.log('memberTokenId', memberTokenId);
-  console.log('baseUrl', baseUrl);
 
   if (!memberTokenId) {
     showUnauthorizedState();

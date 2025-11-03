@@ -1,7 +1,15 @@
+const { auth } = require('@wix/essentials');
+const { currentMember } = require('@wix/members');
+
 const { COLLECTIONS } = require('../public/consts');
 
+const { MEMBER_ACTIONS } = require('./consts');
 const { wixData } = require('./elevated-modules');
 const { createSiteMember } = require('./members-area-methods');
+const { formatDateToMonthYear, getAddressDisplayOptions, isStudent } = require('./utils');
+
+// Elevate currentMember.getMember to bypass permissions
+const elevatedGetMember = auth.elevate(currentMember.getMember);
 
 /**
  * Retrieves member data by member ID
@@ -49,7 +57,82 @@ async function createContactAndMemberIfNew(memberData) {
   }
 }
 
+/**
+ * Validates member token and retrieves member data
+ * @param {string} memberIdInput - The member ID to validate
+ * @returns {Promise<{memberData: Object|null, isValid: boolean}>} Validation result with member data
+ */
+async function validateMemberToken(memberIdInput) {
+  const invalidTokenResponse = { memberData: null, isValid: false };
+
+  if (!memberIdInput) {
+    return invalidTokenResponse;
+  }
+
+  try {
+    // Get current logged-in member using elevated permissions
+    const member = await elevatedGetMember();
+    if (!member || !member._id) {
+      console.log(
+        'member not found from currentMember.getMember() for memberIdInput',
+        memberIdInput
+      );
+      return invalidTokenResponse;
+    }
+
+    // Query member data using elevated permissions (suppressAuth equivalent)
+    const { items } = await wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .eq('contactId', member._id)
+      .find();
+
+    console.log('items', items[0]);
+    console.log('member._id', member._id);
+
+    if (!items[0]?._id) {
+      const errorMessage = `No record found in DB for logged in Member [Corrupted Data - Duplicate Members? ] - There is no match in DB for currentMember: ${JSON.stringify(
+        { memberIdInput, currentMemberId: member._id }
+      )}`;
+      console.error(errorMessage);
+      throw new Error('CORRUPTED_MEMBER_DATA');
+    }
+
+    console.log(`Id found in DB for memberIdInput :${memberIdInput} is ${items[0]?._id}`);
+
+    const memberData = items[0];
+
+    // Format membership dates
+    memberData.memberships = memberData.memberships.map(membership => ({
+      ...membership,
+      membersince: formatDateToMonthYear(membership.membersince),
+    }));
+
+    const savedMemberId = memberData?._id;
+    const isValid = savedMemberId === memberIdInput;
+
+    if (!savedMemberId || !isValid) {
+      return invalidTokenResponse;
+    }
+
+    // Check if member is dropped
+    if (memberData.action === MEMBER_ACTIONS.DROP) {
+      return invalidTokenResponse;
+    }
+
+    // Add computed properties
+    memberData.addressDisplayOption = getAddressDisplayOptions(memberData);
+    console.log('memberData', memberData);
+    memberData.isStudent = isStudent(memberData);
+
+    return { memberData, isValid };
+  } catch (error) {
+    console.error('Error in validateMemberToken:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
+  validateMemberToken,
 };

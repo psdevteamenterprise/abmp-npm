@@ -39,7 +39,50 @@ const retrieveAllItems = async collectionName => {
   return allItems;
 };
 
+/**
+ * Format date to Month Year string
+ * @param {string} dateString - The date string to format
+ * @returns {string} Formatted date (e.g., "January 2024")
+ */
+function formatDateToMonthYear(dateString) {
+  if (!dateString) return '';
+
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  const options = { year: 'numeric', month: 'long' };
+  return date.toLocaleDateString('en-US', options);
+}
+
+/**
+ * Check if member is a student
+ * @param {Object} member - The member object
+ * @returns {boolean} True if member has student membership
+ */
+function isStudent(member) {
+  const memberships = member?.memberships;
+  if (!Array.isArray(memberships)) return false;
+
+  return memberships.some(membership => membership.membertype === 'student');
+}
+
+/**
+ * Get address display options for member
+ * @param {Object} member - The member object
+ * @returns {Array} Address display options
+ */
+function getAddressDisplayOptions(member) {
+  const addresses = member.addresses || [];
+  const displayOptions = member.addressDisplayOption || [];
+  if (addresses.length === 1 && addresses[0].key) {
+    return [{ key: addresses[0].key, isMain: true }];
+  }
+  return displayOptions;
+}
+
 module.exports = {
   getSiteConfigs,
   retrieveAllItems,
+  formatDateToMonthYear,
+  isStudent,
+  getAddressDisplayOptions,
 };
