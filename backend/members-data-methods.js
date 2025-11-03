@@ -1,9 +1,17 @@
+const { contacts } = require('@wix/crm');
+
 const { COLLECTIONS } = require('../public/consts');
 
 const { MEMBER_ACTIONS } = require('./consts');
 const { wixData } = require('./elevated-modules');
 const { createSiteMember, getCurrentMember } = require('./members-area-methods');
-const { formatDateToMonthYear, getAddressDisplayOptions, isStudent } = require('./utils');
+const {
+  formatDateToMonthYear,
+  getAddressDisplayOptions,
+  isStudent,
+  generateGeoHash,
+  urlExists,
+} = require('./utils');
 
 /**
  * Retrieves member data by member ID
@@ -124,8 +132,172 @@ async function validateMemberToken(memberIdInput) {
   }
 }
 
+/**
+ * Generic contact update helper function
+ * @param {string} contactId - The contact ID in Wix CRM
+ * @param {function} updateInfoCallback - Function that returns the updated info object
+ * @param {string} operationName - Name of the operation for logging
+ */
+async function updateContactInfo(contactId, updateInfoCallback, operationName) {
+  if (!contactId) {
+    throw new Error('Contact ID is required');
+  }
+
+  try {
+    const contact = await contacts.getContact(contactId);
+    const currentInfo = contact.info;
+    const updatedInfo = updateInfoCallback(currentInfo);
+
+    await contacts.updateContact(contactId, { info: updatedInfo });
+  } catch (error) {
+    console.error(`Error in ${operationName}:`, error);
+    throw new Error(`Failed to ${operationName}: ${error.message}`);
+  }
+}
+
+/**
+ * Updates contact email in Wix CRM
+ * @param {string} contactId - The contact ID in Wix CRM
+ * @param {string} newEmail - The new email address
+ */
+async function updateContactEmail(contactId, newEmail) {
+  if (!newEmail) {
+    throw new Error('New email is required');
+  }
+
+  return updateContactInfo(
+    contactId,
+    currentInfo => ({
+      ...currentInfo,
+      emails: {
+        items: [
+          {
+            email: newEmail,
+            primary: true,
+          },
+        ],
+      },
+    }),
+    'update contact email'
+  );
+}
+
+/**
+ * Updates contact names in Wix CRM
+ * @param {string} contactId - The contact ID in Wix CRM
+ * @param {string} firstName - The new first name
+ * @param {string} lastName - The new last name
+ */
+async function updateContactNames(contactId, firstName, lastName) {
+  if (!firstName && !lastName) {
+    throw new Error('At least one name field is required');
+  }
+
+  return updateContactInfo(
+    contactId,
+    currentInfo => ({
+      ...currentInfo,
+      name: {
+        first: firstName || currentInfo?.name?.first || '',
+        last: lastName || currentInfo?.name?.last || '',
+      },
+    }),
+    'update contact names'
+  );
+}
+
+/**
+ * Update fields if they have changed
+ * @param {Array} existingValues - Current values for comparison
+ * @param {Array} newValues - New values to compare against
+ * @param {Function} updater - Function to call if values changed
+ * @param {Function} argsBuilder - Function to build arguments for updater
+ */
+const updateIfChanged = (existingValues, newValues, updater, argsBuilder) => {
+  const hasChanged = existingValues.some((val, idx) => val !== newValues[idx]);
+  if (!hasChanged) return null;
+  return updater(...argsBuilder(newValues));
+};
+
+/**
+ * Updates member contact information in CRM if fields have changed
+ * @param {string} id - Member ID
+ * @param {Object} data - New member data
+ */
+const updateMemberContactInfo = async (id, data) => {
+  const existing = await findMemberByWixDataId(id);
+  const { contactId } = existing;
+
+  const updateConfig = [
+    {
+      fields: ['contactFormEmail'],
+      updater: updateContactEmail,
+      args: ([email]) => [contactId, email],
+    },
+    {
+      fields: ['firstName', 'lastName'],
+      updater: updateContactNames,
+      args: ([firstName, lastName]) => [contactId, firstName, lastName],
+    },
+  ];
+
+  const updatePromises = updateConfig
+    .map(({ fields, updater, args }) => {
+      const existingValues = fields.map(field => existing[field]);
+      const newValues = fields.map(field => data[field]);
+      return updateIfChanged(existingValues, newValues, updater, args);
+    })
+    .filter(Boolean);
+
+  await Promise.all(updatePromises);
+};
+
+/**
+ * Saves member registration data
+ * @param {Object} data - Member data to save
+ * @param {string} id - Member ID
+ * @returns {Promise<Object>} Result object with type and data/error
+ */
+async function saveRegistrationData(data, id) {
+  try {
+    console.log(' saveRegistrationData data._id', data._id);
+    console.log(' saveRegistrationData id', id);
+    if (data._id !== id) return { type: 'notAuthorized' };
+
+    if (data.url) {
+      const isDuplicate = await urlExists(data.url, data.memberId);
+
+      if (isDuplicate) {
+        return {
+          type: 'error',
+          error: 'URL slug is already taken. Please choose a different one.',
+        };
+      }
+    }
+
+    if (data.addresses && Array.isArray(data.addresses)) {
+      data.locHash = generateGeoHash(data.addresses);
+    }
+
+    await updateMemberContactInfo(id, data);
+
+    const saveData = await wixData.update(COLLECTIONS.MEMBERS_DATA, data);
+    return {
+      type: 'success',
+      saveData,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      type: 'error',
+      error,
+    };
+  }
+}
+
 module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
   validateMemberToken,
+  saveRegistrationData,
 };

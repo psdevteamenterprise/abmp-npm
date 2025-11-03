@@ -1,6 +1,8 @@
+const { encode } = require('ngeohash');
+
 const { COLLECTIONS } = require('../public/consts');
 
-const { CONFIG_KEYS } = require('./consts');
+const { CONFIG_KEYS, PRECISION } = require('./consts');
 const { wixData } = require('./elevated-modules');
 
 /**
@@ -104,6 +106,48 @@ async function getInterestAll() {
   }
 }
 
+/**
+ * Generate geohash from addresses
+ * @param {Array} addresses - Array of address objects with latitude and longitude
+ * @returns {Array} Array of geohash strings
+ */
+function generateGeoHash(addresses) {
+  const geohash = addresses
+    ?.filter(address => (isNaN(address?.latitude) && isNaN(address?.longitude) ? false : address))
+    ?.map(address => encode(address.latitude, address.longitude, PRECISION));
+  return geohash && geohash.length > 0 ? geohash : [];
+}
+
+/**
+ * Checks if a URL already exists in the database for a different member (case-insensitive)
+ * @param {string} url - The URL to check
+ * @param {string|number} excludeMemberId - Member ID to exclude from the check
+ * @returns {Promise<boolean>} - True if URL exists for another member
+ */
+async function urlExists(url, excludeMemberId) {
+  if (!url) return false;
+
+  try {
+    let query = wixData.query(COLLECTIONS.MEMBERS_DATA).contains('url', url).ne('action', 'drop');
+
+    if (excludeMemberId) {
+      query = query.ne('memberId', excludeMemberId);
+    }
+
+    const { items } = await query.find();
+
+    // Case-insensitive comparison
+    const matchingMembers = items.filter(
+      item => item.url && item.url.toLowerCase() === url.toLowerCase()
+    );
+
+    return matchingMembers.length > 0;
+  } catch (error) {
+    console.error('Error checking URL existence:', error);
+    return false;
+  }
+}
+
 module.exports = {
   getSiteConfigs,
   retrieveAllItems,
@@ -111,4 +155,6 @@ module.exports = {
   isStudent,
   getAddressDisplayOptions,
   getInterestAll,
+  generateGeoHash,
+  urlExists,
 };
