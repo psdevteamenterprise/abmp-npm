@@ -1,9 +1,8 @@
 const { contacts } = require('@wix/crm');
 const { auth } = require('@wix/essentials');
+
 const elevatedGetContact = auth.elevate(contacts.getContact);
 const elevatedUpdateContact = auth.elevate(contacts.updateContact);
-
-const { findMemberByWixDataId } = require('./members-data-methods');
 
 /**
  * Generic contact update helper function
@@ -94,12 +93,11 @@ const updateIfChanged = (existingValues, newValues, updater, argsBuilder) => {
 
 /**
  * Updates member contact information in CRM if fields have changed
- * @param {string} id - Member ID
  * @param {Object} data - New member data
+ * @param {Object} existingMemberData - Existing member data
  */
-const updateMemberContactInfo = async (id, data) => {
-  const existing = await findMemberByWixDataId(id);
-  const { contactId } = existing;
+const updateMemberContactInfo = async (data, existingMemberData) => {
+  const { contactId } = existingMemberData;
 
   const updateConfig = [
     {
@@ -116,7 +114,7 @@ const updateMemberContactInfo = async (id, data) => {
 
   const updatePromises = updateConfig
     .map(({ fields, updater, args }) => {
-      const existingValues = fields.map(field => existing[field]);
+      const existingValues = fields.map(field => existingMemberData[field]);
       const newValues = fields.map(field => data[field]);
       return updateIfChanged(existingValues, newValues, updater, args);
     })

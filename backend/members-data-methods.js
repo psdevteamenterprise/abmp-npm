@@ -267,7 +267,9 @@ async function saveRegistrationData(data, id) {
       data.locHash = generateGeoHash(data.addresses);
     }
 
-    await updateMemberContactInfo(id, data);
+    const existingMemberData = await findMemberByWixDataId(id);
+
+    await updateMemberContactInfo(data, existingMemberData);
 
     const saveData = await wixData.update(COLLECTIONS.MEMBERS_DATA, data);
     return {
