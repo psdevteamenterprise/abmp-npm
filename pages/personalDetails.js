@@ -952,7 +952,7 @@ async function personalDetailsOnReady({
     // Capture data before save for logging
     const beforeSaveData = JSON.parse(JSON.stringify(itemMemberObj));
 
-    const { type, saveData: saved } = await saveRegistrationData(formData, itemMemberObj.memberId);
+    const { type, saveData: saved } = await saveRegistrationData(formData, itemMemberObj._id);
 
     if (type === 'success') {
       // Log the successful change

@@ -165,7 +165,7 @@ async function updateContactEmail(contactId, newEmail) {
     throw new Error('New email is required');
   }
 
-  return updateContactInfo(
+  return await updateContactInfo(
     contactId,
     currentInfo => ({
       ...currentInfo,
@@ -193,7 +193,7 @@ async function updateContactNames(contactId, firstName, lastName) {
     throw new Error('At least one name field is required');
   }
 
-  return updateContactInfo(
+  return await updateContactInfo(
     contactId,
     currentInfo => ({
       ...currentInfo,
