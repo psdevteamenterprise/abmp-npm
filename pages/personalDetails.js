@@ -48,8 +48,6 @@ const FORM_SECTION_HANDLER_MAP = {
 
 async function personalDetailsOnReady({
   $w: _$w,
-  memberTokenId,
-  baseUrl,
   getInterestAll,
   saveRegistrationData,
   validateMemberToken,
@@ -101,15 +99,13 @@ async function personalDetailsOnReady({
 
   let memberData, isValid, isStudent;
 
-  // Main initialization
+  // Main initialization - Get from wixLocation
+  const queryParams = await wixLocation.query();
+  const memberTokenId = queryParams.token;
+  const baseUrl = await wixLocation.baseUrl();
+
   console.log('memberTokenId', memberTokenId);
   console.log('baseUrl', baseUrl);
-
-  const memberTokenIdAPI = await wixLocation.query();
-  console.log('memberTokenIdAPI with await', memberTokenIdAPI);
-
-  const baseUrlAPI = await wixLocation.baseUrl();
-  console.log('baseUrlAPI with await', baseUrlAPI);
 
   if (!memberTokenId) {
     showUnauthorizedState();
