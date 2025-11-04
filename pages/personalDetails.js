@@ -98,7 +98,7 @@ async function personalDetailsOnReady({
     _$w('#mainMultiStateBox').changeState(MAIN_STATE_BOX_STATES.UNAUTHORIZED_STATE);
   };
 
-  let memberData, isValid, isStudent;
+  let memberData, isValid, isStudent, membersExternalPortalUrl;
 
   // Main initialization
   const queryParams = await wixLocation.query();
@@ -116,10 +116,12 @@ async function personalDetailsOnReady({
     const {
       memberData: { isStudent: _isStudent, ...memberDataResponse },
       isValid: isValidResponse,
+      membersExternalPortalUrl: _membersExternalPortalUrl,
     } = await validateMemberToken(memberTokenId);
     memberData = memberDataResponse;
     isValid = isValidResponse;
     isStudent = _isStudent;
+    membersExternalPortalUrl = _membersExternalPortalUrl;
   } catch (error) {
     console.error(`Error in validateMemberToken memberTokenId : ${memberTokenId}`, error);
     _$w('#mainMultiStateBox').changeState(MAIN_STATE_BOX_STATES.ERROR_STATE);
@@ -141,10 +143,10 @@ async function personalDetailsOnReady({
       const isFormHasUnsavedChanges = Object.values(formHasUnsavedChanges).some(Boolean);
       if (isFormHasUnsavedChanges) {
         wixWindow.openLightbox(LIGHTBOX_NAMES.SAVE_ALERT, {
-          membersExternalPortalUrl: memberData.membersExternalPortalUrl,
+          membersExternalPortalUrl,
         });
       } else {
-        await wixLocation.to(memberData.membersExternalPortalUrlL);
+        await wixLocation.to(membersExternalPortalUrl);
       }
     } catch (error) {
       console.error('Logout failed:', error);
