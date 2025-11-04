@@ -1,4 +1,13 @@
-const { DEFAULT_SEO_DESCRIPTION, ADDRESS_STATUS_TYPES } = require('../public/consts');
+const {
+  DEFAULT_SEO_DESCRIPTION,
+  ADDRESS_STATUS_TYPES,
+  ABMP_LOGO_URL,
+  SITE_ASSOCIATION,
+  MEMBERSHIPS_TYPES,
+  formatAddress,
+  getMainAddress,
+  generateId,
+} = require('../public');
 
 const { getMemberBySlug } = require('./members-data-methods');
 const { formatDateToMonthYear } = require('./utils');
@@ -41,17 +50,15 @@ function stripHtmlTags(html) {
  * Check if member has student membership
  * @param {Object} member - Member object
  * @param {boolean} checkAssociation - Whether to check for specific association
- * @param {string} siteAssociation - Site association to check for
- * @param {string} studentType - Student membership type
  * @returns {boolean} True if member has student membership
  */
-function hasStudentMembership(member, checkAssociation, siteAssociation, studentType) {
+function hasStudentMembership(member, checkAssociation) {
   const memberships = member?.memberships;
   if (!Array.isArray(memberships)) return false;
 
   return memberships.some(membership => {
-    const isStudent = membership.membertype === studentType;
-    const hasCorrectAssociation = !checkAssociation || membership.association === siteAssociation;
+    const isStudent = membership.membertype === MEMBERSHIPS_TYPES.STUDENT;
+    const hasCorrectAssociation = !checkAssociation || membership.association === SITE_ASSOCIATION;
     return isStudent && hasCorrectAssociation;
   });
 }
@@ -59,12 +66,10 @@ function hasStudentMembership(member, checkAssociation, siteAssociation, student
 /**
  * Check if member should have student badge
  * @param {Object} member - Member object
- * @param {string} siteAssociation - Site association
- * @param {string} studentType - Student membership type
  * @returns {boolean} True if should have badge
  */
-function shouldHaveStudentBadge(member, siteAssociation, studentType) {
-  return hasStudentMembership(member, true, siteAssociation, studentType);
+function shouldHaveStudentBadge(member) {
+  return hasStudentMembership(member, true);
 }
 
 /**
@@ -73,13 +78,7 @@ function shouldHaveStudentBadge(member, siteAssociation, studentType) {
  * @param {Array} addressDisplayOption - Display options
  * @returns {Array} Processed addresses
  */
-function getAddressesByStatus(
-  addresses = [],
-  addressDisplayOption = [],
-  formatAddress,
-  getMainAddress,
-  generateId
-) {
+function getAddressesByStatus(addresses = [], addressDisplayOption = []) {
   const visible = addresses.filter(addr => addr.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW);
   if (visible.length < 2) {
     return [];
@@ -99,32 +98,22 @@ function getAddressesByStatus(
 /**
  * Get member profile data formatted for display
  * @param {Object} member - Member object
- * @param {Object} utils - Utility functions (formatAddress, getMainAddress, generateId)
- * @param {Object} constants - Constants (siteAssociation, studentType, pacStaffType)
  * @returns {Object} Formatted profile data
  */
-function getMemberProfileData(member, utils, constants) {
+function getMemberProfileData(member) {
   if (!member) {
     throw new Error('member is required');
   }
-  const { formatAddress, getMainAddress, generateId } = utils;
-  const { siteAssociation, studentType, pacStaffType } = constants;
 
   const addresses = member.addresses || [];
   const licenceNo = member.licenses
     ?.map(val => val.license)
     .filter(Boolean)
     .join(', ');
-  const processedAddresses = getAddressesByStatus(
-    member.addresses,
-    member.addressDisplayOption,
-    formatAddress,
-    getMainAddress,
-    generateId
-  );
+  const processedAddresses = getAddressesByStatus(member.addresses, member.addressDisplayOption);
 
   const memberships = member.memberships || [];
-  const abmp = memberships.find(m => m.association === siteAssociation);
+  const abmp = memberships.find(m => m.association === SITE_ASSOCIATION);
 
   const areasOfPractices =
     member.areasOfPractices
@@ -145,7 +134,7 @@ function getMemberProfileData(member, utils, constants) {
     licenceNo,
     processedAddresses,
     memberSince: (member.showABMP && abmp && formatDateToMonthYear(abmp?.membersince)) || '',
-    shouldHaveStudentBadge: shouldHaveStudentBadge(member, siteAssociation, studentType),
+    shouldHaveStudentBadge: shouldHaveStudentBadge(member),
     logoImage: member.logoImage,
     fullName: member.fullName,
     profileImage: member.profileImage,
@@ -162,7 +151,9 @@ function getMemberProfileData(member, utils, constants) {
     url: member.url,
     city: mainAddress?.city || '',
     state: mainAddress?.state || '',
-    isPrivateMember: member.memberships.some(membership => membership.membertype === pacStaffType),
+    isPrivateMember: member.memberships.some(
+      membership => membership.membertype === MEMBERSHIPS_TYPES.PAC_STAFF
+    ),
   };
 }
 
@@ -170,13 +161,10 @@ function getMemberProfileData(member, utils, constants) {
  * Profile router handler
  * @param {Object} request - Router request object
  * @param {Object} dependencies - Dependencies (ok, notFound, redirect, sendStatus)
- * @param {Object} utils - Utility functions
- * @param {Object} constants - Constants
  * @returns {Promise} Router response
  */
-async function profileRouter(request, dependencies, utils, constants) {
+async function profileRouter(request, dependencies) {
   const { ok, notFound, redirect, sendStatus } = dependencies;
-  const { abmpLogoUrl } = constants;
 
   const slug = request.path[0];
   if (!slug) {
@@ -193,10 +181,10 @@ async function profileRouter(request, dependencies, utils, constants) {
       return notFound();
     }
 
-    const profileData = getMemberProfileData(member, utils, constants);
+    const profileData = getMemberProfileData(member);
 
     if (profileData && profileData.showWixUrl) {
-      const ogImage = profileData.profileImage || profileData.logoImage || abmpLogoUrl;
+      const ogImage = profileData.profileImage || profileData.logoImage || ABMP_LOGO_URL;
       const seoTitle = generateSEOTitle(profileData.fullName, profileData.areasOfPractices);
       // Use stripped HTML from aboutService rich text content
       let description = stripHtmlTags(profileData.aboutService) || DEFAULT_SEO_DESCRIPTION;
