@@ -4,6 +4,7 @@ const { COLLECTIONS } = require('../public/consts');
 
 const { CONFIG_KEYS, GEO_HASH_PRECISION } = require('./consts');
 const { wixData } = require('./elevated-modules');
+const { urlExists } = require('./members-data-methods');
 
 /**
  * Retrieves site configuration values from the database
@@ -40,6 +41,46 @@ const retrieveAllItems = async collectionName => {
   }
   return allItems;
 };
+
+/**
+ * Format date to Month Year string
+ * @param {string} dateString - The date string to format
+ * @returns {string} Formatted date (e.g., "January 2024")
+ */
+function formatDateToMonthYear(dateString) {
+  if (!dateString) return '';
+
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  const options = { year: 'numeric', month: 'long' };
+  return date.toLocaleDateString('en-US', options);
+}
+
+/**
+ * Check if member is a student
+ * @param {Object} member - The member object
+ * @returns {boolean} True if member has student membership
+ */
+function isStudent(member) {
+  const memberships = member?.memberships;
+  if (!Array.isArray(memberships)) return false;
+
+  return memberships.some(membership => membership.membertype === 'student');
+}
+
+/**
+ * Get address display options for member
+ * @param {Object} member - The member object
+ * @returns {Array} Address display options
+ */
+function getAddressDisplayOptions(member) {
+  const addresses = member.addresses || [];
+  const displayOptions = member.addressDisplayOption || [];
+  if (addresses.length === 1 && addresses[0].key) {
+    return [{ key: addresses[0].key, isMain: true }];
+  }
+  return displayOptions;
+}
 
 const queryAllItems = async query => {
   console.log('start query');
@@ -87,6 +128,28 @@ const normalizeUrlForComparison = url => {
   return url.toLowerCase().replace(/-\d+$/, '');
 };
 
+/**
+ * Checks URL uniqueness for a member
+ * @param {string} url - The URL to check
+ * @param {string} memberId - The member ID to exclude from the check
+ * @returns {Promise<Object>} Result object with isUnique boolean
+ */
+async function checkUrlUniqueness(url, memberId) {
+  if (!url || !memberId) {
+    throw new Error('Missing required parameters: url and memberId are required');
+  }
+
+  try {
+    const trimmedUrl = url.trim();
+    const exists = await urlExists(trimmedUrl, memberId);
+
+    return { isUnique: !exists };
+  } catch (error) {
+    console.error('Error checking URL uniqueness:', error);
+    throw new Error(`Failed to check URL uniqueness: ${error.message}`);
+  }
+}
+
 module.exports = {
   getSiteConfigs,
   retrieveAllItems,
@@ -95,4 +158,8 @@ module.exports = {
   isValidArray,
   normalizeUrlForComparison,
   queryAllItems,
+  checkUrlUniqueness,
+  formatDateToMonthYear,
+  isStudent,
+  getAddressDisplayOptions,
 };

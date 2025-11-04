@@ -1,6 +1,6 @@
 {
   "name": "abmp-npm",
-  "version": "1.1.52",
+  "version": "1.8.36",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -34,6 +34,7 @@
     "@wix/secrets": "^1.0.62",
     "@wix/site-location": "^1.31.0",
     "@wix/site-window": "^1.44.0",
+    "lodash": "^4.17.21",
     "ngeohash": "^0.6.3",
     "phone": "^3.1.67",
     "psdev-task-manager": "1.1.7",
