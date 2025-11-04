@@ -622,9 +622,7 @@ async function personalDetailsOnReady({
     // Get memberships array
     const memberships = Array.isArray(itemMemberObj.memberships) ? itemMemberObj.memberships : [];
     // Find Site Association Member Since
-    const siteAssociationMemberSince = memberships.find(
-      m => m.association.isSiteAssociation
-    )?.membersince;
+    const siteAssociationMemberSince = memberships.find(m => m.isSiteAssociation)?.membersince;
     // Set yearJoinedText
     if (siteAssociationMemberSince) {
       _$w('#yearJoinedText').text = siteAssociationMemberSince;
