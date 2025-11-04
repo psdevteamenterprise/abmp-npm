@@ -168,4 +168,5 @@ module.exports = {
   calculateDistance,
   toRadians,
   generateId,
+  formatAddress,
 };

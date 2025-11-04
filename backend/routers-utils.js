@@ -1,11 +1,5 @@
-const {
-  ADDRESS_STATUS_TYPES,
-  SITE_ASSOCIATION,
-  MEMBERSHIPS_TYPES,
-  formatAddress,
-  getMainAddress,
-  generateId,
-} = require('../public');
+const { ADDRESS_STATUS_TYPES, SITE_ASSOCIATION, MEMBERSHIPS_TYPES } = require('../public');
+const { formatAddress, generateId, getMainAddress } = require('../public/Utils/sharedUtils');
 
 const { formatDateToMonthYear } = require('./utils');
 
