@@ -92,6 +92,9 @@ const FREE_WEBSITE_TEXT_STATES = {
 
 const DEFAULT_BUSINESS_NAME_TEXT = 'Business name not provided';
 
+const DEFAULT_SEO_DESCRIPTION =
+  'Find a licensed ABMP massage therapist or bodyworker near you! Powered by Associated Bodywork & Massage Professionals. ';
+
 const DEFAULT_PROFILE_IMAGE =
   'https://static.wixstatic.com/media/1d7134_e052e9b1d0a543d0980650e16dd6d374~mv2.jpg';
 
@@ -117,6 +120,7 @@ module.exports = {
   ABMP_MEMBERS_HOME_URL,
   FREE_WEBSITE_TEXT_STATES,
   DEFAULT_BUSINESS_NAME_TEXT,
+  DEFAULT_SEO_DESCRIPTION,
   DEFAULT_PROFILE_IMAGE,
   ABMP_LOGO_URL,
   SITE_ASSOCIATION,
