@@ -3,7 +3,6 @@ const { window: wixWindow } = require('@wix/site-window');
 const _ = require('lodash');
 
 const {
-  ABMP_MEMBERS_HOME_URL,
   ADDRESS_STATUS_TYPES,
   DEFAULT_BUSINESS_NAME_TEXT,
   FREE_WEBSITE_TEXT_STATES,
@@ -141,9 +140,11 @@ async function personalDetailsOnReady({
     try {
       const isFormHasUnsavedChanges = Object.values(formHasUnsavedChanges).some(Boolean);
       if (isFormHasUnsavedChanges) {
-        wixWindow.openLightbox(LIGHTBOX_NAMES.SAVE_ALERT);
+        wixWindow.openLightbox(LIGHTBOX_NAMES.SAVE_ALERT, {
+          membersExternalPortalUrl: memberData.membersExternalPortalUrl,
+        });
       } else {
-        await wixLocation.to(ABMP_MEMBERS_HOME_URL);
+        await wixLocation.to(memberData.membersExternalPortalUrlL);
       }
     } catch (error) {
       console.error('Logout failed:', error);
@@ -617,11 +618,13 @@ async function personalDetailsOnReady({
 
     // Get memberships array
     const memberships = Array.isArray(itemMemberObj.memberships) ? itemMemberObj.memberships : [];
-    // Find ABMP object
-    const abmp = memberships.find(m => m.association === 'ABMP');
+    // Find Site Association Member Since
+    const siteAssociationMemberSince = memberships.find(
+      m => m.association.isSiteAssociation
+    )?.membersince;
     // Set yearJoinedText
-    if (abmp && abmp.membersince) {
-      _$w('#yearJoinedText').text = abmp.membersince;
+    if (siteAssociationMemberSince) {
+      _$w('#yearJoinedText').text = siteAssociationMemberSince;
     } else {
       _$w('#yearJoinedText').text = 'Year joined not provided';
     }
