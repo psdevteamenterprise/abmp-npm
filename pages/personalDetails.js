@@ -3,7 +3,6 @@ const { window: wixWindow } = require('@wix/site-window');
 const _ = require('lodash');
 
 const {
-  ABMP_MEMBERS_HOME_URL,
   ADDRESS_STATUS_TYPES,
   DEFAULT_BUSINESS_NAME_TEXT,
   FREE_WEBSITE_TEXT_STATES,
@@ -34,6 +33,7 @@ const MAIN_STATE_BOX_STATES = {
   FORM_STATE: 'formState',
   UNAUTHORIZED_STATE: 'unauthorizedState',
   ERROR_STATE: 'errorState',
+  LOADING_STATE: 'loading',
 };
 
 const FALLBACK_ADDRESS_STATUS = ADDRESS_STATUS_TYPES.STATE_CITY_ZIP;
@@ -99,7 +99,7 @@ async function personalDetailsOnReady({
     _$w('#mainMultiStateBox').changeState(MAIN_STATE_BOX_STATES.UNAUTHORIZED_STATE);
   };
 
-  let memberData, isValid, isStudent;
+  let memberData, isValid, isStudent, membersExternalPortalUrl;
 
   // Main initialization
   const queryParams = await wixLocation.query();
@@ -117,10 +117,12 @@ async function personalDetailsOnReady({
     const {
       memberData: { isStudent: _isStudent, ...memberDataResponse },
       isValid: isValidResponse,
+      membersExternalPortalUrl: _membersExternalPortalUrl,
     } = await validateMemberToken(memberTokenId);
     memberData = memberDataResponse;
     isValid = isValidResponse;
     isStudent = _isStudent;
+    membersExternalPortalUrl = _membersExternalPortalUrl;
   } catch (error) {
     console.error(`Error in validateMemberToken memberTokenId : ${memberTokenId}`, error);
     _$w('#mainMultiStateBox').changeState(MAIN_STATE_BOX_STATES.ERROR_STATE);
@@ -141,9 +143,11 @@ async function personalDetailsOnReady({
     try {
       const isFormHasUnsavedChanges = Object.values(formHasUnsavedChanges).some(Boolean);
       if (isFormHasUnsavedChanges) {
-        wixWindow.openLightbox(LIGHTBOX_NAMES.SAVE_ALERT);
+        wixWindow.openLightbox(LIGHTBOX_NAMES.SAVE_ALERT, {
+          membersExternalPortalUrl,
+        });
       } else {
-        await wixLocation.to(ABMP_MEMBERS_HOME_URL);
+        await wixLocation.to(membersExternalPortalUrl);
       }
     } catch (error) {
       console.error('Logout failed:', error);
@@ -617,11 +621,11 @@ async function personalDetailsOnReady({
 
     // Get memberships array
     const memberships = Array.isArray(itemMemberObj.memberships) ? itemMemberObj.memberships : [];
-    // Find ABMP object
-    const abmp = memberships.find(m => m.association === 'ABMP');
+    // Find Site Association Member Since
+    const siteAssociationMemberSince = memberships.find(m => m.isSiteAssociation)?.membersince;
     // Set yearJoinedText
-    if (abmp && abmp.membersince) {
-      _$w('#yearJoinedText').text = abmp.membersince;
+    if (siteAssociationMemberSince) {
+      _$w('#yearJoinedText').text = siteAssociationMemberSince;
     } else {
       _$w('#yearJoinedText').text = 'Year joined not provided';
     }

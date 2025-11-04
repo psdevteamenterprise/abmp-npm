@@ -1,6 +1,6 @@
 const { secrets } = require('@wix/secrets');
 
-const { PAC_API_URL } = require('./daily-pull/consts');
+const { PAC_API_URL } = require('./consts');
 
 const getHeaders = async () => {
   const AUTH_TOKEN = await secrets.getSecretValue('members-data-api-key');

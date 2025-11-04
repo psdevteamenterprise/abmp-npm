@@ -83,8 +83,6 @@ const LIGHTBOX_NAMES = {
   CONTACT_US: 'Contact Us',
 };
 
-const ABMP_MEMBERS_HOME_URL = 'https://www.abmp.com/members';
-
 const FREE_WEBSITE_TEXT_STATES = {
   ENABLED: 'This is the default and will auto-populate with the information entered on this page.',
   DISABLED: 'To deactivate, please opt in via Personal Details.',
@@ -92,8 +90,6 @@ const FREE_WEBSITE_TEXT_STATES = {
 
 const DEFAULT_BUSINESS_NAME_TEXT = 'Business name not provided';
 
-const DEFAULT_PROFILE_IMAGE =
-  'https://static.wixstatic.com/media/1d7134_e052e9b1d0a543d0980650e16dd6d374~mv2.jpg';
 module.exports = {
   REGEX,
   COLLECTIONS,
@@ -103,8 +99,6 @@ module.exports = {
   DEBOUNCE_DELAY,
   MEMBERS_FIELDS,
   LIGHTBOX_NAMES,
-  ABMP_MEMBERS_HOME_URL,
   FREE_WEBSITE_TEXT_STATES,
   DEFAULT_BUSINESS_NAME_TEXT,
-  DEFAULT_PROFILE_IMAGE,
 };
