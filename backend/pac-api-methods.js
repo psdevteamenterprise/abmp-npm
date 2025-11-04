@@ -1,9 +1,8 @@
-const { secrets } = require('@wix/secrets');
-
 const { PAC_API_URL } = require('./consts');
+const { getSecret } = require('./utils');
 
 const getHeaders = async () => {
-  const AUTH_TOKEN = await secrets.getSecretValue('members-data-api-key');
+  const AUTH_TOKEN = await getSecret('members-data-api-key');
   const headers = {
     Authorization: `Bearer ${AUTH_TOKEN}`,
   };

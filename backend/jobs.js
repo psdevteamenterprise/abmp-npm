@@ -1,7 +1,6 @@
 const { taskManager } = require('psdev-task-manager');
 
-const { TASKS_NAMES } = require('./consts');
-const { TASKS } = require('./tasks');
+const { TASKS, TASKS_NAMES } = require('./tasks');
 
 async function runScheduledTasks() {
   try {
@@ -27,4 +26,16 @@ async function scheduleDailyPullTask() {
   }
 }
 
-module.exports = { runScheduledTasks, scheduleDailyPullTask };
+async function updateSiteMapS3() {
+  try {
+    return await taskManager().schedule({
+      name: TASKS_NAMES.updateSiteMapS3,
+      data: {},
+      type: 'scheduled',
+    });
+  } catch (error) {
+    throw new Error(`Failed to updateSiteMapS3: ${error.message}`);
+  }
+}
+
+module.exports = { runScheduledTasks, scheduleDailyPullTask, updateSiteMapS3 };

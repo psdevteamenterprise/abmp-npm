@@ -33,7 +33,6 @@ const MAIN_STATE_BOX_STATES = {
   FORM_STATE: 'formState',
   UNAUTHORIZED_STATE: 'unauthorizedState',
   ERROR_STATE: 'errorState',
-  LOADING_STATE: 'loading',
 };
 
 const FALLBACK_ADDRESS_STATUS = ADDRESS_STATUS_TYPES.STATE_CITY_ZIP;
