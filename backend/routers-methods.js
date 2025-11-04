@@ -132,9 +132,9 @@ async function profileRouter(request, dependencies) {
  * @param {Object} _sitemapRequest - Sitemap request object
  * @param {Object} _dependencies - Dependencies (WixRouterSitemapEntry)
  * @param {Function} _fetchAllItemsInParallel - Function to fetch all items in parallel
- * @returns {Array} Sitemap entries
+ * @returns {Promise<Array>} Sitemap entries
  */
-function profileSiteMap(_sitemapRequest, _dependencies, _fetchAllItemsInParallel) {
+async function profileSiteMap(_sitemapRequest, _dependencies, _fetchAllItemsInParallel) {
   return [];
   // Commented out - currently disabled in host site
   /*
