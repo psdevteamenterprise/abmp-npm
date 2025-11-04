@@ -1,7 +1,7 @@
 const { location: wixLocation } = require('@wix/site-location');
 const { window: wixWindow } = require('@wix/site-window');
 
-const { DEFAULT_PROFILE_IMAGE, LIGHTBOX_NAMES } = require('../public/consts');
+const { LIGHTBOX_NAMES } = require('../public/consts');
 const { generateId, formatPracticeAreasForDisplay } = require('../public/Utils/sharedUtils');
 
 const TESTIMONIALS_PER_PAGE_CONFIG = {
@@ -120,7 +120,7 @@ async function profileOnReady({ $w: _$w }) {
     if (profileData.profileImage) {
       _$w('#profileImage').src = profileData.profileImage;
     } else {
-      _$w('#profileImage').src = DEFAULT_PROFILE_IMAGE;
+      _$w('#profileImage').src = profileData.defaultProfileImage;
     }
   }
 
