@@ -1,4 +1,4 @@
-const { elevate } = require('@wix/essentials');
+const { auth } = require('@wix/essentials');
 const { secrets } = require('@wix/secrets');
 const { site } = require('@wix/urls');
 const { encode } = require('ngeohash');
@@ -8,7 +8,7 @@ const { COLLECTIONS } = require('../public/consts');
 const { CONFIG_KEYS, GEO_HASH_PRECISION } = require('./consts');
 const { wixData } = require('./elevated-modules');
 const { urlExists } = require('./members-data-methods');
-const elevatedGetSecretValue = elevate(secrets.getSecretValue);
+const elevatedGetSecretValue = auth.elevate(secrets.getSecretValue);
 
 /**
  * Retrieves site configuration values from the database
