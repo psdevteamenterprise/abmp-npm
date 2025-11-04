@@ -179,8 +179,4 @@ async function profileSiteMap(_sitemapRequest, _dependencies) {
 module.exports = {
   profileRouter,
   profileSiteMap,
-  // Re-export utilities for backward compatibility
-  getMemberProfileData,
-  generateSEOTitle,
-  stripHtmlTags,
 };
