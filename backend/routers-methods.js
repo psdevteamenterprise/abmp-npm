@@ -1,5 +1,6 @@
 const { DEFAULT_SEO_DESCRIPTION, ABMP_LOGO_URL } = require('../public');
 
+const { fetchAllItemsInParallel: _fetchAllItemsInParallel } = require('./cms-data-methods');
 const { getMemberBySlug } = require('./members-data-methods');
 const { generateSEOTitle, stripHtmlTags, getMemberProfileData } = require('./routers-utils');
 
@@ -131,10 +132,9 @@ async function profileRouter(request, dependencies) {
  * Profile sitemap generator
  * @param {Object} _sitemapRequest - Sitemap request object
  * @param {Object} _dependencies - Dependencies (WixRouterSitemapEntry)
- * @param {Function} _fetchAllItemsInParallel - Function to fetch all items in parallel
  * @returns {Promise<Array>} Sitemap entries
  */
-async function profileSiteMap(_sitemapRequest, _dependencies, _fetchAllItemsInParallel) {
+async function profileSiteMap(_sitemapRequest, _dependencies) {
   return [];
   // Commented out - currently disabled in host site
   /*
@@ -148,7 +148,7 @@ async function profileSiteMap(_sitemapRequest, _dependencies, _fetchAllItemsInPa
       .ne('action', 'drop')
       .fields('url', 'fullName');
 
-    const allMembers = await fetchAllItemsInParallel(membersQuery);
+    const allMembers = await _fetchAllItemsInParallel(membersQuery);
 
     const batchSize = 1000;
     const sitemapEntries = [];
