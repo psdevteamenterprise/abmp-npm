@@ -400,6 +400,42 @@ const getMembersByIds = async memberIds => {
   }
 };
 
+async function getSiteMemberId(data) {
+  try {
+    console.log('data', data);
+    const memberId = data?.pac?.cst_recno;
+    if (!memberId) {
+      const errorMessage = `Member ID is missing in passed data ${JSON.stringify(data)}`;
+      console.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    const queryMemberResult = await wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .eq('memberId', Number(memberId))
+      .find()
+      .then(res => res.items);
+    if (!queryMemberResult.length || queryMemberResult.length > 1) {
+      throw new Error(
+        `Invalid Members count found in DB for email ${data.email} members count is : [${
+          queryMemberResult.length
+        }] membersIds are : [${queryMemberResult.map(member => member.memberId).join(', ')}]`
+      );
+    }
+    let memberData = queryMemberResult[0];
+    console.log('memberData', memberData);
+    const isNewUser = !memberData.contactId;
+    if (isNewUser) {
+      const memberDataWithContactId = await createContactAndMemberIfNew(memberData);
+      console.log('memberDataWithContactId', memberDataWithContactId);
+      memberData = memberDataWithContactId;
+    }
+    return memberData;
+  } catch (error) {
+    console.error('Error in getSiteMemberId', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
@@ -415,4 +451,5 @@ module.exports = {
   getAllMembersWithoutContactFormEmail,
   getAllUpdatedLoginEmails,
   getMembersByIds,
+  getSiteMemberId,
 };

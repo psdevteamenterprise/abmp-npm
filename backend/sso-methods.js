@@ -1,7 +1,12 @@
-const { CONFIG_KEYS } = require('./consts');
+const { createHmac } = require('crypto');
+
+const { authentication } = require('@wix/identity'); //importing from @wix/identity because @wix/members authentication do not have generateSessionToken method
+const { decode } = require('jwt-js-decode');
+
+const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL, SSO_TOKEN_AUTH_API_KEY } = require('./consts');
 const { MEMBER_ACTIONS } = require('./daily-pull');
 const { getCurrentMember } = require('./members-area-methods');
-const { getMemberByContactId } = require('./members-data-methods');
+const { getMemberByContactId, getSiteMemberId } = require('./members-data-methods');
 const {
   formatDateToMonthYear,
   getAddressDisplayOptions,
@@ -82,7 +87,74 @@ async function validateMemberToken(memberIdInput) {
     throw error;
   }
 }
+async function checkAndFetchSSO(token) {
+  const signature = createHmac('sha256', SSO_TOKEN_AUTH_API_KEY).update(token).digest('hex');
+  const professionalassistcorpUrl = `${SSO_TOKEN_AUTH_API_URL}/eweb/SSOToken.ashx?token=${token}&Partner=Wix&Signature=${signature}`;
+  const options = {
+    method: 'get',
+  };
+  try {
+    const httpResponse = await fetch(professionalassistcorpUrl, options);
+    console.log('httpResponse status', httpResponse.status);
+    if (!httpResponse.ok) {
+      throw new Error('Fetch did not succeed with status: ' + httpResponse.status);
+    }
+    const responseToken = await httpResponse.text();
+    return responseToken;
+  } catch (error) {
+    console.error('Error in checkAndFetchSSO', error);
+    return null;
+  }
+}
+
+function generateSessionTokenFunction(email) {
+  return authentication
+    .signOn({ email })
+    .then(response => response.sessionToken)
+    .catch(error => {
+      console.error('Error in generateSessionTokenFunction', error);
+      throw error;
+    });
+}
+
+const authenticateSSOToken = async token => {
+  const responseToken = await checkAndFetchSSO(token);
+  const isValidToken = Boolean(
+    responseToken && typeof responseToken === 'string' && responseToken?.trim()
+  );
+  const toLogTokenData = {
+    isValidToken,
+    tokenData: responseToken
+      ? {
+          length: responseToken.length,
+          preview: responseToken.substring(0, 50),
+        }
+      : 'No token',
+  };
+  console.log('checkAndFetchSSO responseToken data', JSON.stringify(toLogTokenData, null, 2));
+  if (isValidToken) {
+    const jwt = decode(responseToken);
+    const payload = jwt.payload;
+    const membersData = await getSiteMemberId(payload);
+    console.log('membersDataCollectionId', membersData._id);
+    const sessionToken = await generateSessionTokenFunction(membersData.email);
+    const authObj = {
+      type: 'success',
+      memberId: membersData._id,
+      sessionToken,
+    };
+    return authObj;
+  } else {
+    console.log('invalid Token responseToken is: ', responseToken);
+    return {
+      type: 'error',
+      memberId: '',
+      sessionToken: '',
+    };
+  }
+};
 
 module.exports = {
   validateMemberToken,
+  authenticateSSOToken,
 };
