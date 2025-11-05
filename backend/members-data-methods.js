@@ -297,6 +297,27 @@ async function urlExists(url, excludeMemberId) {
 }
 
 /**
+ * Checks URL uniqueness for a member
+ * @param {string} url - The URL to check
+ * @param {string} memberId - The member ID to exclude from the check
+ * @returns {Promise<Object>} Result object with isUnique boolean
+ */
+async function checkUrlUniqueness(url, memberId) {
+  if (!url || !memberId) {
+    throw new Error('Missing required parameters: url and memberId are required');
+  }
+
+  try {
+    const trimmedUrl = url.trim();
+    const exists = await urlExists(trimmedUrl, memberId);
+
+    return { isUnique: !exists };
+  } catch (error) {
+    console.error('Error checking URL uniqueness:', error);
+    throw new Error(`Failed to check URL uniqueness: ${error.message}`);
+  }
+}
+/**
  * Get all members with external profile images
  * @returns {Promise<Array>} - Array of member IDs
  */
@@ -452,4 +473,5 @@ module.exports = {
   getAllUpdatedLoginEmails,
   getMembersByIds,
   getSiteMemberId,
+  checkUrlUniqueness,
 };
