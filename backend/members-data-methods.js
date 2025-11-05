@@ -400,6 +400,39 @@ const getMembersByIds = async memberIds => {
   }
 };
 
+const getMemberByEmail = async email => {
+  try {
+    const members = await wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .eq('email', email)
+      .limit(2)
+      .find()
+      .then(res => res.items);
+    if (members.length > 1) {
+      throw new Error(
+        `[getMemberByEmail] Multiple members found with email ${email} membersIds are : [${members.map(member => member.memberId).join(', ')}]`
+      );
+    }
+    return members[0] || null;
+  } catch (error) {
+    console.error('Error getting member by email:', error);
+    throw new Error(`Failed to get member by email: ${error.message}`);
+  }
+};
+
+const getQAUsers = async () => {
+  try {
+    return await wixData
+      .query(COLLECTIONS.QA_USERS)
+      .include('member')
+      .find()
+      .then(res => res.items.map(item => item.member));
+  } catch (error) {
+    console.error('Error getting QA users:', error);
+    throw new Error(`Failed to get QA users: ${error.message}`);
+  }
+};
+
 module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
@@ -415,4 +448,6 @@ module.exports = {
   getAllMembersWithoutContactFormEmail,
   getAllUpdatedLoginEmails,
   getMembersByIds,
+  getMemberByEmail,
+  getQAUsers,
 };
