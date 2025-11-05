@@ -10,6 +10,7 @@ const wixData = {
   save: auth.elevate(items.save),
   remove: auth.elevate(items.remove),
   get: auth.elevate(items.get),
+  truncate: auth.elevate(items.truncate),
   //TODO: add other methods here as needed
 };
 

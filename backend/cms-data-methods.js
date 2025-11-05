@@ -231,9 +231,17 @@ async function getInterestAll() {
     throw e;
   }
 }
+async function clearCollection(collectionName) {
+  try {
+    await wixData.truncate(collectionName);
+  } catch (err) {
+    throw new Error(`Failed to clearCollection ${collectionName} with error: ${err.message}`);
+  }
+}
 
 module.exports = {
   buildMembersSearchQuery,
   fetchAllItemsInParallel,
   getInterestAll,
+  clearCollection,
 };
