@@ -11,6 +11,7 @@ const COLLECTIONS = {
   STATE: 'State',
   INTERESTS: 'interests',
   STATE_CITY_MAP: 'City',
+  UPDATED_LOGIN_EMAILS: 'updatedLoginEmails',
 };
 
 /**
@@ -89,6 +90,10 @@ const FREE_WEBSITE_TEXT_STATES = {
 };
 
 const DEFAULT_BUSINESS_NAME_TEXT = 'Business name not provided';
+const PAGES_PATHS = {
+  PROFILE: 'profile',
+  MEMBERS_FORM: 'directory-website-update',
+};
 
 module.exports = {
   REGEX,
@@ -101,4 +106,5 @@ module.exports = {
   LIGHTBOX_NAMES,
   FREE_WEBSITE_TEXT_STATES,
   DEFAULT_BUSINESS_NAME_TEXT,
+  PAGES_PATHS,
 };

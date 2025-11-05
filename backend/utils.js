@@ -1,3 +1,6 @@
+const { elevate } = require('@wix/essentials');
+const { secrets } = require('@wix/secrets');
+const { site } = require('@wix/urls');
 const { encode } = require('ngeohash');
 
 const { COLLECTIONS } = require('../public/consts');
@@ -5,6 +8,7 @@ const { COLLECTIONS } = require('../public/consts');
 const { CONFIG_KEYS, GEO_HASH_PRECISION } = require('./consts');
 const { wixData } = require('./elevated-modules');
 const { urlExists } = require('./members-data-methods');
+const elevatedGetSecretValue = elevate(secrets.getSecretValue);
 
 /**
  * Retrieves site configuration values from the database
@@ -95,17 +99,17 @@ const queryAllItems = async query => {
   return allItems;
 };
 /**
- * Batches large arrays into smaller chunks for processing
- * @param {Array} array - Array to batch
- * @param {number} batchSize - Size of each batch
- * @returns {Array} - Array of batches
+ * Chunks large arrays into smaller chunks for processing
+ * @param {Array} array - Array to chunk
+ * @param {number} chunkSize - Size of each chunk
+ * @returns {Array} - Array of chunks
  */
-const createBatches = (array, batchSize = 50) => {
-  const batches = [];
-  for (let i = 0; i < array.length; i += batchSize) {
-    batches.push(array.slice(i, i + batchSize));
+const chunkArray = (array, chunkSize = 50) => {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
   }
-  return batches;
+  return chunks;
 };
 
 const generateGeoHash = addresses => {
@@ -150,10 +154,45 @@ async function checkUrlUniqueness(url, memberId) {
   }
 }
 
+async function getSecret(secretKey) {
+  return await elevatedGetSecretValue(secretKey).value;
+}
+
+async function getSiteBaseUrl() {
+  try {
+    const result = await site.listPublishedSiteUrls({
+      filters: { primary: true },
+    });
+    const baseUrl = result.urls[0].url;
+    if (!baseUrl) {
+      throw new Error('No Base URL Found');
+    }
+    return baseUrl;
+  } catch (error) {
+    throw new Error(`Failed to get site base URL: ${error?.message || error}`);
+  }
+}
+
+function encodeXml(value) {
+  if (!value) return '';
+  return (
+    String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      // eslint-disable-next-line no-useless-escape
+      .replace(/\"/g, '&quot;')
+      .replace(/'/g, '&apos;')
+  );
+}
+
+function formatDateOnly(dateStr) {
+  return new Date(dateStr).toISOString().slice(0, 10);
+}
 module.exports = {
   getSiteConfigs,
   retrieveAllItems,
-  createBatches,
+  chunkArray,
   generateGeoHash,
   isValidArray,
   normalizeUrlForComparison,
@@ -162,4 +201,8 @@ module.exports = {
   formatDateToMonthYear,
   isStudent,
   getAddressDisplayOptions,
+  getSecret,
+  getSiteBaseUrl,
+  encodeXml,
+  formatDateOnly,
 };

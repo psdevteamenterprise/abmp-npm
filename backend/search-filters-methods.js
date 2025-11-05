@@ -118,4 +118,7 @@ module.exports = {
   getCompiledFiltersOptions,
   getNonCompiledFiltersOptions,
   filterProfiles,
+  getCompleteStateList,
+  getAreasOfPracticeList,
+  getStateCityMap,
 };

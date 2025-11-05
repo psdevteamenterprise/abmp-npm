@@ -11,4 +11,5 @@ module.exports = {
   ...require('./cms-data-methods'), //TODO: remove it once we finish NPM movement
   ...require('./routers-methods'),
   ...require('./sso-methods'),
+  ...require('./data-hooks'),
 };
