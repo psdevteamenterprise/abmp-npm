@@ -10,4 +10,5 @@ module.exports = {
   ...require('./members-data-methods'), //TODO: remove it once we finish NPM movement
   ...require('./cms-data-methods'), //TODO: remove it once we finish NPM movement
   ...require('./sso-methods'),
+  ...require('./data-hooks'),
 };

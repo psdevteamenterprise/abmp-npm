@@ -1,11 +1,12 @@
 const { COLLECTIONS } = require('../public/consts');
 
+const { MEMBERSHIPS_TYPES } = require('./consts');
 const { updateMemberContactInfo } = require('./contacts-methods');
 const { MEMBER_ACTIONS } = require('./daily-pull');
 const { wixData } = require('./elevated-modules');
 const { createSiteMember } = require('./members-area-methods');
 const {
-  createBatches,
+  chunkArray,
   normalizeUrlForComparison,
   queryAllItems,
   generateGeoHash,
@@ -45,7 +46,7 @@ async function createContactAndMemberIfNew(memberData) {
       ...memberData,
       contactId,
     };
-    const updatedResult = await wixData.update(COLLECTIONS.MEMBERS_DATA, memberDataWithContactId);
+    const updatedResult = await updateMember(memberDataWithContactId);
     memberDataWithContactId = {
       ...memberDataWithContactId,
       ...updatedResult,
@@ -68,7 +69,7 @@ async function bulkSaveMembers(memberDataList) {
 
   try {
     // bulkSave all with batches of 1000 items as this is the Velo limit for bulkSave
-    const batches = createBatches(memberDataList, 1000);
+    const batches = chunkArray(memberDataList, 1000);
     return await Promise.all(
       batches.map(batch => wixData.bulkSave(COLLECTIONS.MEMBERS_DATA, batch))
     );
@@ -187,7 +188,36 @@ async function getMemberByContactId(contactId) {
     );
   }
 }
+/**
+ * Gets all members with aboutyoustatus as null
+ * @returns {Promise<import('wix-data').WixDataQueryResult>} - WixDataQueryResult of member data
+ */
+const getAllEmptyAboutYouMembers = async () => {
+  try {
+    const membersQuery = wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .isEmpty('aboutYourSelf')
+      .isNotEmpty('aboutYouHtml');
+    return await queryAllItems(membersQuery);
+  } catch (error) {
+    console.error('Error getting empty about you members:', error);
+    throw new Error(`Failed to get empty about you members: ${error.message}`);
+  }
+};
 
+/**
+ * updates member data
+ * @param {Object} memberToUpdate - The member data to update
+ * @returns {Promise<Object|null>} - Member data or null if not found
+ */
+async function updateMember(memberToUpdate) {
+  try {
+    const updatedMember = await wixData.update(COLLECTIONS.MEMBERS_DATA, memberToUpdate);
+    return updatedMember;
+  } catch (error) {
+    throw new Error(`Failed to update member data: ${error.message}`);
+  }
+}
 /**
  * Saves member registration data
  * @param {Object} data - Member data to save
@@ -219,7 +249,7 @@ async function saveRegistrationData(data, id) {
 
     await updateMemberContactInfo(data, existingMemberData);
 
-    const saveData = await wixData.update(COLLECTIONS.MEMBERS_DATA, data);
+    const saveData = await updateMember(data);
     return {
       type: 'success',
       saveData,
@@ -266,6 +296,110 @@ async function urlExists(url, excludeMemberId) {
   }
 }
 
+/**
+ * Get all members with external profile images
+ * @returns {Promise<Array>} - Array of member IDs
+ */
+async function getAllMembersWithExternalImages() {
+  try {
+    const membersQuery = await wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .isNotEmpty('profileImage')
+      .ne('profileImage', null);
+
+    const allItems = await queryAllItems(membersQuery);
+
+    // Filter for external images (not starting with 'wix:')
+    const membersWithExternalImages = allItems.filter(
+      member => member.profileImage && !member.profileImage.startsWith('wix:')
+    );
+
+    return membersWithExternalImages;
+  } catch (error) {
+    console.error('Error getting members with external images:', error);
+    return [];
+  }
+}
+
+async function getMembersWithWixUrl() {
+  const membersQuery = wixData
+    .query(COLLECTIONS.MEMBERS_DATA)
+    .eq('isVisible', true)
+    .eq('showWixUrl', true)
+    .ne('action', MEMBER_ACTIONS.DROP)
+    .ne('memberships.membertype', MEMBERSHIPS_TYPES.PAC_STAFF)
+    .isNotEmpty('url')
+    .limit(1000);
+  let currentResults = await membersQuery.find();
+  let i = 0;
+  const allItems = currentResults.items;
+  while (currentResults.hasNext()) {
+    if (i % 50 === 0) console.log(`page ${i}`);
+    currentResults = await currentResults.next();
+    allItems.push(...currentResults.items);
+    i++;
+  }
+  console.log('i is ', i);
+  const filtered = allItems.filter(item => typeof item.url === 'string' && !item.url.includes('/'));
+  console.log('filtered is ', filtered.length);
+  return filtered;
+}
+
+/**
+ * Gets all members who need contactFormEmail migration (missing contactFormEmail field)
+ * @returns {Promise<Array>} - Array of member data
+ */
+const getAllMembersWithoutContactFormEmail = async () => {
+  try {
+    const membersQuery = wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .isEmpty('contactFormEmail')
+      .isNotEmpty('email')
+      .limit(1000);
+
+    const allItems = await queryAllItems(membersQuery);
+    return allItems;
+  } catch (error) {
+    console.error('Error getting members without contactFormEmail:', error);
+    throw new Error(`Failed to get members without contactFormEmail: ${error.message}`);
+  }
+};
+
+/* Gets all updated login emails from the updated emails database
+ * @returns {Promise<Array>} - Array of updated email data
+ */
+const getAllUpdatedLoginEmails = async () => {
+  try {
+    const updatedEmailsQuery = await wixData
+      .query(COLLECTIONS.UPDATED_LOGIN_EMAILS)
+      .isNotEmpty('memberId')
+      .isNotEmpty('loginEmail')
+      .limit(1000);
+    return await queryAllItems(updatedEmailsQuery);
+  } catch (error) {
+    console.error('Error getting updated login emails:', error);
+    throw new Error(`Failed to get updated login emails: ${error.message}`);
+  }
+};
+/**
+ * Gets members by their member IDs for email sync
+ * @param {Array} memberIds - Array of member IDs to fetch
+ * @returns {Promise<Array>} - Array of member data
+ */
+const getMembersByIds = async memberIds => {
+  try {
+    const membersQuery = wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .hasSome('memberId', memberIds)
+      .limit(1000);
+
+    return await queryAllItems(membersQuery);
+  } catch (error) {
+    console.error('Error getting members by IDs:', error);
+    throw new Error(`Failed to get members by IDs: ${error.message}`);
+  }
+};
+
 module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
@@ -274,4 +408,11 @@ module.exports = {
   findMemberById,
   getMemberBySlug,
   getMemberByContactId,
+  getAllEmptyAboutYouMembers,
+  updateMember,
+  getAllMembersWithExternalImages,
+  getMembersWithWixUrl,
+  getAllMembersWithoutContactFormEmail,
+  getAllUpdatedLoginEmails,
+  getMembersByIds,
 };
