@@ -16,12 +16,12 @@ const loginQAMember = async (userEmail, secret) => {
   try {
     const userValidation = await validateQAUser(userEmail);
     if (userValidation.error) {
-      return userValidation;
+      return { success: false, error: userValidation.error };
     }
 
     const qaSecret = await getSecret('ABMP_QA_SECRET');
     if (secret !== qaSecret) {
-      return { error: 'Invalid secret' };
+      return { success: false, error: 'Invalid secret' };
     }
 
     //TODO: this code still needs fixes, as there is no generateSessionToken method on
@@ -47,7 +47,7 @@ async function getMemberCMSId(userEmail) {
   try {
     const userValidation = await validateQAUser(userEmail);
     if (userValidation.error) {
-      return userValidation;
+      return { success: false, error: userValidation.error };
     }
 
     const member = await getMemberByEmail(userEmail);
