@@ -1,6 +1,8 @@
 const { createHmac } = require('crypto');
 
+const { auth } = require('@wix/essentials');
 const { authentication } = require('@wix/identity'); //importing from @wix/identity because @wix/members authentication do not have generateSessionToken method
+const generateSessionToken = auth.elevate(authentication.signOn);
 const { decode } = require('jwt-js-decode');
 
 const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL, SSO_TOKEN_AUTH_API_KEY } = require('./consts');
@@ -108,8 +110,7 @@ async function checkAndFetchSSO(token) {
 }
 
 function generateSessionTokenFunction(email) {
-  return authentication
-    .signOn({ email })
+  return generateSessionToken({ email })
     .then(response => response.sessionToken)
     .catch(error => {
       console.error('Error in generateSessionTokenFunction', error);
