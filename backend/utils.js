@@ -3,18 +3,17 @@ const { secrets } = require('@wix/secrets');
 const { site } = require('@wix/urls');
 const { encode } = require('ngeohash');
 
-const { COLLECTIONS } = require('../public/consts');
+const { COLLECTIONS, ADDRESS_STATUS_TYPES } = require('../public/consts');
+const { formatAddress, generateId } = require('../public/Utils/sharedUtils');
 
-const { CONFIG_KEYS, GEO_HASH_PRECISION } = require('./consts');
+const { CONFIG_KEYS, GEO_HASH_PRECISION, MEMBERSHIPS_TYPES } = require('./consts');
 const { wixData } = require('./elevated-modules');
 const { urlExists } = require('./members-data-methods');
 const elevatedGetSecretValue = elevate(secrets.getSecretValue);
 
 /**
  * Retrieves site configuration values from the database
- * @param {string} [configKey] - The configuration key to retrieve. Must be one of:
- *   - 'AUTOMATION_EMAIL_TRIGGER_ID' - Email template ID for triggered emails
- *   - 'SITE_ASSOCIATION' - Site association configuration
+ * @param {keyof typeof CONFIG_KEYS} [configKey] - The configuration key to retrieve
  * @returns {Promise<any>} The configuration value for the specified key, or all configs if no key provided
  * @example
  * // Get specific config
@@ -60,18 +59,26 @@ function formatDateToMonthYear(dateString) {
   return date.toLocaleDateString('en-US', options);
 }
 
-/**
- * Check if member is a student
- * @param {Object} member - The member object
- * @returns {boolean} True if member has student membership
- */
-function isStudent(member) {
+function hasStudentMembership({ member, checkAssociation = false, siteAssociation = null }) {
   const memberships = member?.memberships;
   if (!Array.isArray(memberships)) return false;
 
-  return memberships.some(membership => membership.membertype === 'student');
+  return memberships.some(membership => {
+    const isStudent = membership.membertype === MEMBERSHIPS_TYPES.STUDENT;
+    const hasCorrectAssociation = !checkAssociation || membership.association === siteAssociation;
+    return isStudent && hasCorrectAssociation;
+  });
 }
 
+function isStudent(member) {
+  return hasStudentMembership({ member, checkAssociation: false });
+}
+
+function isPAC_STAFF(member) {
+  return Boolean(
+    member?.memberships?.some(membership => membership.membertype === MEMBERSHIPS_TYPES.PAC_STAFF)
+  );
+}
 /**
  * Get address display options for member
  * @param {Object} member - The member object
@@ -85,7 +92,22 @@ function getAddressDisplayOptions(member) {
   }
   return displayOptions;
 }
-
+function getAddressesByStatus(addresses = [], addressDisplayOption = []) {
+  const visible = addresses.filter(addr => addr.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW);
+  if (visible.length < 2) {
+    return [];
+  }
+  const opts = Array.isArray(addressDisplayOption) ? addressDisplayOption : [];
+  const mainOpt = opts.find(o => o.isMain);
+  const mainKey = mainOpt ? mainOpt.key : visible[0].key; // fallback to the first visible if none marked
+  return visible
+    .filter(addr => addr?.key !== mainKey)
+    .map(addr => {
+      const addressString = formatAddress(addr);
+      return addressString ? { _id: generateId(), address: addressString } : null;
+    })
+    .filter(Boolean);
+}
 const queryAllItems = async query => {
   console.log('start query');
   let oldResults = await query.find();
@@ -200,9 +222,12 @@ module.exports = {
   checkUrlUniqueness,
   formatDateToMonthYear,
   isStudent,
+  hasStudentMembership,
   getAddressDisplayOptions,
   getSecret,
   getSiteBaseUrl,
   encodeXml,
   formatDateOnly,
+  getAddressesByStatus,
+  isPAC_STAFF,
 };
