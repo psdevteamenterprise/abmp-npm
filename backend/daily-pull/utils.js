@@ -3,8 +3,8 @@ const { updateWixMemberLoginEmail } = require('../members-area-methods');
 const { MEMBER_ACTIONS } = require('./consts');
 
 const isUpdatedMember = member => member.action !== MEMBER_ACTIONS.NONE;
-const isABMPMember = member =>
-  member.memberships.some(membership => membership.association === 'ABMP');
+const isSiteAssociatedMember = (member, siteAssociation) =>
+  member.memberships.some(membership => membership.association === siteAssociation);
 
 const changeWixMembersEmails = async toChangeWixMembersEmails => {
   console.log(
@@ -70,7 +70,7 @@ const createFullName = (firstName, lastName) => {
 
 module.exports = {
   isUpdatedMember,
-  isABMPMember,
+  isSiteAssociatedMember,
   changeWixMembersEmails,
   validateCoreMemberData,
   containsNonEnglish,

@@ -83,30 +83,12 @@ const LIGHTBOX_NAMES = {
   CONTACT_US: 'Contact Us',
 };
 
-const ABMP_MEMBERS_HOME_URL = 'https://www.abmp.com/members';
-
 const FREE_WEBSITE_TEXT_STATES = {
   ENABLED: 'This is the default and will auto-populate with the information entered on this page.',
   DISABLED: 'To deactivate, please opt in via Personal Details.',
 };
 
 const DEFAULT_BUSINESS_NAME_TEXT = 'Business name not provided';
-
-const DEFAULT_SEO_DESCRIPTION =
-  'Find a licensed ABMP massage therapist or bodyworker near you! Powered by Associated Bodywork & Massage Professionals. ';
-
-const DEFAULT_PROFILE_IMAGE =
-  'https://static.wixstatic.com/media/1d7134_e052e9b1d0a543d0980650e16dd6d374~mv2.jpg';
-
-const ABMP_LOGO_URL =
-  'https://static.wixstatic.com/media/3eb9c9_b7447dc19d1b48cc99348a828cf77278~mv2.png';
-
-const SITE_ASSOCIATION = 'ABMP';
-
-const MEMBERSHIPS_TYPES = {
-  STUDENT: 'Student',
-  PAC_STAFF: 'PAC STAFF',
-};
 
 module.exports = {
   REGEX,
@@ -117,12 +99,6 @@ module.exports = {
   DEBOUNCE_DELAY,
   MEMBERS_FIELDS,
   LIGHTBOX_NAMES,
-  ABMP_MEMBERS_HOME_URL,
   FREE_WEBSITE_TEXT_STATES,
   DEFAULT_BUSINESS_NAME_TEXT,
-  DEFAULT_SEO_DESCRIPTION,
-  DEFAULT_PROFILE_IMAGE,
-  ABMP_LOGO_URL,
-  SITE_ASSOCIATION,
-  MEMBERSHIPS_TYPES,
 };
