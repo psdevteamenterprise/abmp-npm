@@ -2,7 +2,7 @@ const { COLLECTIONS } = require('../public/consts');
 
 const { MEMBERSHIPS_TYPES } = require('./consts');
 const { updateMemberContactInfo } = require('./contacts-methods');
-const { MEMBER_ACTIONS } = require('./daily-pull');
+const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { wixData } = require('./elevated-modules');
 const { createSiteMember } = require('./members-area-methods');
 const {

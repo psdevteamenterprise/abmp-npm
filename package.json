@@ -3,8 +3,9 @@
   "version": "1.1.60",
   "main": "index.js",
   "scripts": {
+    "check-cycles": "madge --circular .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint .",
+    "lint": "npm run check-cycles && eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,json,md}\"",
@@ -23,6 +24,7 @@
     "eslint-plugin-promise": "^7.1.0",
     "globals": "^15.10.0",
     "husky": "^9.1.6",
+    "madge": "^8.0.0",
     "prettier": "^3.3.3"
   },
   "dependencies": {
