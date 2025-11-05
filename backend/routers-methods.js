@@ -134,7 +134,7 @@ async function profileRouter(request, dependencies) {
  * @param {Object} _dependencies - Dependencies (WixRouterSitemapEntry)
  * @returns {Promise<Array>} Sitemap entries
  */
-async function profileSiteMap(_sitemapRequest, _dependencies) {
+function profileSiteMap(_sitemapRequest, _dependencies) {
   return [];
   // Commented out - currently disabled in host site
   /*
