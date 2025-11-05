@@ -12,7 +12,7 @@ const createRoutersHandlers = wixRouterMethods => {
     notFound,
     sendStatus,
     WixRouterSitemapEntry: _WixRouterSitemapEntry,
-  } = wixRouterMethods;
+  } = wixRouterMethods; // These dependencies needs to be injected as they do not have an SDK equivalent for now
 
   async function profileRouter(request) {
     const slug = request.path[0];
