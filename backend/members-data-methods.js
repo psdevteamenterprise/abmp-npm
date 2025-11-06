@@ -444,7 +444,7 @@ const getMemberByEmail = async email => {
 const getQAUsers = async () => {
   try {
     return await wixData
-      .query(COLLECTIONS.QA_USERS)
+      .query(COLLECTIONS.QA_Users)
       .include('member')
       .find()
       .then(res => res.items.map(item => item.member));
