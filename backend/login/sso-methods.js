@@ -1,20 +1,17 @@
 const { createHmac } = require('crypto');
 
-const { auth } = require('@wix/essentials');
-const { authentication } = require('@wix/identity'); //importing from @wix/identity because @wix/members authentication do not have generateSessionToken method
-const generateSessionToken = auth.elevate(authentication.signOn);
 const { decode } = require('jwt-js-decode');
 
-const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL, SSO_TOKEN_AUTH_API_KEY } = require('./consts');
-const { MEMBER_ACTIONS } = require('./daily-pull');
-const { getCurrentMember } = require('./members-area-methods');
-const { getMemberByContactId, getSiteMemberId } = require('./members-data-methods');
+const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL, SSO_TOKEN_AUTH_API_KEY } = require('../consts');
+const { MEMBER_ACTIONS } = require('../daily-pull/consts');
+const { getCurrentMember } = require('../members-area-methods');
+const { getMemberByContactId, getSiteMemberId } = require('../members-data-methods');
 const {
   formatDateToMonthYear,
   getAddressDisplayOptions,
   isStudent,
   getSiteConfigs,
-} = require('./utils');
+} = require('../utils');
 
 /**
  * Validates member token and retrieves member data
@@ -109,16 +106,14 @@ async function checkAndFetchSSO(token) {
   }
 }
 
-function generateSessionTokenFunction(email) {
-  return generateSessionToken({ email })
-    .then(response => response.sessionToken)
-    .catch(error => {
-      console.error('Error in generateSessionTokenFunction', error);
-      throw error;
-    });
-}
-
-const authenticateSSOToken = async token => {
+/**
+ * Authenticate an SSO token
+ * @param {Object} params - The parameters for the authentication
+ * @param {string} params.token - The token to authenticate
+ * @param {Function} generateSessionToken - a dependency of the method, injected by the createLoginMethods function
+ * @returns {Promise<Object>} The result of the authentication
+ */
+const authenticateSSOToken = async ({ token }, generateSessionToken) => {
   const responseToken = await checkAndFetchSSO(token);
   const isValidToken = Boolean(
     responseToken && typeof responseToken === 'string' && responseToken?.trim()
@@ -138,7 +133,7 @@ const authenticateSSOToken = async token => {
     const payload = jwt.payload;
     const membersData = await getSiteMemberId(payload);
     console.log('membersDataCollectionId', membersData._id);
-    const sessionToken = await generateSessionTokenFunction(membersData.email);
+    const sessionToken = await generateSessionToken(membersData.email);
     const authObj = {
       type: 'success',
       memberId: membersData._id,
