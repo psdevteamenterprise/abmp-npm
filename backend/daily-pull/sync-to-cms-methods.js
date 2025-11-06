@@ -2,7 +2,7 @@ const { taskManager } = require('psdev-task-manager');
 
 const { CONFIG_KEYS } = require('../consts');
 const { fetchPACMembers } = require('../pac-api-methods');
-const { TASKS_NAMES } = require('../tasks');
+const { TASKS_NAMES } = require('../tasks/consts');
 const { getSiteConfigs } = require('../utils');
 
 const { bulkProcessAndSaveMemberData } = require('./bulk-process-methods');
