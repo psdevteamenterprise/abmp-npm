@@ -12,4 +12,5 @@ module.exports = {
   ...require('./routers'),
   ...require('./sso-methods'),
   ...require('./data-hooks'),
+  ...require('./http-functions'),
 };
