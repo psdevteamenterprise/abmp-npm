@@ -1,6 +1,6 @@
 const { taskManager } = require('psdev-task-manager');
 
-const { TASKS, TASKS_NAMES } = require('./tasks');
+const { TASKS, TASKS_NAMES } = require('./tasks/consts');
 
 async function runScheduledTasks() {
   try {

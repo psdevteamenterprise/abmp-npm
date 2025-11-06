@@ -1,18 +1,24 @@
-const { authentication } = require('@wix/members');
-
-const { getMemberByEmail, getQAUsers } = require('./members-data-methods');
-const { getSecret } = require('./utils');
+const { getMemberByEmail, getQAUsers } = require('../members-data-methods');
+const { getSecret } = require('../utils');
 
 const validateQAUser = async userEmail => {
   const qaUsers = await getQAUsers();
-  const matchingUser = qaUsers.find(user => user.email === userEmail);
-  if (!matchingUser) {
+  const matchingUserEmail = qaUsers.find(user => user.email === userEmail)?.email;
+  if (!matchingUserEmail) {
     return { error: `Invalid user email: ${userEmail}` };
   }
-  return { valid: true, user: matchingUser };
+  return { valid: true, email: matchingUserEmail };
 };
 
-const loginQAMember = async (userEmail, secret) => {
+/**
+ * Login a QA user
+ * @param {Object} params - The parameters for the login
+ * @param {string} params.userEmail - The email of the user to login
+ * @param {string} params.secret - The secret of the user to login
+ * @param {Function} generateSessionToken - a dependency of the method, injected by the createLoginMethods function
+ * @returns {Promise<Object>} The result of the login
+ */
+const loginQAMember = async ({ userEmail, secret }, generateSessionToken) => {
   try {
     const userValidation = await validateQAUser(userEmail);
     if (userValidation.error) {
@@ -24,8 +30,7 @@ const loginQAMember = async (userEmail, secret) => {
       return { success: false, error: 'Invalid secret' };
     }
 
-    //TODO: this code still needs fixes, as there is no generateSessionToken method on
-    const token = await authentication.generateSessionToken(userValidation.user, qaSecret);
+    const token = await generateSessionToken(userValidation.email, qaSecret);
 
     const result = await getMemberCMSId(userEmail);
     if (!result.success) {

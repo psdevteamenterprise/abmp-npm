@@ -1,8 +1,8 @@
+const { MEMBER_ACTIONS } = require('../daily-pull/consts.js');
 const {
-  MEMBER_ACTIONS,
   synchronizeSinglePage,
   syncMembersDataPerAction,
-} = require('../daily-pull');
+} = require('../daily-pull/sync-to-cms-methods');
 
 const { TASKS_NAMES } = require('./consts');
 const {
