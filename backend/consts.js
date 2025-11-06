@@ -1,4 +1,6 @@
 const PAC_API_URL = 'https://members.abmp.com/eweb/api/Wix';
+const SSO_TOKEN_AUTH_API_URL = 'https://members.professionalassistcorp.com/';
+const SSO_TOKEN_AUTH_API_KEY = 'testkey';
 
 /**
  * Valid configuration keys for getSiteConfigs function
@@ -38,4 +40,6 @@ module.exports = {
   PAC_API_URL,
   COMPILED_FILTERS_FIELDS,
   MEMBERSHIPS_TYPES,
+  SSO_TOKEN_AUTH_API_URL,
+  SSO_TOKEN_AUTH_API_KEY,
 };

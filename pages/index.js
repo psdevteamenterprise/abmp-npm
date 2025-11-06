@@ -4,4 +4,5 @@ module.exports = {
   ...require('./Home.js'),
   ...require('./personalDetails.js'),
   ...require('./QAPage.js'),
+  ...require('./LoadingPage.js'),
 };

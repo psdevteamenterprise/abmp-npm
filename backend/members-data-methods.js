@@ -2,7 +2,7 @@ const { COLLECTIONS } = require('../public/consts');
 
 const { MEMBERSHIPS_TYPES } = require('./consts');
 const { updateMemberContactInfo } = require('./contacts-methods');
-const { MEMBER_ACTIONS } = require('./daily-pull');
+const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { wixData } = require('./elevated-modules');
 const { createSiteMember } = require('./members-area-methods');
 const {
@@ -297,6 +297,27 @@ async function urlExists(url, excludeMemberId) {
 }
 
 /**
+ * Checks URL uniqueness for a member
+ * @param {string} url - The URL to check
+ * @param {string} memberId - The member ID to exclude from the check
+ * @returns {Promise<Object>} Result object with isUnique boolean
+ */
+async function checkUrlUniqueness(url, memberId) {
+  if (!url || !memberId) {
+    throw new Error('Missing required parameters: url and memberId are required');
+  }
+
+  try {
+    const trimmedUrl = url.trim();
+    const exists = await urlExists(trimmedUrl, memberId);
+
+    return { isUnique: !exists };
+  } catch (error) {
+    console.error('Error checking URL uniqueness:', error);
+    throw new Error(`Failed to check URL uniqueness: ${error.message}`);
+  }
+}
+/**
  * Get all members with external profile images
  * @returns {Promise<Array>} - Array of member IDs
  */
@@ -432,6 +453,41 @@ const getQAUsers = async () => {
     throw new Error(`Failed to get QA users: ${error.message}`);
   }
 };
+async function getSiteMemberId(data) {
+  try {
+    console.log('data', data);
+    const memberId = data?.pac?.cst_recno;
+    if (!memberId) {
+      const errorMessage = `Member ID is missing in passed data ${JSON.stringify(data)}`;
+      console.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+    const queryMemberResult = await wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .eq('memberId', Number(memberId))
+      .find()
+      .then(res => res.items);
+    if (!queryMemberResult.length || queryMemberResult.length > 1) {
+      throw new Error(
+        `Invalid Members count found in DB for email ${data.email} members count is : [${
+          queryMemberResult.length
+        }] membersIds are : [${queryMemberResult.map(member => member.memberId).join(', ')}]`
+      );
+    }
+    let memberData = queryMemberResult[0];
+    console.log('memberData', memberData);
+    const isNewUser = !memberData.contactId;
+    if (isNewUser) {
+      const memberDataWithContactId = await createContactAndMemberIfNew(memberData);
+      console.log('memberDataWithContactId', memberDataWithContactId);
+      memberData = memberDataWithContactId;
+    }
+    return memberData;
+  } catch (error) {
+    console.error('Error in getSiteMemberId', error.message);
+    throw error;
+  }
+}
 
 module.exports = {
   findMemberByWixDataId,
@@ -450,4 +506,6 @@ module.exports = {
   getMembersByIds,
   getMemberByEmail,
   getQAUsers,
+  getSiteMemberId,
+  checkUrlUniqueness,
 };
