@@ -1,5 +1,5 @@
 const { loginQAMember } = require('./qa-login-methods');
-const { authenticateSSOToken } = require('./sso-methods');
+const { authenticateSSOToken, validateMemberToken } = require('./sso-methods');
 
 const createLoginMethods = generateSessionToken => {
   //There is no generateSessionToken SDK version,  and the signOn of @wix/identity returns 403 error regardless that the permissions are valid
@@ -16,4 +16,5 @@ const createLoginMethods = generateSessionToken => {
 
 module.exports = {
   createLoginMethods,
+  validateMemberToken,
 };
