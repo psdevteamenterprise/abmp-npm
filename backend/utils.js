@@ -1,4 +1,4 @@
-const { elevate } = require('@wix/essentials');
+const { auth } = require('@wix/essentials');
 const { secrets } = require('@wix/secrets');
 const { site } = require('@wix/urls');
 const { encode } = require('ngeohash');
@@ -8,8 +8,7 @@ const { formatAddress, generateId } = require('../public/Utils/sharedUtils');
 
 const { CONFIG_KEYS, GEO_HASH_PRECISION, MEMBERSHIPS_TYPES } = require('./consts');
 const { wixData } = require('./elevated-modules');
-const { urlExists } = require('./members-data-methods');
-const elevatedGetSecretValue = elevate(secrets.getSecretValue);
+const elevatedGetSecretValue = auth.elevate(secrets.getSecretValue);
 
 /**
  * Retrieves site configuration values from the database
@@ -154,28 +153,6 @@ const normalizeUrlForComparison = url => {
   return url.toLowerCase().replace(/-\d+$/, '');
 };
 
-/**
- * Checks URL uniqueness for a member
- * @param {string} url - The URL to check
- * @param {string} memberId - The member ID to exclude from the check
- * @returns {Promise<Object>} Result object with isUnique boolean
- */
-async function checkUrlUniqueness(url, memberId) {
-  if (!url || !memberId) {
-    throw new Error('Missing required parameters: url and memberId are required');
-  }
-
-  try {
-    const trimmedUrl = url.trim();
-    const exists = await urlExists(trimmedUrl, memberId);
-
-    return { isUnique: !exists };
-  } catch (error) {
-    console.error('Error checking URL uniqueness:', error);
-    throw new Error(`Failed to check URL uniqueness: ${error.message}`);
-  }
-}
-
 async function getSecret(secretKey) {
   return await elevatedGetSecretValue(secretKey).value;
 }
@@ -219,7 +196,6 @@ module.exports = {
   isValidArray,
   normalizeUrlForComparison,
   queryAllItems,
-  checkUrlUniqueness,
   formatDateToMonthYear,
   isStudent,
   hasStudentMembership,
