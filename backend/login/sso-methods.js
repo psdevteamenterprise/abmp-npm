@@ -2,7 +2,7 @@ const { createHmac } = require('crypto');
 
 const { decode } = require('jwt-js-decode');
 
-const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL, SSO_TOKEN_AUTH_API_KEY } = require('../consts');
+const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL } = require('../consts');
 const { MEMBER_ACTIONS } = require('../daily-pull/consts');
 const { getCurrentMember } = require('../members-area-methods');
 const { getMemberByContactId, getSiteMemberId } = require('../members-data-methods');
@@ -11,6 +11,7 @@ const {
   getAddressDisplayOptions,
   isStudent,
   getSiteConfigs,
+  getSecret,
 } = require('../utils');
 
 /**
@@ -87,6 +88,7 @@ async function validateMemberToken(memberIdInput) {
   }
 }
 async function checkAndFetchSSO(token) {
+  const SSO_TOKEN_AUTH_API_KEY = await getSecret('SSO_TOKEN_AUTH_API_KEY');
   const signature = createHmac('sha256', SSO_TOKEN_AUTH_API_KEY).update(token).digest('hex');
   const professionalassistcorpUrl = `${SSO_TOKEN_AUTH_API_URL}/eweb/SSOToken.ashx?token=${token}&Partner=Wix&Signature=${signature}`;
   const options = {
