@@ -154,10 +154,7 @@ const normalizeUrlForComparison = url => {
 };
 
 async function getSecret(secretKey) {
-  console.log('getSecret', secretKey);
-  const secret = await elevatedGetSecretValue(secretKey);
-  console.log('secret', secret);
-  return secret;
+  return (await elevatedGetSecretValue(secretKey)).value;
 }
 
 async function getSiteBaseUrl() {
