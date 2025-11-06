@@ -447,10 +447,7 @@ const getQAUsers = async () => {
       .query(COLLECTIONS.QA_Users)
       .include('member')
       .find()
-      .then(res => {
-        console.log('res', JSON.stringify(res.items, null, 2));
-        return res.items.map(item => item.member);
-      });
+      .then(res => res.items.map(item => item.member));
   } catch (error) {
     console.error('Error getting QA users:', error);
     throw new Error(`Failed to get QA users: ${error.message}`);

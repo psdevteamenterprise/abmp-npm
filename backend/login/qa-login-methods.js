@@ -3,9 +3,7 @@ const { getSecret } = require('../utils');
 
 const validateQAUser = async userEmail => {
   const qaUsers = await getQAUsers();
-  console.log('userEmail', userEmail);
   const matchingUserEmail = qaUsers.find(user => user.email === userEmail)?.email;
-  console.log('matchingUserEmail', matchingUserEmail);
   if (!matchingUserEmail) {
     return { error: `Invalid user email: ${userEmail}` };
   }
