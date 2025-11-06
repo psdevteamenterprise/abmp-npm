@@ -1,6 +1,7 @@
 const { COLLECTIONS } = require('../../public/consts');
 const { clearCollection } = require('../cms-data-methods');
-const { getSecret } = require('../utils');
+const { CONFIG_KEYS } = require('../consts');
+const { getSecret, getSiteConfigs } = require('../utils');
 
 const { migrateInterests } = require('./interests');
 
@@ -62,10 +63,23 @@ const createHTTPFunctionsHelpers = wixHTTPFunctionsMethods => {
       return serverError(error);
     }
   };
+  const getSiteAssociationHandler = async _request => {
+    try {
+      const siteAssociation = await getSiteConfigs(CONFIG_KEYS.SITE_ASSOCIATION);
+      return ok({
+        ...responseOptions,
+        body: { siteAssociation },
+      });
+    } catch (error) {
+      console.error('Error getting site association:', error);
+      return serverError(error);
+    }
+  };
 
   return {
     post_migrateInterests: withAuth(migrateInterestsHandler),
     delete_clearCollection: withAuth(clearCollectionHandler),
+    get_getSiteAssociation: withAuth(getSiteAssociationHandler),
   };
 };
 
