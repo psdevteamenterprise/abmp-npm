@@ -3,11 +3,13 @@ const { getSecret } = require('../utils');
 
 const validateQAUser = async userEmail => {
   const qaUsers = await getQAUsers();
-  const matchingUser = qaUsers.find(user => user.email === userEmail);
-  if (!matchingUser) {
+  console.log('userEmail', userEmail);
+  const matchingUserEmail = qaUsers.find(user => user.email === userEmail)?.email;
+  console.log('matchingUserEmail', matchingUserEmail);
+  if (!matchingUserEmail) {
     return { error: `Invalid user email: ${userEmail}` };
   }
-  return { valid: true, user: matchingUser };
+  return { valid: true, email: matchingUserEmail };
 };
 
 /**
@@ -30,7 +32,7 @@ const loginQAMember = async ({ userEmail, secret }, generateSessionToken) => {
       return { success: false, error: 'Invalid secret' };
     }
 
-    const token = await generateSessionToken(userValidation.user, qaSecret);
+    const token = await generateSessionToken(userValidation.email, qaSecret);
 
     const result = await getMemberCMSId(userEmail);
     if (!result.success) {
