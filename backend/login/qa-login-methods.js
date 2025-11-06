@@ -27,6 +27,7 @@ const loginQAMember = async ({ userEmail, secret }, generateSessionToken) => {
 
     const qaSecret = await getSecret('ABMP_QA_SECRET');
     if (secret !== qaSecret) {
+      console.log('Invalid secret', secret, qaSecret);
       return { success: false, error: 'Invalid secret' };
     }
 
