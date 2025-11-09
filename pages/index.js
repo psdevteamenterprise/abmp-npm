@@ -5,5 +5,5 @@ module.exports = {
   ...require('./personalDetails.js'),
   ...require('./QAPage.js'),
   ...require('./LoadingPage.js'),
-  ...require('./selecBannerImages.js'),
+  ...require('./SelectBannerImages.js'),
 };

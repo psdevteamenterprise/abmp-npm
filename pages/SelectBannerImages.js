@@ -1,4 +1,4 @@
-const { window } = require('@wix/site-window');
+const { lightbox } = require('@wix/site-window');
 
 function selectBannerImagesOnReady({ $w: _$w }) {
   _$w('#imageDataset').onReady(async () => {
@@ -37,7 +37,7 @@ function selectBannerImagesOnReady({ $w: _$w }) {
         };
       }
     });
-    window.lightbox.close(selectedImage);
+    lightbox.close(selectedImage);
   });
 }
 
