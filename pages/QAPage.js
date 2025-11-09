@@ -10,7 +10,7 @@ async function qaPageOnReady({ $w: _$w, loginQAMember }) {
       throw new Error('Missing required parameters: userEmail and/or secret');
     }
 
-    const result = await loginQAMember(userEmail, secret);
+    const result = await loginQAMember({ userEmail, secret });
 
     if (!result.success || !result.token) {
       throw new Error(result.error || 'Login failed');

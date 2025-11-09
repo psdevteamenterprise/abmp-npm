@@ -9,7 +9,7 @@ const checkAndLogin = async authenticateSSOToken => {
   const token = query['token']?.trim();
   try {
     if (token) {
-      const authObj = await authenticateSSOToken(token);
+      const authObj = await authenticateSSOToken({ token });
       console.log('authObj', authObj);
       if (authObj.type == 'success') {
         console.log('success');

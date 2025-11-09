@@ -6,4 +6,5 @@ module.exports = {
   ...require('./QAPage.js'),
   ...require('./LoadingPage.js'),
   ...require('./deleteConfirm.js'),
+  ...require('./SaveAlerts.js'),
 };
