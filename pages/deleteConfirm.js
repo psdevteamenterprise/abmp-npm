@@ -1,14 +1,14 @@
-const { window } = require('@wix/site-window');
+const { lightbox } = require('@wix/site-window');
 
 function deleteConfirmOnReady({ $w: _$w }) {
   _$w('#delete').onClick(() => {
-    window.lightbox.close({
+    lightbox.close({
       toDelete: true,
     });
   });
 
   _$w('#cancel').onClick(() => {
-    window.lightbox.close({
+    lightbox.close({
       toDelete: false,
     });
   });
