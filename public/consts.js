@@ -95,8 +95,6 @@ const PAGES_PATHS = {
   MEMBERS_FORM: 'directory-website-update',
 };
 
-const ABMP_MEMBERS_HOME_URL = 'https://www.abmp.com/members';
-
 module.exports = {
   REGEX,
   COLLECTIONS,
@@ -109,5 +107,4 @@ module.exports = {
   FREE_WEBSITE_TEXT_STATES,
   DEFAULT_BUSINESS_NAME_TEXT,
   PAGES_PATHS,
-  ABMP_MEMBERS_HOME_URL,
 };
