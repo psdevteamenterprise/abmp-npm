@@ -5,5 +5,6 @@ module.exports = {
   ...require('./personalDetails.js'),
   ...require('./QAPage.js'),
   ...require('./LoadingPage.js'),
+  ...require('./deleteConfirm.js'),
   ...require('./SaveAlerts.js'),
 };
