@@ -1,7 +1,7 @@
 const { taskManager, TASK_TYPE } = require('psdev-task-manager');
 
 const { COMPILED_FILTERS_FIELDS } = require('./consts');
-const { TASKS_NAMES } = require('./tasks');
+const { TASKS_NAMES } = require('./tasks/consts');
 
 const scheduleCompileFiltersTask = field =>
   taskManager().schedule({
