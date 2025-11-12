@@ -108,7 +108,7 @@ async function findMemberById(memberId) {
  * @param {boolean} options.excludeDropped - Whether to exclude dropped members (default: true)
  * @param {boolean} options.excludeSearchedMember - Whether to exclude a specific member (default: false)
  * @param {string|number} [options.memberId] - Member ID to exclude when excludeSearchedMember is true (optional)
- * @param {boolean} [options.queryAllMatches=false] - Whether to query all matches or just the first one (default: false)
+ * @param {boolean} [options.normalizeSlugForComparison=false] - Whether to normalize the slug for comparison (default: false)
  * @returns {Promise<Object|null>} - Member data or null if not found
  */
 async function getMemberBySlug({
@@ -116,7 +116,7 @@ async function getMemberBySlug({
   excludeDropped = true,
   excludeSearchedMember = false,
   memberId = null,
-  queryAllMatches = false,
+  normalizeSlugForComparison = false,
 }) {
   if (!slug) return null;
 
@@ -130,17 +130,12 @@ async function getMemberBySlug({
     if (excludeSearchedMember && memberId) {
       query = query.ne('memberId', memberId);
     }
-    let membersList;
-    if (queryAllMatches) {
-      query = query.limit(1000);
-      membersList = await queryAllItems(query);
-    } else {
-      membersList = await query.find().then(res => res.items);
-    }
+    query = query.limit(1000);
+    const membersList = await queryAllItems(query);
     let matchingMembers = membersList.filter(
       item => item.url && item.url.toLowerCase() === slug.toLowerCase()
     );
-    if (queryAllMatches) {
+    if (normalizeSlugForComparison) {
       matchingMembers = membersList
         .filter(
           //remove trailing "-1", "-2", etc.
@@ -152,7 +147,7 @@ async function getMemberBySlug({
       const queryResultMsg = `Multiple members found with same slug ${slug} membersIds are : [${matchingMembers
         .map(member => member.memberId)
         .join(', ')}]`;
-      if (!queryAllMatches) {
+      if (!normalizeSlugForComparison) {
         throw new Error(queryResultMsg);
       } else {
         console.log(queryResultMsg);
