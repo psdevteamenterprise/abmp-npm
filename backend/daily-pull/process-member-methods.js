@@ -42,7 +42,7 @@ const ensureUniqueUrl = async ({ url, memberId, fullName }) => {
     excludeDropped: true,
     excludeSearchedMember: true,
     memberId,
-    queryAllMatches: true,
+    normalizeSlugForComparison: true,
   });
   if (existingMember && existingMember.url) {
     console.log(
