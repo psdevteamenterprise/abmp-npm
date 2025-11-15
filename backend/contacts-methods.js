@@ -17,10 +17,15 @@ async function updateContactInfo(contactId, updateInfoCallback, operationName) {
 
   try {
     const contact = await elevatedGetContact(contactId);
+    console.log('debug contact', contact);
     const currentInfo = contact.info;
+    console.log('debug currentInfo', currentInfo);
     const updatedInfo = updateInfoCallback(currentInfo);
+    console.log('debug updatedInfo', updatedInfo);
 
-    await elevatedUpdateContact(contactId, { info: updatedInfo }, contact.revision);
+    const result = await elevatedUpdateContact(contactId, updatedInfo, contact.revision);
+    console.log('debug result', result);
+    return result;
   } catch (error) {
     console.error(`Error in ${operationName}:`, error);
     throw new Error(`Failed to ${operationName}: ${error.message}`);
