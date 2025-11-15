@@ -13,4 +13,5 @@ module.exports = {
   ...require('./login'),
   ...require('./data-hooks'),
   ...require('./http-functions'),
+  ...require('./test-methods'), // Debug/test methods for contact email update investigation
 };
