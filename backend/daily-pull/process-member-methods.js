@@ -60,11 +60,17 @@ const ensureUniqueUrl = async ({ url, memberId, fullName }) => {
 
 /**
  * Generates complete updated member data by combining existing and migration data
- * @param {Object} inputMemberData - Raw member data from API
- * @param {number} currentPageNumber - Current page number being processed
+ * @param {Object} options - The options object
+ * @param {Object} options.inputMemberData - Raw member data from API
+ * @param {string} options.addInterests - Site association of the member
+ * @param {number} options.currentPageNumber - Current page number being processed
  * @returns {Promise<Object|null>} - Complete updated member data or null if validation fails
  */
-async function generateUpdatedMemberData(inputMemberData, currentPageNumber) {
+async function generateUpdatedMemberData({
+  inputMemberData,
+  addInterests = true,
+  currentPageNumber,
+}) {
   if (!validateCoreMemberData(inputMemberData)) {
     throw new Error(
       'Invalid member data: memberid, email (valid string), and memberships (array) are required'
@@ -86,7 +92,11 @@ async function generateUpdatedMemberData(inputMemberData, currentPageNumber) {
 
   // Only enrich with migration and address data for new members
   if (!existingDbMember) {
-    enrichWithMigrationData(updatedMemberData, inputMemberData.migrationData);
+    enrichWithMigrationData({
+      memberDataToUpdate: updatedMemberData,
+      migrationData: inputMemberData.migrationData,
+      addInterests,
+    });
 
     enrichWithAddressData(
       updatedMemberData,
@@ -196,10 +206,13 @@ async function getNewMemberOnlyFields(inputMemberData, existingDbMember) {
 }
 /**
  * Enriches member data with optional migration properties
- * @param {Object} memberDataToUpdate - Member data object to enhance
+ * @param {Object} options - The options object
+ * @param {Object} options.memberDataToUpdate - Member data object to enhance
+ * @param {Object} options.migrationData - Migration data containing optional properties
+ * @param {boolean} [options.addInterests=true] - Whether to add interests to the member data
  * @param {Object} migrationData - Migration data containing optional properties
  */
-function enrichWithMigrationData(memberDataToUpdate, migrationData) {
+function enrichWithMigrationData({ memberDataToUpdate, migrationData, addInterests = true }) {
   if (!migrationData) return;
 
   memberDataToUpdate.addressInfo = migrationData.addressinfo;
@@ -209,7 +222,7 @@ function enrichWithMigrationData(memberDataToUpdate, migrationData) {
     memberDataToUpdate.showWebsite = true;
   }
 
-  if (migrationData.interests) {
+  if (addInterests && migrationData.interests) {
     memberDataToUpdate.areasOfPractices = processInterests(migrationData.interests);
   }
 }
