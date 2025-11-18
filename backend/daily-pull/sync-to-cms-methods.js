@@ -6,6 +6,7 @@ const { TASKS_NAMES } = require('../tasks/consts');
 const { getSiteConfigs } = require('../utils');
 
 const { bulkProcessAndSaveMemberData } = require('./bulk-process-methods');
+const { SITES_WITH_INTERESTS_TO_MIGRATE } = require('./consts');
 const { isUpdatedMember, isSiteAssociatedMember } = require('./utils');
 
 async function syncMembersDataPerAction(action) {
@@ -79,6 +80,7 @@ async function synchronizeSinglePage(taskObject) {
       getSiteConfigs(CONFIG_KEYS.SITE_ASSOCIATION),
       fetchPACMembers(pageNumber, action),
     ]);
+    const addInterests = SITES_WITH_INTERESTS_TO_MIGRATE.includes(siteAssociation);
     if (
       !memberDataResponse ||
       !memberDataResponse.results ||
@@ -98,7 +100,11 @@ async function synchronizeSinglePage(taskObject) {
         message: `No to be updated, or members of association: '${siteAssociation}' found`,
       };
     }
-    const result = await bulkProcessAndSaveMemberData(toSyncMembers, pageNumber);
+    const result = await bulkProcessAndSaveMemberData({
+      memberDataList: toSyncMembers,
+      currentPageNumber: pageNumber,
+      addInterests,
+    });
 
     return {
       success: true,

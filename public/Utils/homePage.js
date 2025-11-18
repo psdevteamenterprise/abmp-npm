@@ -127,6 +127,8 @@ const createHomepageUtils = (_$w, filterProfiles) => {
 
     paginateSearchResults(searchResults, pagination);
     await updateUrlParams(filter, pagination);
+
+    _$w('#resultsStateBox').scrollTo();
   }
 
   async function onChangeMultiCheckbox({
