@@ -10,6 +10,7 @@ const {
   normalizeUrlForComparison,
   queryAllItems,
   generateGeoHash,
+  searchAllItems,
 } = require('./utils');
 
 /**
@@ -121,7 +122,7 @@ async function getMemberBySlug({
   if (!slug) return null;
 
   try {
-    let query = wixData.query(COLLECTIONS.MEMBERS_DATA).contains('url', slug);
+    let query = wixData.search(COLLECTIONS.MEMBERS_DATA).expression(slug);
 
     if (excludeDropped) {
       query = query.ne('action', 'drop');
@@ -131,7 +132,8 @@ async function getMemberBySlug({
       query = query.ne('memberId', memberId);
     }
     query = query.limit(1000);
-    const membersList = await queryAllItems(query);
+    const searchResult = await searchAllItems(query);
+    const membersList = searchResult.items.filter(item => item.url && item.url.includes(slug)); //replacement for contains
     let matchingMembers = membersList.filter(
       item => item.url && item.url.toLowerCase() === slug.toLowerCase()
     );
