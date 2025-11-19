@@ -1,4 +1,4 @@
-const { PAC_API_URL } = require('./consts');
+const { PAC_API_URL: _PAC_API_URL, BACKUP_API_URL } = require('./consts');
 const { getSecret } = require('./utils');
 
 const getHeaders = async () => {
@@ -9,7 +9,7 @@ const getHeaders = async () => {
   return headers;
 };
 const fetchPACMembers = async (pageNum, actionFilter) => {
-  const url = `${PAC_API_URL}/Members?page=${pageNum}&actionFilter=${actionFilter}`;
+  const url = `${BACKUP_API_URL}/Members?page=${pageNum}&actionFilter=${actionFilter}`;
   const headers = await getHeaders();
   const fetchOptions = {
     method: 'get',
