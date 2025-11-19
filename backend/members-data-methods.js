@@ -133,7 +133,7 @@ async function getMemberBySlug({
     }
     query = query.limit(1000);
     const searchResult = await searchAllItems(query);
-    const membersList = searchResult.items.filter(item => item.url && item.url.includes(slug)); //replacement for contains
+    const membersList = searchResult.filter(item => item.url && item.url.includes(slug)); //replacement for contains
     let matchingMembers = membersList.filter(
       item => item.url && item.url.toLowerCase() === slug.toLowerCase()
     );
