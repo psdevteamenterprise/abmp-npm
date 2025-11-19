@@ -1,4 +1,5 @@
 const PAC_API_URL = 'https://members.abmp.com/eweb/api/Wix';
+const BACKUP_API_URL = 'https://psdevteamenterpris.wixstudio.com/abmp-backup/_functions';
 const SSO_TOKEN_AUTH_API_URL = 'https://members.professionalassistcorp.com/';
 
 /**
@@ -40,4 +41,5 @@ module.exports = {
   COMPILED_FILTERS_FIELDS,
   MEMBERSHIPS_TYPES,
   SSO_TOKEN_AUTH_API_URL,
+  BACKUP_API_URL,
 };
