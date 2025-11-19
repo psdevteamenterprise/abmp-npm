@@ -12,7 +12,7 @@ const wixData = {
   get: auth.elevate(items.get),
   truncate: auth.elevate(items.truncate),
   bulkSave: auth.elevate(items.bulkSave),
-  search: auth.elevate(items.search),
   //TODO: add other methods here as needed
 };
+
 module.exports = { wixData };
