@@ -107,17 +107,27 @@ function getAddressesByStatus(addresses = [], addressDisplayOption = []) {
     })
     .filter(Boolean);
 }
-const queryAllItems = async query => {
-  console.log('start query');
-  let oldResults = await query.find();
+const getAllItems = async querySearchResult => {
+  let oldResults = querySearchResult;
   console.log(`found items: ${oldResults.items.length}`);
   const allItems = oldResults.items;
   while (oldResults.hasNext()) {
     oldResults = await oldResults.next();
     allItems.push(...oldResults.items);
   }
-  console.log(`all items: ${allItems.length}`);
+  console.log(`all items count : ${allItems.length}`);
   return allItems;
+};
+const searchAllItems = async searchQuery => {
+  console.log('start search');
+  const searchResults = await searchQuery.run();
+  return getAllItems(searchResults);
+};
+
+const queryAllItems = async query => {
+  console.log('start query');
+  const queryResults = await query.find();
+  return getAllItems(queryResults);
 };
 /**
  * Chunks large arrays into smaller chunks for processing
@@ -206,4 +216,5 @@ module.exports = {
   formatDateOnly,
   getAddressesByStatus,
   isPAC_STAFF,
+  searchAllItems,
 };
