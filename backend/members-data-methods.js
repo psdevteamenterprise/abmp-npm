@@ -273,7 +273,7 @@ async function urlExists(url, excludeMemberId) {
     let query = wixData
       .query(COLLECTIONS.MEMBERS_DATA)
       .contains('url', url)
-      .ne('action', MEMBER_ACTIONS.DROP);//TODO: change it to wix search 
+      .ne('action', MEMBER_ACTIONS.DROP); //TODO: change it to wix search
 
     if (excludeMemberId) {
       query = query.ne('memberId', excludeMemberId);
