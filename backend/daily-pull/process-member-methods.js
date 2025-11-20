@@ -39,7 +39,7 @@ const ensureUniqueUrl = async ({ url, memberId, fullName }) => {
 
   const existingMember = await getMemberBySlug({
     slug: uniqueUrl,
-    excludeDropped: true,
+    excludeDropped: false,
     excludeSearchedMember: true,
     memberId,
     normalizeSlugForComparison: true,
