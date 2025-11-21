@@ -1106,6 +1106,7 @@ async function personalDetailsOnReady({
         });
         _$w('#profileLink').text = newProfileLink;
         _$w('#profileLink').link = newProfileLink;
+        _$w('#urlWebsiteText').text = newProfileLink;
 
         _$w(SLUG_FLAGS.VALID).collapse();
         _$w(SLUG_FLAGS.INVALID).collapse();
