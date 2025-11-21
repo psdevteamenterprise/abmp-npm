@@ -1858,8 +1858,15 @@ async function personalDetailsOnReady({
         itemMemberObj.toShowPhone = null;
       }
 
+      if (itemMemberObj.phones) {
+        itemMemberObj.phones = itemMemberObj.phones.filter(
+          phone => phone !== phoneToRemove.phoneNumber
+        );
+      }
+
       const updatedData = currentData.filter(item => item._id !== phoneId);
       renderPhonesList(updatedData);
+      checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     }
   }
 
