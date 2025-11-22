@@ -300,4 +300,5 @@ async function createCoreMemberData(inputMemberData, existingDbMember, currentPa
 
 module.exports = {
   generateUpdatedMemberData,
+  ensureUniqueUrl,
 };
