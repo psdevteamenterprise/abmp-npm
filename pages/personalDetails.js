@@ -1106,6 +1106,7 @@ async function personalDetailsOnReady({
         });
         _$w('#profileLink').text = newProfileLink;
         _$w('#profileLink').link = newProfileLink;
+        _$w('#urlWebsiteText').text = newProfileLink;
 
         _$w(SLUG_FLAGS.VALID).collapse();
         _$w(SLUG_FLAGS.INVALID).collapse();
@@ -1858,8 +1859,15 @@ async function personalDetailsOnReady({
         itemMemberObj.toShowPhone = null;
       }
 
+      if (itemMemberObj.phones) {
+        itemMemberObj.phones = itemMemberObj.phones.filter(
+          phone => phone !== phoneToRemove.phoneNumber
+        );
+      }
+
       const updatedData = currentData.filter(item => item._id !== phoneId);
       renderPhonesList(updatedData);
+      checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     }
   }
 
