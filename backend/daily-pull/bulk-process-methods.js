@@ -1,7 +1,12 @@
 const { bulkSaveMembers, getMemberBySlug } = require('../members-data-methods');
 
 const { generateUpdatedMemberData } = require('./process-member-methods');
-const { changeWixMembersEmails, extractUrlCounter, incrementUrlCounter } = require('./utils');
+const {
+  changeWixMembersEmails,
+  extractUrlCounter,
+  incrementUrlCounter,
+  extractBaseUrl,
+} = require('./utils');
 
 /**
  * Ensures unique URLs within a batch of members by deduplicating URLs
@@ -23,7 +28,8 @@ async function ensureUniqueUrlsInBatch(memberDataList) {
       return;
     }
 
-    const baseUrl = member.url;
+    // Extract the base URL (without any counter) for grouping
+    const baseUrl = extractBaseUrl(member.url);
     if (!urlGroups.has(baseUrl)) {
       urlGroups.set(baseUrl, []);
     }
@@ -53,10 +59,10 @@ async function ensureUniqueUrlsInBatch(memberDataList) {
       continue;
     }
 
-    // Sort members to ensure consistent ordering (by memberId for determinism)
+    // Sort members to ensure consistent ordering
     members.sort((a, b) => {
-      if (a.memberId && b.memberId) {
-        return String(a.memberId).localeCompare(String(b.memberId));
+      if (a.url && b.url) {
+        return String(a.url).localeCompare(String(b.url));
       }
       return 0;
     });
@@ -102,7 +108,9 @@ async function ensureUniqueUrlsInBatch(memberDataList) {
     });
 
     console.log(
-      `Deduplicated ${members.length} members with base URL "${baseUrl}" (DB max: ${dbMaxCounter}, batch max: ${batchMaxCounter}, start: ${startIndex}): ${members
+      `Deduplicated ${
+        members.length
+      } members with base URL "${baseUrl}" (DB max: ${dbMaxCounter}, batch max: ${batchMaxCounter}, start: ${startIndex}): ${members
         .map(m => m.url)
         .join(', ')}`
     );
@@ -144,10 +152,6 @@ const bulkProcessAndSaveMemberData = async ({
     const validMemberData = processedMemberDataList.filter(
       data => data !== null && data !== undefined
     );
-
-    // Ensure unique URLs within the batch to prevent duplicates (also checks DB for cross-page conflicts)
-    await ensureUniqueUrlsInBatch(validMemberData);
-
     if (validMemberData.length === 0) {
       return {
         totalProcessed: memberDataList.length,
@@ -156,9 +160,14 @@ const bulkProcessAndSaveMemberData = async ({
         processingTime: Date.now() - startTime,
       };
     }
+    const newMembers = validMemberData.filter(data => data.isNewToDb);
+    const existingMembers = validMemberData.filter(data => !data.isNewToDb);
+    // Ensure unique URLs within the batch to prevent duplicates (also checks DB for cross-page conflicts)
+    const uniqueUrlsNewToDBMembersList = await ensureUniqueUrlsInBatch(newMembers);
+    const uniqueUrlsMembersData = [...uniqueUrlsNewToDBMembersList, ...existingMembers];
     const toChangeWixMembersEmails = [];
-    const toSaveMembersData = validMemberData.map(member => {
-      const { isLoginEmailChanged, ...restMemberData } = member;
+    const toSaveMembersData = uniqueUrlsMembersData.map(member => {
+      const { isLoginEmailChanged, isNewToDb: _isNewToDb, ...restMemberData } = member;
       if (member.contactId && isLoginEmailChanged) {
         toChangeWixMembersEmails.push(member);
       }

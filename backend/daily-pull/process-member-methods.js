@@ -105,7 +105,7 @@ async function generateUpdatedMemberData({
     );
   }
 
-  return updatedMemberData;
+  return { ...updatedMemberData, isNewToDb: !existingDbMember };
 }
 
 /**

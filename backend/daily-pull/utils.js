@@ -22,6 +22,18 @@ const extractUrlCounter = url => {
   return isNumeric ? parseInt(lastSegment, 10) : -1;
 };
 
+const extractBaseUrl = url => {
+  if (!url) return url;
+  const urlParts = url.split('-');
+  const lastSegment = urlParts[urlParts.length - 1];
+  const isNumeric = /^\d+$/.test(lastSegment);
+  if (isNumeric && urlParts.length > 1) {
+    // Remove the numeric counter to get the base URL
+    return urlParts.slice(0, -1).join('-');
+  }
+  // No counter found, return the URL as-is
+  return url;
+};
 const incrementUrlCounter = (existingUrl, baseUrl) => {
   if (existingUrl && existingUrl === baseUrl) {
     console.log(
@@ -95,4 +107,5 @@ module.exports = {
   createFullName,
   extractUrlCounter,
   incrementUrlCounter,
+  extractBaseUrl,
 };
