@@ -318,5 +318,4 @@ module.exports = {
   migrateUrlsChunk,
   scheduleGenerateMissingUrls,
   generateUrlsChunk,
-  TASKS_NAMES,
 };
