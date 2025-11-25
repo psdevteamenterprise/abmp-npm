@@ -111,8 +111,10 @@ const getAllItems = async querySearchResult => {
   let oldResults = querySearchResult;
   console.log(`found items: ${oldResults.items.length}`);
   const allItems = oldResults.items;
+  console.log(`total pages: ${oldResults.totalPages}`);
   while (oldResults.hasNext()) {
     oldResults = await oldResults.next();
+    console.log(`next page: ${oldResults.currentPage}`);
     allItems.push(...oldResults.items);
   }
   console.log(`all items count : ${allItems.length}`);

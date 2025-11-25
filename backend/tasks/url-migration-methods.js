@@ -3,7 +3,7 @@ const { taskManager } = require('psdev-task-manager');
 const { COLLECTIONS } = require('../../public/consts');
 const { ensureUniqueUrl } = require('../daily-pull/process-member-methods');
 const { wixData } = require('../elevated-modules');
-const { bulkSaveMembers, findMemberById } = require('../members-data-methods');
+// const { bulkSaveMembers } = require('../members-data-methods');
 const { queryAllItems, chunkArray } = require('../utils');
 
 const { TASKS_NAMES } = require('./consts');
@@ -20,7 +20,10 @@ async function scheduleMigrateExistingUrls() {
 
   try {
     const membersQuery = await wixData.query(COLLECTION_WITH_URLS);
+    const startTime = Date.now();
     const membersWithUrls = await queryAllItems(membersQuery);
+    const endTime = Date.now();
+    console.log(`QueryAllItems time: ${endTime - startTime}ms`);
 
     const validMembers = membersWithUrls.filter(member => member.memberId && member.url);
     console.log(`${validMembers.length} members have valid memberId and URL`);
@@ -90,40 +93,47 @@ async function migrateUrlsChunk(data) {
     skipped: 0,
     errors: [],
     skippedIds: [],
+    failedIds: [],
   };
 
   try {
-    const memberPromises = urlData.map(async ({ memberId, url }) => {
-      try {
-        const member = await findMemberById(memberId);
+    const memberIds = urlData.map(({ memberId }) => memberId);
 
-        if (!member) {
-          console.log(`Member with memberId ${memberId} not found - skipping`);
-          result.skipped++;
-          result.skippedIds.push(memberId);
-          return null;
-        }
+    console.log(`Fetching ${memberIds.length} members from database...`);
+    const query = await wixData.query(COLLECTIONS.MEMBERS_DATA).hasSome('memberId', memberIds);
+    const members = await queryAllItems(query);
+    console.log(`Found ${members.length} members in database`);
 
-        if (member.url === url) {
-          console.log(`Member ${member._id} already has URL ${url} - skipping`);
-          result.skipped++;
-          result.skippedIds.push(memberId);
-          return null;
-        }
-
-        return {
-          ...member,
-          url: url,
-        };
-      } catch (error) {
-        console.error(`Error preparing member ${memberId}:`, error);
-        result.failed++;
-        result.errors.push({ memberId, error: error.message });
-        return null;
+    const memberMap = new Map();
+    members.forEach(member => {
+      if (member.memberId) {
+        memberMap.set(member.memberId, member);
       }
     });
 
-    const membersToUpdate = (await Promise.all(memberPromises)).filter(Boolean);
+    const membersToUpdate = [];
+    for (const { memberId, url } of urlData) {
+      const member = memberMap.get(memberId);
+
+      if (!member) {
+        console.log(`Member with memberId ${memberId} not found - skipping`);
+        result.skipped++;
+        result.skippedIds.push(memberId);
+        continue;
+      }
+
+      if (member.url === url) {
+        console.log(`Member ${member._id} already has URL ${url} - skipping`);
+        result.skipped++;
+        result.skippedIds.push(memberId);
+        continue;
+      }
+
+      membersToUpdate.push({
+        ...member,
+        url: url,
+      });
+    }
 
     if (membersToUpdate.length === 0) {
       console.log('No members need updating in this batch');
@@ -135,12 +145,15 @@ async function migrateUrlsChunk(data) {
     );
 
     try {
-      await bulkSaveMembers(membersToUpdate);
+      // keep bulk save as comment for now, since we are just testing the query and update logic
+      // await bulkSaveMembers(membersToUpdate);
       result.successful += membersToUpdate.length;
       console.log(`✅ Successfully updated ${membersToUpdate.length} members`);
     } catch (error) {
       console.error(`❌ Error bulk saving members:`, error);
       result.failed += membersToUpdate.length;
+      // Add all member IDs to failedIds
+      result.failedIds.push(...membersToUpdate.map(m => m.memberId));
       result.errors.push({
         error: error.message,
         memberCount: membersToUpdate.length,
@@ -150,6 +163,15 @@ async function migrateUrlsChunk(data) {
     console.log(
       `Chunk ${chunkIndex + 1} complete: ${result.successful} success, ${result.failed} failed, ${result.skipped} skipped`
     );
+
+    // Log failed and skipped IDs if any
+    if (result.failedIds.length > 0) {
+      console.log(`❌ Failed memberIds (${result.failedIds.length}):`, result.failedIds);
+    }
+    if (result.skippedIds.length > 0) {
+      console.log(`⏭️  Skipped memberIds (${result.skippedIds.length}):`, result.skippedIds);
+    }
+
     return result;
   } catch (error) {
     console.error(`Error processing migration chunk ${chunkIndex}:`, error);
@@ -230,33 +252,56 @@ async function generateUrlsChunk(data) {
     skipped: 0,
     errors: [],
     skippedIds: [],
+    failedIds: [],
   };
 
   try {
-    const memberPromises = memberIds.map(async memberId => {
+    // Fetch all members at once using hasSome
+    console.log(`Fetching ${memberIds.length} members from database...`);
+    const members = await queryAllItems(
+      wixData.query(COLLECTIONS.MEMBERS_DATA).hasSome('_id', memberIds)
+    );
+    console.log(`Found ${members.length} members in database`);
+
+    // Create a map of _id -> member for quick lookup
+    const memberMap = new Map();
+    members.forEach(member => {
+      memberMap.set(member._id, member);
+    });
+
+    // Process each member and generate URLs
+    const membersToUpdate = [];
+    for (const memberId of memberIds) {
+      const member = memberMap.get(memberId);
+
+      if (!member) {
+        console.log(`Member ${memberId} not found - skipping`);
+        result.skipped++;
+        result.skippedIds.push(memberId);
+        continue;
+      }
+
+      if (member.url) {
+        console.log(`Member ${memberId} already has URL - skipping`);
+        result.skipped++;
+        result.skippedIds.push(memberId);
+        continue;
+      }
+
+      const name = member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim();
+
+      if (!name) {
+        console.error(`Member ${memberId} has no name data - skipping`);
+        result.failed++;
+        result.failedIds.push(memberId);
+        result.errors.push({
+          memberId,
+          error: 'No name data available',
+        });
+        continue;
+      }
+
       try {
-        const member = await findMemberById(memberId);
-
-        if (!member) {
-          console.log(`Member ${memberId} not found - skipping`);
-          result.skipped++;
-          result.skippedIds.push(memberId);
-          return null;
-        }
-
-        if (member.url) {
-          console.log(`Member ${memberId} already has URL - skipping`);
-          result.skipped++;
-          result.skippedIds.push(memberId);
-          return null;
-        }
-
-        const name = member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim();
-
-        if (!name) {
-          throw new Error(`Member ${memberId} has no name data`);
-        }
-
         const uniqueUrl = await ensureUniqueUrl({
           url: '',
           memberId: member._id,
@@ -264,22 +309,20 @@ async function generateUrlsChunk(data) {
         });
 
         console.log(`✅ Generated URL for member ${memberId}: ${uniqueUrl}`);
-        return {
+        membersToUpdate.push({
           ...member,
           url: uniqueUrl,
-        };
+        });
       } catch (error) {
         console.error(`❌ Failed to generate URL for member ${memberId}:`, error);
         result.failed++;
+        result.failedIds.push(memberId);
         result.errors.push({
           memberId,
           error: error.message || 'Unknown error',
         });
-        return null;
       }
-    });
-
-    const membersToUpdate = (await Promise.all(memberPromises)).filter(Boolean);
+    }
 
     if (membersToUpdate.length === 0) {
       console.log('No members need updating in this batch');
@@ -291,12 +334,15 @@ async function generateUrlsChunk(data) {
     );
 
     try {
-      await bulkSaveMembers(membersToUpdate);
+      // keep bulk save as comment for now, since we are just testing the query and update logic
+      // await bulkSaveMembers(membersToUpdate);
       result.successful += membersToUpdate.length;
       console.log(`✅ Successfully updated ${membersToUpdate.length} members`);
     } catch (error) {
       console.error(`❌ Error bulk saving members:`, error);
       result.failed += membersToUpdate.length;
+      // Add all member _ids to failedIds
+      result.failedIds.push(...membersToUpdate.map(m => m._id));
       result.errors.push({
         error: error.message,
         memberCount: membersToUpdate.length,
@@ -306,6 +352,15 @@ async function generateUrlsChunk(data) {
     console.log(
       `Chunk ${chunkIndex + 1} complete: ${result.successful} success, ${result.failed} failed, ${result.skipped} skipped`
     );
+
+    // Log failed and skipped IDs if any
+    if (result.failedIds.length > 0) {
+      console.log(`❌ Failed memberIds (${result.failedIds.length}):`, result.failedIds);
+    }
+    if (result.skippedIds.length > 0) {
+      console.log(`⏭️  Skipped memberIds (${result.skippedIds.length}):`, result.skippedIds);
+    }
+
     return result;
   } catch (error) {
     console.error(`Error processing generation chunk ${chunkIndex}:`, error);

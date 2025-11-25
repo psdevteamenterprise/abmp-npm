@@ -130,28 +130,28 @@ const TASKS = {
     getIdentifier: () => 'SHOULD_NEVER_SKIP',
     process: scheduleMigrateExistingUrls,
     shouldSkipCheck: () => false,
-    estimatedDurationSec: 30,
+    estimatedDurationSec: 160,
   },
   [TASKS_NAMES.migrateUrlsChunk]: {
     name: TASKS_NAMES.migrateUrlsChunk,
     getIdentifier: task => `chunk-${task.data.chunkIndex}`,
     process: migrateUrlsChunk,
     shouldSkipCheck: () => false,
-    estimatedDurationSec: 50,
+    estimatedDurationSec: 80,
   },
   [TASKS_NAMES.scheduleGenerateMissingUrls]: {
     name: TASKS_NAMES.scheduleGenerateMissingUrls,
     getIdentifier: () => 'SHOULD_NEVER_SKIP',
     process: scheduleGenerateMissingUrls,
     shouldSkipCheck: () => false,
-    estimatedDurationSec: 30,
+    estimatedDurationSec: 160,
   },
   [TASKS_NAMES.generateUrlsChunk]: {
     name: TASKS_NAMES.generateUrlsChunk,
     getIdentifier: task => `chunk-${task.data.chunkIndex}`,
     process: generateUrlsChunk,
     shouldSkipCheck: () => false,
-    estimatedDurationSec: 55,
+    estimatedDurationSec: 80,
   },
 };
 
