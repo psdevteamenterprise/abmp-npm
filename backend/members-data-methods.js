@@ -269,23 +269,13 @@ async function urlExists(url, excludeMemberId) {
   if (!url) return false;
 
   try {
-    let query = wixData
-      .query(COLLECTIONS.MEMBERS_DATA)
-      .contains('url', url)
-      .ne('action', MEMBER_ACTIONS.DROP); //TODO: change it to wix search
-
-    if (excludeMemberId) {
-      query = query.ne('memberId', excludeMemberId);
-    }
-
-    const { items } = await query.find();
-
-    // Case-insensitive comparison
-    const matchingMembers = items.filter(
-      item => item.url && item.url.toLowerCase() === url.toLowerCase()
-    );
-
-    return matchingMembers.length > 0;
+    const member = await getMemberBySlug({
+      slug: url,
+      excludeDropped: false,
+      excludeSearchedMember: true,
+      memberId: excludeMemberId,
+    });
+    return member !== null;
   } catch (error) {
     console.error('Error checking URL existence:', error);
     return false;
