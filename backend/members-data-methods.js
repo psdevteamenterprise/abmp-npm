@@ -61,9 +61,10 @@ async function createContactAndMemberIfNew(memberData) {
 
 /** Performs bulk save operation for member data
  * @param { Array } memberDataList - Array of member data objects to save
+ * @param { string } [collectionName] - The collection name to save the members to (default: COLLECTIONS.MEMBERS_DATA)
  * @returns { Promise < Object >} - Bulk save operation result
  */
-async function bulkSaveMembers(memberDataList) {
+async function bulkSaveMembers(memberDataList, collectionName = COLLECTIONS.MEMBERS_DATA) {
   if (!Array.isArray(memberDataList) || memberDataList.length === 0) {
     throw new Error('Invalid member data list provided for bulk save');
   }
@@ -71,9 +72,7 @@ async function bulkSaveMembers(memberDataList) {
   try {
     // bulkSave all with batches of 1000 items as this is the Velo limit for bulkSave
     const batches = chunkArray(memberDataList, 1000);
-    return await Promise.all(
-      batches.map(batch => wixData.bulkSave(COLLECTIONS.MEMBERS_DATA, batch))
-    );
+    return await Promise.all(batches.map(batch => wixData.bulkSave(collectionName, batch)));
   } catch (error) {
     console.error('Error bulk saving members:', error);
     throw new Error(`Bulk save failed: ${error.message}`);
