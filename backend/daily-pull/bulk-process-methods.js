@@ -1,7 +1,123 @@
-const { bulkSaveMembers } = require('../members-data-methods');
+const { bulkSaveMembers, getMemberBySlug } = require('../members-data-methods');
 
 const { generateUpdatedMemberData } = require('./process-member-methods');
-const { changeWixMembersEmails } = require('./utils');
+const {
+  changeWixMembersEmails,
+  extractUrlCounter,
+  incrementUrlCounter,
+  extractBaseUrl,
+} = require('./utils');
+
+/**
+ * Ensures unique URLs within a batch of members by deduplicating URLs
+ * Groups members by their base URL (normalized) and assigns unique counters
+ * Also checks database to handle cross-page conflicts
+ * @param {Array} memberDataList - Array of processed member data
+ * @returns {Promise<Array>} - Array of members with unique URLs assigned
+ */
+async function ensureUniqueUrlsInBatch(memberDataList) {
+  if (!Array.isArray(memberDataList) || memberDataList.length === 0) {
+    return memberDataList;
+  }
+
+  // Group members by their normalized base URL
+  const urlGroups = new Map();
+
+  memberDataList.forEach(member => {
+    if (!member || !member.url) {
+      return;
+    }
+
+    // Extract the base URL (without any counter) for grouping
+    const baseUrl = extractBaseUrl(member.url);
+    if (!urlGroups.has(baseUrl)) {
+      urlGroups.set(baseUrl, []);
+    }
+    urlGroups.get(baseUrl).push(member);
+  });
+
+  // For each group, check database and assign unique URLs sequentially
+  for (const [baseUrl, members] of urlGroups.entries()) {
+    if (members.length <= 1) {
+      // Single member - still check DB to ensure it doesn't conflict with other pages
+      const member = members[0];
+      if (member) {
+        const dbMember = await getMemberBySlug({
+          slug: baseUrl,
+          excludeDropped: false,
+          normalizeSlugForComparison: true,
+        });
+
+        if (dbMember && dbMember.url) {
+          // Conflict found in DB, need to add counter
+          member.url = incrementUrlCounter(dbMember.url, baseUrl);
+          console.log(
+            `Found DB conflict for single member with base URL "${baseUrl}", assigned: ${member.url}`
+          );
+        }
+      }
+      continue;
+    }
+
+    // Sort members to ensure consistent ordering
+    members.sort((a, b) => {
+      if (a.url && b.url) {
+        return String(a.url).localeCompare(String(b.url));
+      }
+      return 0;
+    });
+
+    // Check database for existing members with this base URL to find highest counter
+    const dbMember = await getMemberBySlug({
+      slug: baseUrl,
+      excludeDropped: false,
+      normalizeSlugForComparison: true,
+    });
+
+    const dbMaxCounter = extractUrlCounter(dbMember?.url);
+
+    // Find the highest existing counter among all members in this batch group
+    let batchMaxCounter = -1;
+    members.forEach(member => {
+      const originalUrl = member.url;
+      const urlParts = originalUrl.split('-');
+      const lastSegment = urlParts[urlParts.length - 1];
+      const isNumeric = /^\d+$/.test(lastSegment);
+      if (isNumeric) {
+        const counter = parseInt(lastSegment, 10);
+        if (counter > batchMaxCounter) {
+          batchMaxCounter = counter;
+        }
+      }
+    });
+
+    // Start index from the maximum of DB counter and batch counter + 1
+    const maxCounter = Math.max(dbMaxCounter, batchMaxCounter);
+    const startIndex = maxCounter + 1;
+
+    // Assign unique URLs: start from the appropriate index
+    members.forEach((member, index) => {
+      const assignedIndex = startIndex + index;
+      if (assignedIndex === 0) {
+        // Index 0 means no counter, use baseUrl
+        member.url = baseUrl;
+      } else {
+        // Index > 0 means add counter
+        member.url = `${baseUrl}-${assignedIndex}`;
+      }
+    });
+
+    console.log(
+      `Deduplicated ${
+        members.length
+      } members with base URL "${baseUrl}" (DB max: ${dbMaxCounter}, batch max: ${batchMaxCounter}, start: ${startIndex}): ${members
+        .map(m => m.url)
+        .join(', ')}`
+    );
+  }
+
+  return memberDataList;
+}
 
 /**
  * Processes and saves multiple member records in bulk
@@ -36,7 +152,6 @@ const bulkProcessAndSaveMemberData = async ({
     const validMemberData = processedMemberDataList.filter(
       data => data !== null && data !== undefined
     );
-
     if (validMemberData.length === 0) {
       return {
         totalProcessed: memberDataList.length,
@@ -45,9 +160,14 @@ const bulkProcessAndSaveMemberData = async ({
         processingTime: Date.now() - startTime,
       };
     }
+    const newMembers = validMemberData.filter(data => data.isNewToDb);
+    const existingMembers = validMemberData.filter(data => !data.isNewToDb);
+    // Ensure unique URLs within the batch to prevent duplicates (also checks DB for cross-page conflicts)
+    const uniqueUrlsNewToDBMembersList = await ensureUniqueUrlsInBatch(newMembers);
+    const uniqueUrlsMembersData = [...uniqueUrlsNewToDBMembersList, ...existingMembers];
     const toChangeWixMembersEmails = [];
-    const toSaveMembersData = validMemberData.map(member => {
-      const { isLoginEmailChanged, ...restMemberData } = member;
+    const toSaveMembersData = uniqueUrlsMembersData.map(member => {
+      const { isLoginEmailChanged, isNewToDb: _isNewToDb, ...restMemberData } = member;
       if (member.contactId && isLoginEmailChanged) {
         toChangeWixMembersEmails.push(member);
       }
@@ -73,4 +193,4 @@ const bulkProcessAndSaveMemberData = async ({
   }
 };
 
-module.exports = { bulkProcessAndSaveMemberData };
+module.exports = { bulkProcessAndSaveMemberData, ensureUniqueUrlsInBatch };

@@ -1,6 +1,6 @@
 {
   "name": "abmp-npm",
-  "version": "2.0.9",
+  "version": "1.1.83",
   "main": "index.js",
   "scripts": {
     "check-cycles": "madge --circular .",
@@ -9,7 +9,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,json,md}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "find-duplicates": "node dev-only-scripts/find-duplicate-urls.js"
   },
   "author": "",
   "license": "ISC",
@@ -46,6 +47,7 @@
     "crypto": "^1.0.1",
     "jwt-js-decode": "^1.9.0",
     "lodash": "^4.17.21",
+    "csv-parser": "^3.0.0",
     "ngeohash": "^0.6.3",
     "phone": "^3.1.67",
     "psdev-task-manager": "1.1.7",

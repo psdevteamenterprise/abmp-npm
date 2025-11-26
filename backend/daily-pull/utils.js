@@ -15,6 +15,36 @@ const changeWixMembersEmails = async toChangeWixMembersEmails => {
   );
 };
 
+const extractUrlCounter = url => {
+  if (!url) return -1;
+  const lastSegment = url.split('-').pop() || '0';
+  const isNumeric = /^\d+$/.test(lastSegment);
+  return isNumeric ? parseInt(lastSegment, 10) : -1;
+};
+
+const extractBaseUrl = url => {
+  if (!url) return url;
+  const urlParts = url.split('-');
+  const lastSegment = urlParts[urlParts.length - 1];
+  const isNumeric = /^\d+$/.test(lastSegment);
+  if (isNumeric && urlParts.length > 1) {
+    // Remove the numeric counter to get the base URL
+    return urlParts.slice(0, -1).join('-');
+  }
+  // No counter found, return the URL as-is
+  return url;
+};
+const incrementUrlCounter = (existingUrl, baseUrl) => {
+  if (existingUrl && existingUrl === baseUrl) {
+    console.log(
+      `Found member with same url ${existingUrl} for baseUrl ${baseUrl}, increasing counter by 1`
+    );
+    const lastSegment = existingUrl.split('-').pop() || '0';
+    const isNumeric = /^\d+$/.test(lastSegment);
+    const lastCounter = isNumeric ? parseInt(lastSegment, 10) : 0;
+    return `${baseUrl}-${lastCounter + 1}`;
+  }
+};
 /**
  * Validates core member data requirements
  * @param {Object} inputMemberData - Raw member data from API to validate
@@ -75,4 +105,7 @@ module.exports = {
   validateCoreMemberData,
   containsNonEnglish,
   createFullName,
+  extractUrlCounter,
+  incrementUrlCounter,
+  extractBaseUrl,
 };

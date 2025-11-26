@@ -39,7 +39,7 @@ const ensureUniqueUrl = async ({ url, memberId, fullName }) => {
 
   const existingMember = await getMemberBySlug({
     slug: uniqueUrl,
-    excludeDropped: true,
+    excludeDropped: false,
     excludeSearchedMember: true,
     memberId,
     normalizeSlugForComparison: true,
@@ -105,7 +105,7 @@ async function generateUpdatedMemberData({
     );
   }
 
-  return updatedMemberData;
+  return { ...updatedMemberData, isNewToDb: !existingDbMember };
 }
 
 /**
