@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const csv = require('csv-parser');
+
 const { containsNonEnglish } = require('../backend/daily-pull/utils');
 
 /**
@@ -24,7 +25,6 @@ function findNonEnglishUrls(csvFilePath) {
 
   const nonEnglishUrls = [];
   let totalMembers = 0;
-  let rowNumber = 0;
   let headersValidated = false;
   let headers = null;
   let urlColumnName = null;
@@ -89,7 +89,6 @@ function findNonEnglishUrls(csvFilePath) {
           headersValidated = true;
         }
 
-        rowNumber++;
         totalMembers++;
 
         // Get URL and memberId using the actual column names from headers
