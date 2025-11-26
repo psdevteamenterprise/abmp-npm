@@ -10,7 +10,8 @@
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,json,md}\"",
     "prepare": "husky",
-    "find-duplicates": "node dev-only-scripts/find-duplicate-urls.js"
+    "find-duplicates": "node dev-only-scripts/find-duplicate-urls.js",
+    "find-non-english-urls": "node dev-only-scripts/find-non-english-urls.js"
   },
   "author": "",
   "license": "ISC",
