@@ -89,7 +89,7 @@ const TASKS = {
     getIdentifier: () => 'SHOULD_NEVER_SKIP',
     process: updateSiteMapS3,
     shouldSkipCheck: () => false,
-    estimatedDurationSec: 70,
+    estimatedDurationSec: 90,
   },
   [TASKS_NAMES.scheduleContactFormEmailMigration]: {
     name: TASKS_NAMES.scheduleContactFormEmailMigration,
