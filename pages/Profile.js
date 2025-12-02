@@ -332,15 +332,15 @@ async function profileOnReady({ $w: _$w }) {
   }
 
   function updateTestimonialNavigation(end, totalLength) {
-    _$w('#prevTestimonialBtn').delete();
-    _$w('#nextTestimonialBtn').delete();
+    _$w('#prevTestimonialBtn').hide();
+    _$w('#nextTestimonialBtn').hide();
 
     if (currentTestimonialPage > 0) {
-      _$w('#prevTestimonialBtn').restore();
+      _$w('#prevTestimonialBtn').show();
     }
 
     if (end < totalLength) {
-      _$w('#nextTestimonialBtn').restore();
+      _$w('#nextTestimonialBtn').show();
     }
   }
 }
