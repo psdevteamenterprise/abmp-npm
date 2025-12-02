@@ -84,7 +84,7 @@ const validateCoreMemberData = inputMemberData => {
   return true;
 };
 
-const containsNonEnglish = str => /[^a-zA-Z0-9]/.test(str); // if it contains any non-english characters, test1 is allowed, but any others are not
+const containsNonEnglish = str => /[^a-zA-Z0-9-]/.test(str); // if it contains any non-english characters or invalid URL chars, test1 is allowed, hyphens are allowed
 
 /**
  * Creates a full name from first and last name components
