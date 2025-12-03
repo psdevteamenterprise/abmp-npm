@@ -62,8 +62,8 @@ async function profileOnReady({ $w: _$w }) {
     _$w('#moreAdressesRepeater').data = profileData.processedAddresses;
 
     if (profileData.processedAddresses.length > 0) {
-      _$w('#moreLocationButton').restore();
-      _$w('#addressTitle').delete();
+      _$w('#moreLocationButton').expand();
+      _$w('#addressTitle').collapse();
     }
 
     _$w('#moreAdressesRepeater').onItemReady(($item, itemData) => {
@@ -81,9 +81,9 @@ async function profileOnReady({ $w: _$w }) {
     const $container = _$w(containerId);
 
     $button.onClick(() => {
-      const isDeleted = $container.deleted;
-      $container[isDeleted ? 'restore' : 'delete']();
-      $button.label = isDeleted ? 'Less Locations  -' : 'More Locations  +';
+      const isCollapsed = $container.collapsed;
+      $container[isCollapsed ? 'expand' : 'collapse']();
+      $button.label = isCollapsed ? 'Less Locations  -' : 'More Locations  +';
     });
   }
 
@@ -104,7 +104,7 @@ async function profileOnReady({ $w: _$w }) {
 
   function bindStudentBadge() {
     if (profileData.shouldHaveStudentBadge) {
-      _$w('#studentContainer, #studentContainerMobile').restore();
+      _$w('#studentContainer, #studentContainerMobile').expand();
     } else {
       _$w('#studentContainer, #studentContainerMobile').delete();
     }
@@ -201,7 +201,7 @@ async function profileOnReady({ $w: _$w }) {
   function bindBusinessName() {
     if (profileData.businessName) {
       _$w('#businessName').text = profileData.businessName;
-      _$w('#businessName').restore();
+      _$w('#businessName').expand();
     } else {
       _$w('#businessName').delete();
     }
@@ -265,7 +265,7 @@ async function profileOnReady({ $w: _$w }) {
   function setupTestimonialsIfAvailable() {
     if (profileData.testimonials.length > 0) {
       setupTestimonialsPagination(profileData.testimonials);
-      _$w('#testimonialsSection').restore();
+      _$w('#testimonialsSection').expand();
     } else {
       _$w('#testimonialsSection').delete();
     }
