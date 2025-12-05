@@ -52,7 +52,7 @@ async function profileOnReady({ $w: _$w }) {
         profileData.mainAddress
       );
     } else {
-      collapseElements(['#locationContainer', '#location1Container', '#locationContainer2']);
+      deleteElements(['#locationContainer', '#location1Container', '#locationContainer2']);
     }
 
     setupAdditionalAddresses();
@@ -98,7 +98,7 @@ async function profileOnReady({ $w: _$w }) {
     if (profileData.memberSince) {
       _$w('#sinceYearText').text = profileData.memberSince;
     } else {
-      _$w('#memberSinceBox').collapse();
+      _$w('#memberSinceBox').delete();
     }
   }
 
@@ -106,7 +106,7 @@ async function profileOnReady({ $w: _$w }) {
     if (profileData.shouldHaveStudentBadge) {
       _$w('#studentContainer, #studentContainerMobile').expand();
     } else {
-      _$w('#studentContainer, #studentContainerMobile').collapse();
+      _$w('#studentContainer, #studentContainerMobile').delete();
     }
   }
 
@@ -114,7 +114,7 @@ async function profileOnReady({ $w: _$w }) {
     if (profileData.logoImage) {
       _$w('#logoImage').src = profileData.logoImage;
     } else {
-      _$w('#logoImage').collapse();
+      _$w('#logoImage').delete();
     }
 
     if (profileData.profileImage) {
@@ -131,7 +131,7 @@ async function profileOnReady({ $w: _$w }) {
         profileData.fullName
       );
     } else {
-      collapseElements(['#fullNameText', '#fullNameText2', '#fullNameTextFoter']);
+      deleteElements(['#fullNameText', '#fullNameText2', '#fullNameTextFoter']);
     }
   }
 
@@ -149,7 +149,7 @@ async function profileOnReady({ $w: _$w }) {
         wixWindow.openLightbox(LIGHTBOX_NAMES.CONTACT_US, profileData)
       );
     } else {
-      _$w('#contactButton').collapse();
+      _$w('#contactButton').delete();
     }
   }
 
@@ -157,7 +157,7 @@ async function profileOnReady({ $w: _$w }) {
     if (profileData.bookingUrl) {
       _$w('#bookNowButton').link = profileData.bookingUrl;
     } else {
-      _$w('#bookNowButton').collapse();
+      _$w('#bookNowButton').delete();
     }
   }
 
@@ -172,7 +172,7 @@ async function profileOnReady({ $w: _$w }) {
       _$w('#phoneText').html = getPhoneHTML(_$w('#phoneText'));
       _$w('#phoneText2').html = getPhoneHTML(_$w('#phoneText2'));
     } else {
-      collapseElements(['#phoneContainer', '#phoneContainer2']);
+      deleteElements(['#phoneContainer', '#phoneContainer2']);
     }
   }
 
@@ -180,7 +180,7 @@ async function profileOnReady({ $w: _$w }) {
     if (profileData.licenceNo) {
       _$w('#licenceNoText').text = profileData.licenceNo;
     } else {
-      _$w('#licensesContainer').collapse();
+      _$w('#licensesContainer').delete();
     }
   }
 
@@ -194,7 +194,7 @@ async function profileOnReady({ $w: _$w }) {
     if (profileData.aboutService) {
       _$w('#aboutYouText').html = profileData.aboutService;
     } else {
-      _$w('#aboutSection').collapse();
+      _$w('#aboutSection').delete();
     }
   }
 
@@ -203,7 +203,7 @@ async function profileOnReady({ $w: _$w }) {
       _$w('#businessName').text = profileData.businessName;
       _$w('#businessName').expand();
     } else {
-      _$w('#businessName').collapse();
+      _$w('#businessName').delete();
     }
   }
 
@@ -213,13 +213,13 @@ async function profileOnReady({ $w: _$w }) {
     if (areasText) {
       _$w('#areaOfPracticesText').text = areasText;
     } else {
-      _$w('#areaOfPracticesText').collapse();
+      _$w('#areaOfPracticesText').delete();
     }
 
     if (Array.isArray(profileData.areasOfPractices) && profileData.areasOfPractices.length > 0) {
       populateRepeater(profileData.areasOfPractices, '#areaOfPracticesRepeater', '#practiceText');
     } else {
-      _$w('#servicesSection').collapse();
+      _$w('#servicesSection').delete();
     }
   }
 
@@ -229,16 +229,16 @@ async function profileOnReady({ $w: _$w }) {
     }
 
     if (!profileData.gallery?.length) {
-      _$w('#gallerySection').collapse();
+      _$w('#gallerySection').delete();
     } else {
       _$w('#gallery').items = profileData.gallery;
-      _$w('#gallerySection').expand();
+      _$w('#gallerySection').restore();
     }
   }
 
   function bindTestimonialsData() {
     if (!profileData.testimonials?.length) {
-      _$w('#testimonialsSection').collapse();
+      _$w('#testimonialsSection').delete();
     }
   }
 
@@ -267,7 +267,7 @@ async function profileOnReady({ $w: _$w }) {
       setupTestimonialsPagination(profileData.testimonials);
       _$w('#testimonialsSection').expand();
     } else {
-      _$w('#testimonialsSection').collapse();
+      _$w('#testimonialsSection').delete();
     }
   }
 
@@ -283,9 +283,9 @@ async function profileOnReady({ $w: _$w }) {
     });
   }
 
-  function collapseElements(elementIds) {
+  function deleteElements(elementIds) {
     elementIds.forEach(id => {
-      _$w(id).collapse();
+      _$w(id).delete();
     });
   }
 
