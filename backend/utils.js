@@ -98,9 +98,11 @@ function getAddressesByStatus(addresses = [], addressDisplayOption = []) {
   }
   const opts = Array.isArray(addressDisplayOption) ? addressDisplayOption : [];
   const mainOpt = opts.find(o => o.isMain);
-  const mainKey = mainOpt ? mainOpt.key : visible[0].key; // fallback to the first visible if none marked
-  return visible
-    .filter(addr => addr?.key !== mainKey)
+
+  // Only filter out main address if explicitly set in addressDisplayOption
+  const addressesToFormat = mainOpt ? visible.filter(addr => addr?.key !== mainOpt.key) : visible;
+
+  return addressesToFormat
     .map(addr => {
       const addressString = formatAddress(addr);
       return addressString ? { _id: generateId(), address: addressString } : null;
