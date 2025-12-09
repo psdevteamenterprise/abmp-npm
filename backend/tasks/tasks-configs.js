@@ -17,6 +17,12 @@ const {
   scheduleEmailSync,
   syncMemberLoginEmails,
 } = require('./tasks-process-methods');
+const {
+  scheduleMigrateExistingUrls,
+  migrateUrlsChunk,
+  scheduleGenerateMissingUrls,
+  generateUrlsChunk,
+} = require('./url-migration-methods');
 
 const getDailyMembersDataSyncChildTasks = () => {
   // we don't want to sync none action as it means this members data hasn't changed and we don't need to sync it
@@ -89,7 +95,7 @@ const TASKS = {
     getIdentifier: () => 'SHOULD_NEVER_SKIP',
     process: updateSiteMapS3,
     shouldSkipCheck: () => false,
-    estimatedDurationSec: 90,
+    estimatedDurationSec: 70,
   },
   [TASKS_NAMES.scheduleContactFormEmailMigration]: {
     name: TASKS_NAMES.scheduleContactFormEmailMigration,
@@ -118,6 +124,34 @@ const TASKS = {
     process: syncMemberLoginEmails,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 45,
+  },
+  [TASKS_NAMES.scheduleMigrateExistingUrls]: {
+    name: TASKS_NAMES.scheduleMigrateExistingUrls,
+    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    process: scheduleMigrateExistingUrls,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.migrateUrlsChunk]: {
+    name: TASKS_NAMES.migrateUrlsChunk,
+    getIdentifier: task => task.data,
+    process: migrateUrlsChunk,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.scheduleGenerateMissingUrls]: {
+    name: TASKS_NAMES.scheduleGenerateMissingUrls,
+    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    process: scheduleGenerateMissingUrls,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.generateUrlsChunk]: {
+    name: TASKS_NAMES.generateUrlsChunk,
+    getIdentifier: task => task.data,
+    process: generateUrlsChunk,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
   },
 };
 

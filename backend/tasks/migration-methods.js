@@ -20,7 +20,27 @@ function scheduleExternalProfileImageMigration() {
   });
 }
 
+// Schedule URL migration from backup collection
+function scheduleUrlMigration() {
+  return taskManager().schedule({
+    name: TASKS_NAMES.scheduleMigrateExistingUrls,
+    data: {},
+    type: 'scheduled',
+  });
+}
+
+// Schedule URL generation for members without URLs
+function scheduleUrlGeneration() {
+  return taskManager().schedule({
+    name: TASKS_NAMES.scheduleGenerateMissingUrls,
+    data: {},
+    type: 'scheduled',
+  });
+}
+
 module.exports = {
   scheduleConvertHtmlToRichContent,
   scheduleExternalProfileImageMigration,
+  scheduleUrlMigration,
+  scheduleUrlGeneration,
 };

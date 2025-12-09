@@ -12,6 +12,10 @@ const TASKS_NAMES = {
   syncMemberLoginEmails: 'syncMemberLoginEmails',
   scheduleContactFormEmailMigration: 'scheduleContactFormEmailMigration',
   migrateContactFormEmails: 'migrateContactFormEmails',
+  scheduleMigrateExistingUrls: 'scheduleMigrateExistingUrls',
+  migrateUrlsChunk: 'migrateUrlsChunk',
+  scheduleGenerateMissingUrls: 'scheduleGenerateMissingUrls',
+  generateUrlsChunk: 'generateUrlsChunk',
 };
 
 module.exports = {
