@@ -289,22 +289,11 @@ async function generateUrlsChunk(data) {
 
       const name = member.fullName || `${member.firstName || ''} ${member.lastName || ''}`.trim();
 
-      if (!name) {
-        console.error(`Member ${memberId} has no name data - skipping`);
-        result.failed++;
-        result.failedIds.push(memberId);
-        result.errors.push({
-          memberId,
-          error: 'No name data available',
-        });
-        continue;
-      }
-
       try {
         const uniqueUrl = await ensureUniqueUrl({
           url: '',
           memberId: member._id,
-          fullName: name,
+          fullName: name || '', // Let ensureUniqueUrl handle fallback for empty names
         });
 
         console.log(`✅ Generated URL for member ${memberId}: ${uniqueUrl}`);
