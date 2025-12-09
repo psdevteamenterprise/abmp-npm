@@ -59,9 +59,9 @@ async function profileOnReady({ $w: _$w }) {
   }
 
   function setupAdditionalAddresses() {
-    _$w('#moreAdressesRepeater').data = profileData.processedAddresses;
+    _$w('#moreAdressesRepeater').data = profileData.moreAddressesToDisplay;
 
-    if (profileData.processedAddresses.length > 0) {
+    if (profileData.moreAddressesToDisplay.length > 0) {
       _$w('#moreLocationButton').expand();
       _$w('#addressTitle').collapse();
     }
