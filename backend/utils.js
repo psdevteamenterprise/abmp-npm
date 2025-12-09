@@ -4,7 +4,7 @@ const { site } = require('@wix/urls');
 const { encode } = require('ngeohash');
 
 const { COLLECTIONS, ADDRESS_STATUS_TYPES } = require('../public/consts');
-const { formatAddress, generateId } = require('../public/Utils/sharedUtils');
+const { formatAddress, generateId, findMainAddress } = require('../public/Utils/sharedUtils');
 
 const { CONFIG_KEYS, GEO_HASH_PRECISION, MEMBERSHIPS_TYPES } = require('./consts');
 const { wixData } = require('./elevated-modules');
@@ -91,16 +91,17 @@ function getAddressDisplayOptions(member) {
   }
   return displayOptions;
 }
-function getAddressesByStatus(addresses = [], addressDisplayOption = []) {
+function getMoreAddressesToDisplay(addresses = [], addressDisplayOption = []) {
   const visible = addresses.filter(addr => addr.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW);
   if (visible.length < 2) {
     return [];
   }
-  const opts = Array.isArray(addressDisplayOption) ? addressDisplayOption : [];
-  const mainOpt = opts.find(o => o.isMain);
-  const mainKey = mainOpt ? mainOpt.key : visible[0].key; // fallback to the first visible if none marked
-  return visible
-    .filter(addr => addr?.key !== mainKey)
+  const mainAddress = findMainAddress(addressDisplayOption, addresses);
+  const remainingAddressesToFormat = mainAddress
+    ? visible.filter(addr => addr?.key !== mainAddress.key)
+    : visible;
+
+  return remainingAddressesToFormat
     .map(addr => {
       const addressString = formatAddress(addr);
       return addressString ? { _id: generateId(), address: addressString } : null;
@@ -214,7 +215,7 @@ module.exports = {
   getSiteBaseUrl,
   encodeXml,
   formatDateOnly,
-  getAddressesByStatus,
+  getMoreAddressesToDisplay,
   isPAC_STAFF,
   searchAllItems,
 };

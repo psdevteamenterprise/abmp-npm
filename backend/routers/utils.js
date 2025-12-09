@@ -1,7 +1,7 @@
 const { getMainAddress } = require('../../public/Utils/sharedUtils');
 const { getMemberBySlug } = require('../members-data-methods');
 const {
-  getAddressesByStatus,
+  getMoreAddressesToDisplay,
   formatDateToMonthYear,
   hasStudentMembership,
   isPAC_STAFF,
@@ -48,7 +48,10 @@ function transformMemberToProfileData(member, siteAssociation) {
     ?.map(val => val.license)
     .filter(Boolean)
     .join(', ');
-  const processedAddresses = getAddressesByStatus(member.addresses, member.addressDisplayOption);
+  const moreAddressesToDisplay = getMoreAddressesToDisplay(
+    member.addresses,
+    member.addressDisplayOption
+  );
 
   const memberships = member.memberships || [];
   const siteAssociationMembership = memberships.find(m => m.association === siteAssociation);
@@ -67,7 +70,7 @@ function transformMemberToProfileData(member, siteAssociation) {
     mainAddress,
     testimonials: member.testimonial || [],
     licenceNo,
-    processedAddresses,
+    moreAddressesToDisplay,
     memberSince:
       (member.showABMP &&
         siteAssociationMembership &&
