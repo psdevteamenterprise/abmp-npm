@@ -14,4 +14,6 @@ module.exports = {
   ...require('./data-hooks'),
   ...require('./http-functions'),
   ...require('./dev-only-methods'),
+  ...require('./tasks/migration-methods'),
+  ...require('./tasks/url-migration-methods'),
 };

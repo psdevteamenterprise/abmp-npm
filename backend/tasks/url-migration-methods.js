@@ -3,7 +3,7 @@ const { taskManager } = require('psdev-task-manager');
 const { COLLECTIONS } = require('../../public/consts');
 const { ensureUniqueUrl } = require('../daily-pull/process-member-methods');
 const { wixData } = require('../elevated-modules');
-// const { bulkSaveMembers } = require('../members-data-methods');
+const { bulkSaveMembers } = require('../members-data-methods');
 const { queryAllItems, chunkArray } = require('../utils');
 
 const { TASKS_NAMES } = require('./consts');
@@ -145,8 +145,7 @@ async function migrateUrlsChunk(data) {
     );
 
     try {
-      // keep bulk save as comment for now, since we are just testing the query and update logic
-      // await bulkSaveMembers(membersToUpdate);
+      await bulkSaveMembers(membersToUpdate);
       result.successful += membersToUpdate.length;
       console.log(`✅ Successfully updated ${membersToUpdate.length} members`);
     } catch (error) {
@@ -334,8 +333,7 @@ async function generateUrlsChunk(data) {
     );
 
     try {
-      // keep bulk save as comment for now, since we are just testing the query and update logic
-      // await bulkSaveMembers(membersToUpdate);
+      await bulkSaveMembers(membersToUpdate);
       result.successful += membersToUpdate.length;
       console.log(`✅ Successfully updated ${membersToUpdate.length} members`);
     } catch (error) {
