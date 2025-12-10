@@ -8,6 +8,7 @@ const {
   GEO_HASH_PRECISION,
   MAX__MEMBERS_SEARCH_RESULTS,
   WIX_QUERY_MAX_LIMIT,
+  MEMBERSHIPS_TYPES,
 } = require('./consts.js');
 const { wixData } = require('./elevated-modules');
 
@@ -31,6 +32,7 @@ function buildMembersSearchQuery(data) {
         .query(COLLECTIONS.MEMBERS_DATA)
         .ne('optOut', true)
         .ne('action', 'drop')
+        .ne('memberships.membertype', MEMBERSHIPS_TYPES.PAC_STAFF)
         .eq('isVisible', true);
       let filterConfig = [
         {
@@ -105,7 +107,7 @@ function buildMembersSearchQuery(data) {
         query = query.contains('fullName', filter.searchText);
       }
       if (!includeStudents) {
-        query = query.ne('memberships.membertype', 'Student');
+        query = query.ne('memberships.membertype', MEMBERSHIPS_TYPES.STUDENT);
       }
       return query;
     },

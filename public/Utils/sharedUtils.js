@@ -91,7 +91,7 @@ function formatAddress(item) {
   const limitedPostalCode = item.postalcode.slice(0, 5); //show only 5 digits to not show full user address
   switch (item.addressStatus) {
     case ADDRESS_STATUS_TYPES.FULL_ADDRESS:
-      addressParts = [item.line1, item.city, item.state, limitedPostalCode];
+      addressParts = [item.line1, item.line2, item.city, item.state, limitedPostalCode];
       break;
     case ADDRESS_STATUS_TYPES.STATE_CITY_ZIP:
       addressParts = [item.city, item.state, limitedPostalCode];
