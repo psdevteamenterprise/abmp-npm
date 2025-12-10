@@ -1294,6 +1294,7 @@ async function personalDetailsOnReady({
       streetAddress: {
         name: extractStreetName(address.line1),
         number: extractStreetNumber(address.line1),
+        apt: address.line2 || '',
       },
       city: address.city || '',
       subdivision: address.state || '',
@@ -1309,20 +1310,49 @@ async function personalDetailsOnReady({
     if (!addressInputValue) return null;
 
     let line1 = '';
+    let line2 = '';
+
     if (addressInputValue.streetAddress) {
       const number = addressInputValue.streetAddress.number || '';
       const name = addressInputValue.streetAddress.name || '';
       line1 = `${number} ${name}`.trim();
+
+      // Capture apartment/suite/building info from streetAddress.apt (undocumented but exists)
+      if (addressInputValue.streetAddress.apt) {
+        line2 = addressInputValue.streetAddress.apt;
+      }
     }
 
     if (!line1 && addressInputValue.formatted) {
       line1 = addressInputValue.formatted.split(',')[0]?.trim() || '';
     }
 
+    // If line2 is still empty, try to extract building/suite info from formatted address
+    if (!line2 && addressInputValue.formatted) {
+      const formattedParts = addressInputValue.formatted.split(',').map(part => part.trim());
+      // Look for BLDG/STE/APT/UNIT/SUITE info in the formatted parts
+      for (let i = 1; i < formattedParts.length; i++) {
+        const part = formattedParts[i];
+        const lowerPart = part.toLowerCase();
+        if (
+          lowerPart.includes('bldg') ||
+          lowerPart.includes('ste') ||
+          lowerPart.includes('apt') ||
+          lowerPart.includes('unit') ||
+          lowerPart.includes('suite') ||
+          lowerPart.includes('#') ||
+          lowerPart.includes('building')
+        ) {
+          line2 = part;
+          break;
+        }
+      }
+    }
+
     return {
       key: existingAddress?.key || generateId(),
       line1,
-      line2: existingAddress?.line2 || '',
+      line2: line2 || existingAddress?.line2 || '',
       city: addressInputValue.city || '',
       state: addressInputValue.subdivision || '',
       postalcode: addressInputValue.postalCode || '',
@@ -1705,6 +1735,7 @@ async function personalDetailsOnReady({
     const parts = [];
 
     if (addr.line1) parts.push(addr.line1);
+    if (addr.line2) parts.push(addr.line2); // Include building/suite info
     if (addr.city) parts.push(addr.city);
     if (addr.state && addr.postalcode) {
       parts.push(`${addr.state} ${addr.postalcode}`);
