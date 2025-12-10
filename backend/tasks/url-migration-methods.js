@@ -9,7 +9,8 @@ const { queryAllItems, chunkArray } = require('../utils');
 const { TASKS_NAMES } = require('./consts');
 
 const COLLECTION_WITH_URLS = 'MembersDataWithUrls';
-const CHUNK_SIZE = 5000; // 5k members per task
+const CHUNK_SIZE = 5000; // 5k members per task for migration
+const GENERATION_CHUNK_SIZE = 1000; // 1k members per task for URL generation
 
 /**
  * Step 1: Migrate existing URLs from backup collection
@@ -201,7 +202,7 @@ async function scheduleGenerateMissingUrls() {
       };
     }
 
-    const chunks = chunkArray(membersToUpdate, CHUNK_SIZE);
+    const chunks = chunkArray(membersToUpdate, GENERATION_CHUNK_SIZE);
 
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
@@ -255,11 +256,25 @@ async function generateUrlsChunk(data) {
   };
 
   try {
-    // Fetch all members at once using hasSome
-    console.log(`Fetching ${memberIds.length} members from database...`);
-    const members = await queryAllItems(
-      wixData.query(COLLECTIONS.MEMBERS_DATA).hasSome('_id', memberIds)
+    // Fetch members in smaller batches to avoid cursor size limits
+    // hasSome with too many IDs creates cursors that exceed Wix's 150KB limit
+    const FETCH_BATCH_SIZE = 200;
+    console.log(
+      `Fetching ${memberIds.length} members from database in batches of ${FETCH_BATCH_SIZE}...`
     );
+
+    const members = [];
+    const idBatches = chunkArray(memberIds, FETCH_BATCH_SIZE);
+
+    for (let i = 0; i < idBatches.length; i++) {
+      const idBatch = idBatches[i];
+      const batchMembers = await queryAllItems(
+        wixData.query(COLLECTIONS.MEMBERS_DATA).hasSome('_id', idBatch)
+      );
+      members.push(...batchMembers);
+      console.log(`Fetched batch ${i + 1}/${idBatches.length}: ${batchMembers.length} members`);
+    }
+
     console.log(`Found ${members.length} members in database`);
 
     // Create a map of _id -> member for quick lookup
@@ -292,7 +307,7 @@ async function generateUrlsChunk(data) {
       try {
         const uniqueUrl = await ensureUniqueUrl({
           url: '',
-          memberId: member._id,
+          memberId: member.memberId,
           fullName: name || '', // Let ensureUniqueUrl handle fallback for empty names
         });
 
