@@ -35,7 +35,17 @@ const extractBaseUrl = url => {
   return url;
 };
 const incrementUrlCounter = (existingUrl, baseUrl) => {
-  if (existingUrl && existingUrl === baseUrl) {
+  if (!existingUrl || !baseUrl) {
+    return baseUrl;
+  }
+  // Normalize for comparison (case-insensitive)
+  const normalizedExisting = existingUrl.toLowerCase();
+  const normalizedBase = baseUrl.toLowerCase();
+
+  if (
+    normalizedExisting === normalizedBase ||
+    normalizedExisting.startsWith(`${normalizedBase}-`)
+  ) {
     console.log(
       `Found member with same url ${existingUrl} for baseUrl ${baseUrl}, increasing counter by 1`
     );
@@ -44,6 +54,9 @@ const incrementUrlCounter = (existingUrl, baseUrl) => {
     const lastCounter = isNumeric ? parseInt(lastSegment, 10) : 0;
     return `${baseUrl}-${lastCounter + 1}`;
   }
+
+  // No conflict, return baseUrl with counter 1 to be safe
+  return `${baseUrl}-1`;
 };
 /**
  * Validates core member data requirements
