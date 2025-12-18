@@ -479,7 +479,6 @@ async function getSiteMemberId(data) {
 
 /**
  * Tracks a button click with member and location info.
- * Fetches current member data internally.
  * @param {Object} params - Parameters
  * @param {string} params.pageName - Name of the page/popup where button was clicked
  * @param {string} params.buttonName - Name/ID of the button that was clicked
