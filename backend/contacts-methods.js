@@ -14,13 +14,18 @@ async function updateContactInfo(contactId, updateInfoCallback, operationName) {
   if (!contactId) {
     throw new Error('Contact ID is required');
   }
-
+  console.log('updateContactInfo contactId', contactId);
+  console.log('updateContactInfo operationName', operationName);
   try {
     const contact = await elevatedGetContact(contactId);
+    console.log('updateContactInfo contact', contact);
     const currentInfo = contact.info;
+    console.log('updateContactInfo currentInfo', currentInfo);
     const updatedInfo = updateInfoCallback(currentInfo);
-
-    await elevatedUpdateContact(contactId, updatedInfo, contact.revision);
+    console.log('updateContactInfo updatedInfo', updatedInfo);
+    const updatedContact = await elevatedUpdateContact(contactId, updatedInfo, contact.revision);
+    console.log('updateContactInfo updatedContact', updatedContact);
+    return updatedContact;
   } catch (error) {
     console.error(`Error in ${operationName}:`, error);
     throw new Error(`Failed to ${operationName}: ${error.message}`);
@@ -33,6 +38,8 @@ async function updateContactInfo(contactId, updateInfoCallback, operationName) {
  * @param {string} newEmail - The new email address
  */
 async function updateContactEmail(contactId, newEmail) {
+  console.log('updateContactEmail contactId', contactId);
+  console.log('updateContactEmail newEmail', newEmail);
   if (!newEmail) {
     throw new Error('New email is required');
   }
@@ -88,6 +95,7 @@ async function updateContactNames(contactId, firstName, lastName) {
 const updateIfChanged = (existingValues, newValues, updater, argsBuilder) => {
   const hasChanged = existingValues.some((val, idx) => val !== newValues[idx]);
   if (!hasChanged) return null;
+  console.log('updateIfChanged hasChanged', hasChanged);
   return updater(...argsBuilder(newValues));
 };
 
@@ -98,7 +106,7 @@ const updateIfChanged = (existingValues, newValues, updater, argsBuilder) => {
  */
 const updateMemberContactInfo = async (data, existingMemberData) => {
   const { contactId } = existingMemberData;
-
+  console.log('updateMemberContactInfo contactId', contactId);
   const updateConfig = [
     {
       fields: ['contactFormEmail'],
@@ -120,7 +128,9 @@ const updateMemberContactInfo = async (data, existingMemberData) => {
     })
     .filter(Boolean);
 
-  await Promise.all(updatePromises);
+  const resp = await Promise.all(updatePromises);
+  console.log('updateMemberContactInfo updatePromises', resp);
+  return resp;
 };
 
 module.exports = {
