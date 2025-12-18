@@ -477,6 +477,34 @@ async function getSiteMemberId(data) {
   }
 }
 
+/**
+ * Tracks a button click with member and location info
+ * @param {Object} params - Parameters
+ * @param {string} params.memberName - Member's full name
+ * @param {string} params.memberId - Member's Wix member ID
+ * @param {string} params.pageName - Name of the page/popup where button was clicked
+ * @param {string} params.buttonName - Name/ID of the button that was clicked
+ * @returns {Promise<Object>} - Saved record
+ */
+async function trackButtonClick({ memberName, memberId, pageName, buttonName }) {
+  const clickData = {
+    memberName,
+    memberId,
+    pageName,
+    buttonName,
+    clickedAt: new Date(),
+  };
+
+  try {
+    const result = await wixData.insert(COLLECTIONS.BUTTON_CLICKS, clickData);
+    console.log(`Tracked ${buttonName} click on ${pageName} for member ${memberId}`);
+    return result;
+  } catch (error) {
+    console.error(`Error tracking ${buttonName} click:`, error);
+    throw error;
+  }
+}
+
 module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
@@ -496,4 +524,5 @@ module.exports = {
   getQAUsers,
   getSiteMemberId,
   checkUrlUniqueness,
+  trackButtonClick,
 };

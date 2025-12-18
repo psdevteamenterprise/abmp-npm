@@ -8,4 +8,5 @@ module.exports = {
   ...require('./SelectBannerImages.js'),
   ...require('./deleteConfirm.js'),
   ...require('./SaveAlerts.js'),
+  ...require('./LearnMore.js'),
 };
