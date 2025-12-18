@@ -457,7 +457,8 @@ async function getSiteMemberId(data) {
       .then(res => res.items);
     if (!queryMemberResult.length || queryMemberResult.length > 1) {
       throw new Error(
-        `Invalid Members count found in DB for email ${data.email} members count is : [${queryMemberResult.length
+        `Invalid Members count found in DB for email ${data.email} members count is : [${
+          queryMemberResult.length
         }] membersIds are : [${queryMemberResult.map(member => member.memberId).join(', ')}]`
       );
     }
