@@ -4,7 +4,7 @@ const { MEMBERSHIPS_TYPES } = require('./consts');
 const { updateMemberContactInfo } = require('./contacts-methods');
 const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { wixData } = require('./elevated-modules');
-const { createSiteMember } = require('./members-area-methods');
+const { createSiteMember, getCurrentMember } = require('./members-area-methods');
 const {
   chunkArray,
   normalizeUrlForComparison,
@@ -457,8 +457,7 @@ async function getSiteMemberId(data) {
       .then(res => res.items);
     if (!queryMemberResult.length || queryMemberResult.length > 1) {
       throw new Error(
-        `Invalid Members count found in DB for email ${data.email} members count is : [${
-          queryMemberResult.length
+        `Invalid Members count found in DB for email ${data.email} members count is : [${queryMemberResult.length
         }] membersIds are : [${queryMemberResult.map(member => member.memberId).join(', ')}]`
       );
     }
@@ -478,15 +477,33 @@ async function getSiteMemberId(data) {
 }
 
 /**
- * Tracks a button click with member and location info
+ * Tracks a button click with member and location info.
+ * Fetches current member data internally.
  * @param {Object} params - Parameters
- * @param {string} params.memberName - Member's full name
- * @param {string} params.memberId - Member's Wix member ID
  * @param {string} params.pageName - Name of the page/popup where button was clicked
  * @param {string} params.buttonName - Name/ID of the button that was clicked
- * @returns {Promise<Object>} - Saved record
+ * @returns {Promise<Object>} - Saved record or null if member not found
  */
-async function trackButtonClick({ memberName, memberId, pageName, buttonName }) {
+async function trackButtonClick({ pageName, buttonName }) {
+  const wixMember = await getCurrentMember();
+
+  if (!wixMember) {
+    console.warn('[trackButtonClick]: No logged in member found');
+    return null;
+  }
+
+  const dbMember = await getMemberByContactId(wixMember._id);
+
+  if (!dbMember) {
+    console.warn(
+      `[trackButtonClick]: Member not found in MembersDataLatest for contactId: ${wixMember._id}`
+    );
+    return null;
+  }
+
+  const memberName = dbMember.fullName || 'Unknown';
+  const memberId = dbMember.memberId;
+
   const clickData = {
     memberName,
     memberId,
