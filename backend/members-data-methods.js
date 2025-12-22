@@ -4,7 +4,7 @@ const { MEMBERSHIPS_TYPES } = require('./consts');
 const { updateMemberContactInfo } = require('./contacts-methods');
 const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { wixData } = require('./elevated-modules');
-const { createSiteMember } = require('./members-area-methods');
+const { createSiteMember, getCurrentMember } = require('./members-area-methods');
 const {
   chunkArray,
   normalizeUrlForComparison,
@@ -477,6 +477,51 @@ async function getSiteMemberId(data) {
   }
 }
 
+/**
+ * Tracks a button click with member and location info.
+ * @param {Object} params - Parameters
+ * @param {string} params.pageName - Name of the page/popup where button was clicked
+ * @param {string} params.buttonName - Name/ID of the button that was clicked
+ * @returns {Promise<Object>} - Saved record or null if member not found
+ */
+async function trackButtonClick({ pageName, buttonName }) {
+  const wixMember = await getCurrentMember();
+
+  if (!wixMember) {
+    console.warn('[trackButtonClick]: No logged in member found');
+    return null;
+  }
+
+  const dbMember = await getMemberByContactId(wixMember._id);
+
+  if (!dbMember) {
+    console.warn(
+      `[trackButtonClick]: Member not found in MembersDataLatest for contactId: ${wixMember._id}`
+    );
+    return null;
+  }
+
+  const memberName = dbMember.fullName || 'Unknown';
+  const memberId = dbMember.memberId;
+
+  const clickData = {
+    memberName,
+    memberId,
+    pageName,
+    buttonName,
+    clickedAt: new Date(),
+  };
+
+  try {
+    const result = await wixData.insert(COLLECTIONS.BUTTON_CLICKS, clickData);
+    console.log(`Tracked ${buttonName} click on ${pageName} for member ${memberId}`);
+    return result;
+  } catch (error) {
+    console.error(`Error tracking ${buttonName} click:`, error);
+    throw error;
+  }
+}
+
 module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
@@ -496,4 +541,5 @@ module.exports = {
   getQAUsers,
   getSiteMemberId,
   checkUrlUniqueness,
+  trackButtonClick,
 };
