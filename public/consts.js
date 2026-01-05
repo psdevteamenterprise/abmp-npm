@@ -13,6 +13,7 @@ const COLLECTIONS = {
   STATE_CITY_MAP: 'City',
   UPDATED_LOGIN_EMAILS: 'updatedLoginEmails',
   QA_USERS: 'QA_Users', //Make QA users configurable per site
+  BUTTON_CLICKS: 'ButtonClicks',
 };
 
 /**
