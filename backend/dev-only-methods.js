@@ -1,3 +1,5 @@
+const { COLLECTIONS } = require('../public/consts');
+
 const { ensureUniqueUrlsInBatch } = require('./daily-pull/bulk-process-methods');
 const { wixData } = require('./elevated-modules');
 const { bulkSaveMembers } = require('./members-data-methods');
@@ -15,4 +17,18 @@ async function deduplicateURls(collectionName, duplicateUrlsList) {
   return await bulkSaveMembers(membersWithUniqueUrls, collectionName);
 }
 
-module.exports = { deduplicateURls };
+async function copyContactIdToWixMemberId() {
+  const query = wixData.query(COLLECTIONS.MEMBERS_DATA).isNotEmpty('contactId');
+  const members = await queryAllItems(query);
+  const updatedMembers = members.map(member => ({
+    ...member,
+    wixMemberId: member.contactId,
+  }));
+  return await bulkSaveMembers(updatedMembers, COLLECTIONS.MEMBERS_DATA);
+}
+
+async function createContactsFromMembers() {
+  //TODO: Implement this method
+}
+
+module.exports = { deduplicateURls, copyContactIdToWixMemberId, createContactsFromMembers };
