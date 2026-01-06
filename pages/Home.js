@@ -216,12 +216,19 @@ const homePageOnReady = async ({
         $item('#milesAwayText').text = '';
       }
 
-      // 7) "Show maps" button enabled only if there's at least one visible address
+      // 7) "Show maps" button enabled only if there's a full address with valid coordinates
       const visible = checkAddressIsVisible(addresses);
-      if (visible.length && visible[0].addressStatus === ADDRESS_STATUS_TYPES.FULL_ADDRESS) {
+      const fullAddressWithValidCoords = visible.find(
+        addr =>
+          addr.addressStatus === ADDRESS_STATUS_TYPES.FULL_ADDRESS &&
+          addr.latitude &&
+          addr.longitude
+      );
+
+      if (fullAddressWithValidCoords) {
         $item('#showMaps').enable();
         $item('#showMaps').show();
-        const { latitude, longitude } = visible[0];
+        const { latitude, longitude } = fullAddressWithValidCoords;
         $item('#showMaps').link = `https://maps.google.com/?q=${latitude},${longitude}`;
         $item('#showMaps').target = '_blank';
       } else {
