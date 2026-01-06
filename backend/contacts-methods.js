@@ -11,7 +11,7 @@ const elevatedCreateContact = auth.elevate(contacts.createContact);
  * @param {boolean} allowDuplicates - Allow duplicates if contact with same email already exists, will be true only when handling existing members, after that should be removed
  * @returns {Promise<Object>} - Contact data
  */
-async function createContact(contactData, allowDuplicates = false) {
+async function createSiteContact(contactData, allowDuplicates = false) {
   if (!contactData || !(contactData.contactFormEmail || contactData.email)) {
     throw new Error('Contact data is required');
   }
@@ -157,5 +157,5 @@ const updateMemberContactInfo = async (data, existingMemberData) => {
 
 module.exports = {
   updateMemberContactInfo,
-  createContact,
+  createSiteContact,
 };
