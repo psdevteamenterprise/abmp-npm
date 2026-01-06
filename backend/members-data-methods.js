@@ -1,7 +1,7 @@
 const { COLLECTIONS } = require('../public/consts');
 
 const { MEMBERSHIPS_TYPES } = require('./consts');
-const { updateMemberContactInfo } = require('./contacts-methods');
+const { updateMemberContactInfo, createContact } = require('./contacts-methods');
 const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { wixData } = require('./elevated-modules');
 const { createSiteMember, getCurrentMember } = require('./members-area-methods');
@@ -42,10 +42,14 @@ async function createContactAndMemberIfNew(memberData) {
       phones: memberData.phones,
       contactFormEmail: memberData.contactFormEmail || memberData.email,
     };
-    const contactId = await createSiteMember(toCreateMemberData);
+    const [wixMemberId, wixContactId] = await Promise.all([
+      createSiteMember(toCreateMemberData),
+      createContact(toCreateMemberData),
+    ]);
     let memberDataWithContactId = {
       ...memberData,
-      contactId,
+      wixMemberId,
+      wixContactId,
     };
     const updatedResult = await updateMember(memberDataWithContactId);
     memberDataWithContactId = {
