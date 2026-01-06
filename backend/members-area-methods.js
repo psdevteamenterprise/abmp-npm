@@ -2,10 +2,11 @@ const { auth } = require('@wix/essentials');
 const { members, authentication } = require('@wix/members');
 const elevatedCreateMember = auth.elevate(members.createMember);
 
-function prepareContactData(partner) {
+function prepareMemberData(partner) {
   const phones = Array.isArray(partner.phones) ? partner.phones : []; //some users don't have phones
   const options = {
     member: {
+      //Keeping contact creation in member data for future purposes, in case we need to use it later
       contact: {
         ...partner,
         phones,
@@ -22,9 +23,8 @@ async function createMemberFunction(member) {
 }
 const createSiteMember = async memberDetails => {
   try {
-    const options = prepareContactData(memberDetails);
-    const contactId = await createMemberFunction(options);
-    return contactId;
+    const options = prepareMemberData(memberDetails);
+    return await createMemberFunction(options);
   } catch (error) {
     console.error(`Error in createSiteMember ${error.message}`);
     throw error;
@@ -37,22 +37,25 @@ const getCurrentMember = async () => {
 };
 
 /**
- * Updates Wix member login email if the member has a contactId (registered Wix member)
- * @param {Object} member - Member object with contactId and email
+ * Updates Wix member login email if the member has a wixMemberId (registered Wix member)
+ * @param {Object} member - Member object with wixMemberId and email
  * @param {Object} result - Result object to track Wix member updates
  */
 async function updateWixMemberLoginEmail(member, result = {}) {
-  if (!member.contactId) {
-    console.log(`Member ${member.memberId} has no contactId - skipping Wix login email update`);
+  if (!member.wixMemberId) {
+    console.log(`Member ${member.memberId} has no wixMemberId - skipping Wix login email update`);
     return;
   }
 
   try {
     console.log(
-      `Updating Wix login email for member ${member.memberId} (contactId: ${member.contactId})`
+      `Updating Wix login email for member ${member.memberId} (wixMemberId: ${member.wixMemberId})`
     );
 
-    const updatedWixMember = await authentication.changeLoginEmail(member.contactId, member.email);
+    const updatedWixMember = await authentication.changeLoginEmail(
+      member.wixMemberId,
+      member.email
+    );
 
     console.log(
       `✅ Successfully updated Wix login email for member ${member.memberId}: ${updatedWixMember.loginEmail}`
@@ -75,7 +78,7 @@ async function updateWixMemberLoginEmail(member, result = {}) {
     }
     result.wixMemberErrors.push({
       memberId: member.memberId,
-      contactId: member.contactId,
+      wixMemberId: member.wixMemberId,
       email: member.email,
       error: error.message,
     });
