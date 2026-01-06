@@ -16,7 +16,7 @@ const contactSubmission = async (data, memberDataId) => {
     console.log('Member contact form is not enabled for user, skipping contact submission!');
     return;
   }
-  let memberContactId = memberData.contactId;
+  let memberContactId = memberData.wixContactId;
   if (!memberContactId) {
     /**
      * Create a member contact here since some members may have never logged in
@@ -27,7 +27,7 @@ const contactSubmission = async (data, memberDataId) => {
      */
     console.info('Member contact id not found for user, creating new contact!');
     const member = await createContactAndMemberIfNew(memberData);
-    memberContactId = member.contactId;
+    memberContactId = member.wixContactId;
   }
   console.log('memberContactId', memberContactId);
   const emailTriggered = await triggerAutomation(automationEmailTriggerId, {
@@ -40,7 +40,7 @@ const contactSubmission = async (data, memberDataId) => {
   data = {
     ...data,
     phone: Number(data.phone),
-    memberContactId: memberContactId,
+    memberContactId,
     memberEmail: memberData.contactFormEmail,
   };
   await wixData.insert(COLLECTIONS.CONTACT_US_SUBMISSIONS, data);
