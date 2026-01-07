@@ -22,10 +22,10 @@ async function createSiteContact(contactData, allowDuplicates = false) {
       first: contactData.firstName,
       last: contactData.lastName,
     },
-    emails: [
-      { items: [{ email: contactData.contactFormEmail || contactData.email, primary: true }] },
-    ],
-    phones: [{ items: phones.map(phone => ({ phone })) }],
+    emails: {
+      items: [{ email: contactData.contactFormEmail || contactData.email, primary: true }],
+    },
+    phones: { items: phones.map(phone => ({ phone })) },
   };
   const createContactResponse = await elevatedCreateContact(contactInfo, { allowDuplicates });
   return createContactResponse.contact._id;
