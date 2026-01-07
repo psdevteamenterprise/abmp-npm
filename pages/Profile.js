@@ -111,11 +111,11 @@ async function profileOnReady({ $w: _$w }) {
   }
 
   function bindProfileImages() {
-    if (profileData.logoImage) {
-      _$w('#logoImage').src = profileData.logoImage;
-    } else {
-      _$w('#logoImage').delete();
-    }
+    // if (profileData.logoImage) {
+    //   _$w('#logoImage').src = profileData.logoImage;
+    // } else {
+    //   _$w('#logoImage').delete();
+    // }
 
     if (profileData.profileImage) {
       _$w('#profileImage').src = profileData.profileImage;
