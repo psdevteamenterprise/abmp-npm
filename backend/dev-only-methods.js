@@ -27,8 +27,4 @@ async function copyContactIdToWixMemberId() {
   return await bulkSaveMembers(updatedMembers, COLLECTIONS.MEMBERS_DATA);
 }
 
-async function createContactsFromMembers() {
-  //TODO: Implement this method
-}
-
-module.exports = { deduplicateURls, copyContactIdToWixMemberId, createContactsFromMembers };
+module.exports = { deduplicateURls, copyContactIdToWixMemberId };
