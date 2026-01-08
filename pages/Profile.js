@@ -2,7 +2,11 @@ const { location: wixLocation } = require('@wix/site-location');
 const { window: wixWindow } = require('@wix/site-window');
 
 const { LIGHTBOX_NAMES } = require('../public/consts');
-const { generateId, formatPracticeAreasForDisplay } = require('../public/Utils/sharedUtils');
+const {
+  generateId,
+  formatPracticeAreasForDisplay,
+  isWixHostedImage,
+} = require('../public/Utils/sharedUtils');
 
 const TESTIMONIALS_PER_PAGE_CONFIG = {
   DESKTOP: 4,
@@ -117,7 +121,7 @@ async function profileOnReady({ $w: _$w }) {
       _$w('#logoImage').delete();
     }
 
-    if (profileData.profileImage) {
+    if (profileData.profileImage && isWixHostedImage(profileData.profileImage)) {
       _$w('#profileImage').src = profileData.profileImage;
     } else {
       _$w('#profileImage').src = profileData.defaultProfileImage;

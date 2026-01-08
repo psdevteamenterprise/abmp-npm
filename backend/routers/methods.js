@@ -1,4 +1,5 @@
 const { PAGES_PATHS } = require('../../public/consts');
+const { isWixHostedImage } = require('../../public/Utils/sharedUtils');
 //const { fetchAllItemsInParallel } = require('../cms-data-methods'); unused at host site
 const { CONFIG_KEYS } = require('../consts');
 const { getSiteConfigs } = require('../utils');
@@ -27,7 +28,11 @@ const createRoutersHandlers = wixRouterMethods => {
       const defaultProfileImage = siteConfigs[CONFIG_KEYS.DEFAULT_PROFILE_IMAGE];
       const profileData = await getMemberProfileData(slug, siteAssociation);
       if (profileData && profileData.showWixUrl) {
-        const ogImage = profileData.profileImage || profileData.logoImage || siteLogoUrl;
+        const profileImage =
+          profileData.profileImage?.trim() && isWixHostedImage(profileData.profileImage)
+            ? profileData.profileImage
+            : defaultProfileImage;
+        const ogImage = profileImage || profileData.logoImage || siteLogoUrl;
         const seoTitle = generateSEOTitle({
           fullName: profileData.fullName,
           areasOfPractices: profileData.areasOfPractices,

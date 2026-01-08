@@ -1,4 +1,5 @@
 const { COLLECTIONS } = require('../public/consts');
+const { isWixHostedImage } = require('../public/Utils/sharedUtils');
 
 const { MEMBERSHIPS_TYPES } = require('./consts');
 const { updateMemberContactInfo } = require('./contacts-methods');
@@ -318,9 +319,9 @@ async function getAllMembersWithExternalImages() {
 
     const allItems = await queryAllItems(membersQuery);
 
-    // Filter for external images (not starting with 'wix:')
+    // Filter for external images (not 'wix hosted images')
     const membersWithExternalImages = allItems.filter(
-      member => member.profileImage && !member.profileImage.startsWith('wix:')
+      member => member.profileImage && !isWixHostedImage(member.profileImage)
     );
 
     return membersWithExternalImages;
