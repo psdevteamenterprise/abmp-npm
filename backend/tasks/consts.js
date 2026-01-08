@@ -16,8 +16,6 @@ const TASKS_NAMES = {
   migrateUrlsChunk: 'migrateUrlsChunk',
   scheduleGenerateMissingUrls: 'scheduleGenerateMissingUrls',
   generateUrlsChunk: 'generateUrlsChunk',
-  scheduleCreateContactsFromMembers: 'scheduleCreateContactsFromMembers',
-  createContactsFromMembers: 'createContactsFromMembers',
 };
 
 module.exports = {

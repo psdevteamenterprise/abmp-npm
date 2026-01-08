@@ -547,15 +547,9 @@ async function trackButtonClick({ pageName, buttonName }) {
   }
 }
 
-async function getAllMembersWithWixMemberId() {
-  const membersQuery = wixData.query(COLLECTIONS.MEMBERS_DATA).isNotEmpty('wixMemberId');
-  return await queryAllItems(membersQuery);
-}
-
 module.exports = {
   findMemberByWixDataId,
   createContactAndMemberIfNew,
-  getAllMembersWithWixMemberId,
   saveRegistrationData,
   bulkSaveMembers,
   findMemberById,
