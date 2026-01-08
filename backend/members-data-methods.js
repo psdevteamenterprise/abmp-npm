@@ -44,11 +44,10 @@ async function createContactAndMemberIfNew(memberData) {
     };
     const needsWixMember = !memberData.wixMemberId;
     const needsWixContact = !memberData.wixContactId;
-    const createPromises = [
-      needsWixMember && createSiteMember(toCreateMemberData),
-      needsWixContact && createSiteContact(toCreateMemberData),
-    ].filter(Boolean);
-    const [newWixMemberId, newWixContactId] = await Promise.all(createPromises);
+    const [newWixMemberId, newWixContactId] = await Promise.all([
+      needsWixMember ? createSiteMember(toCreateMemberData) : Promise.resolve(null),
+      needsWixContact ? createSiteContact(toCreateMemberData) : Promise.resolve(null),
+    ]);
     let memberDataWithContactId = {
       ...memberData,
       wixMemberId: newWixMemberId || memberData.wixMemberId,
