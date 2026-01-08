@@ -16,6 +16,8 @@ const {
   migrateContactFormEmails,
   scheduleEmailSync,
   syncMemberLoginEmails,
+  scheduleCreateContactsFromMembers,
+  createContactsFromMembers,
 } = require('./tasks-process-methods');
 const {
   scheduleMigrateExistingUrls,
@@ -150,6 +152,20 @@ const TASKS = {
     name: TASKS_NAMES.generateUrlsChunk,
     getIdentifier: task => task.data,
     process: generateUrlsChunk,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.scheduleCreateContactsFromMembers]: {
+    name: TASKS_NAMES.scheduleCreateContactsFromMembers,
+    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    process: scheduleCreateContactsFromMembers,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.createContactsFromMembers]: {
+    name: TASKS_NAMES.createContactsFromMembers,
+    getIdentifier: task => task.data,
+    process: createContactsFromMembers,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
   },

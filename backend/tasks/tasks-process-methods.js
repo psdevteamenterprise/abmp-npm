@@ -13,6 +13,8 @@ const {
   bulkSaveMembers,
   getAllUpdatedLoginEmails,
   getMembersByIds,
+  createContactAndMemberIfNew,
+  getAllMembersWithWixMemberId,
 } = require('../members-data-methods');
 const {
   getCompleteStateList,
@@ -530,6 +532,46 @@ const syncMemberLoginEmails = async data => {
     throw new Error(errorMessage);
   }
 };
+/**
+ * Schedules tasks to create contacts from members
+ * dev-only task, run only once by the developers
+ */
+const scheduleCreateContactsFromMembers = async () => {
+  const members = await getAllMembersWithWixMemberId();
+  console.log(
+    `Starting to schedule create contacts from members tasks for ${members.length} members in chunks of 500 members`
+  );
+  const membersChunks = chunkArray(members, 500);
+  for (let chunkIndex = 0; chunkIndex < membersChunks.length; chunkIndex++) {
+    const chunk = membersChunks[chunkIndex];
+    const toScheduleTask = {
+      name: TASKS_NAMES.createContactsFromMembers,
+      data: { chunk, chunkIndex },
+    };
+    await taskManager().schedule(toScheduleTask);
+    console.log(`Scheduled task for chunk ${chunkIndex} with ${chunk.length} members`);
+  }
+  console.log(`Successfully scheduled ${membersChunks.length} tasks for ${members.length} members`);
+};
+
+/**
+ * Creates contacts from members
+ * dev-only task, run only once by the developers
+ */
+const createContactsFromMembers = async data => {
+  const { chunk, chunkIndex } = data;
+  console.log(`Creating contacts from ${chunk.length} members in chunk ${chunkIndex}`);
+  const createPromises = chunk.map(member => createContactAndMemberIfNew(member));
+  const createResults = await Promise.all(createPromises);
+  console.log(
+    `Created ${createResults.length} contacts from ${chunk.length} members in chunk ${chunkIndex}`
+  );
+  const saveResult = await bulkSaveMembers(createResults);
+  console.log(
+    `Successfully saved ${saveResult.totalSaved} contacts from ${chunk.length} members in chunk ${chunkIndex}`
+  );
+  return saveResult;
+};
 
 module.exports = {
   scheduleTaskForEmptyAboutYouMembers,
@@ -542,4 +584,6 @@ module.exports = {
   migrateContactFormEmails,
   scheduleEmailSync,
   syncMemberLoginEmails,
+  scheduleCreateContactsFromMembers, // run only once by the developers
+  createContactsFromMembers,
 };
