@@ -138,21 +138,25 @@ async function updateMemberRichContent(memberId) {
 async function updateMemberProfileImage(memberId) {
   try {
     const member = await findMemberByWixDataId(memberId);
-
+    const trimmedProfileImage = member.profileImage.trim();
     // Check if member has an external profile image URL
-    if (!member.profileImage || member.profileImage.startsWith('wix:')) {
+    if (
+      !trimmedProfileImage ||
+      trimmedProfileImage.startsWith('wix:') ||
+      trimmedProfileImage.startsWith('https://static.wixstatic.com')
+    ) {
       console.log(`Member ${memberId} already has Wix-hosted image or no image`);
       return { success: true, message: 'No update needed' };
     }
 
     // Validate image URL format before attempting download
-    if (!isValidImageUrl(member.profileImage)) {
-      console.log(`Member ${memberId} has invalid image URL format: ${member.profileImage}`);
+    if (!isValidImageUrl(trimmedProfileImage)) {
+      console.log(`Member ${memberId} has invalid image URL format: ${trimmedProfileImage}`);
       return { success: true, message: 'Invalid image URL format - skipped' };
     }
 
     // Encode URL to handle spaces and special characters in the path
-    const encodedImageUrl = encodeURI(member.profileImage);
+    const encodedImageUrl = encodeURI(trimmedProfileImage);
 
     const response = await axios.get(encodedImageUrl, {
       responseType: 'arraybuffer',
