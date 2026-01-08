@@ -93,16 +93,10 @@ async function findMemberById(memberId) {
     const queryResult = await wixData
       .query(COLLECTIONS.MEMBERS_DATA)
       .eq('memberId', memberId)
-      .limit(2)
       .find();
-    if (queryResult.items.length > 1) {
-      throw new Error(
-        `Multiple members found with memberId ${memberId} members _ids are : [${queryResult.items.map(member => member._id).join(', ')}]`
-      );
-    }
-    return queryResult.items.length === 1 ? queryResult.items[0] : null;
+
+    return queryResult.items.length > 0 ? queryResult.items[0] : null;
   } catch (error) {
-    console.error('Error finding member by ID:', error);
     throw new Error(`Failed to retrieve member data: ${error.message}`);
   }
 }
@@ -447,53 +441,38 @@ const getQAUsers = async () => {
     throw new Error(`Failed to get QA users: ${error.message}`);
   }
 };
-/**
- * Ensures member has a contact - creates one if missing
- * @param {Object} memberData - Member data from DB
- * @returns {Promise<Object>} - Member data with contactId
- */
-async function ensureMemberHasContact(memberData) {
-  if (!memberData) {
-    throw new Error('Member data is required');
-  }
-  if (!memberData.contactId) {
-    const memberDataWithContactId = await createContactAndMemberIfNew(memberData);
-    return memberDataWithContactId;
-  }
-  return memberData;
-}
-async function prepareMemberForSSOLogin(data) {
+async function getSiteMemberId(data) {
   try {
     console.log('data', data);
     const memberId = data?.pac?.cst_recno;
     if (!memberId) {
-      throw new Error(`Member ID is missing in passed data ${JSON.stringify(data)}`);
+      const errorMessage = `Member ID is missing in passed data ${JSON.stringify(data)}`;
+      console.error(errorMessage);
+      throw new Error(errorMessage);
     }
-    const memberData = await findMemberById(Number(memberId));
-    if (!memberData) {
-      throw new Error(`Member data not found for memberId ${memberId}`);
+    const queryMemberResult = await wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .eq('memberId', Number(memberId))
+      .find()
+      .then(res => res.items);
+    if (!queryMemberResult.length || queryMemberResult.length > 1) {
+      throw new Error(
+        `Invalid Members count found in DB for email ${data.email} members count is : [${
+          queryMemberResult.length
+        }] membersIds are : [${queryMemberResult.map(member => member.memberId).join(', ')}]`
+      );
     }
+    let memberData = queryMemberResult[0];
     console.log('memberData', memberData);
-    return await ensureMemberHasContact(memberData);
-  } catch (error) {
-    console.error('Error in prepareMemberForSSOLogin', error.message);
-    throw error;
-  }
-}
-async function prepareMemberForQALogin(email) {
-  try {
-    console.log('qa email:', email);
-    if (!email) {
-      throw new Error(`Email is missing in passed data ${email}`);
+    const isNewUser = !memberData.contactId;
+    if (isNewUser) {
+      const memberDataWithContactId = await createContactAndMemberIfNew(memberData);
+      console.log('memberDataWithContactId', memberDataWithContactId);
+      memberData = memberDataWithContactId;
     }
-    const memberData = await getMemberByEmail(email);
-    if (!memberData) {
-      throw new Error(`Member data not found for email ${email}`);
-    }
-    console.log('memberData', memberData);
-    return await ensureMemberHasContact(memberData);
+    return memberData;
   } catch (error) {
-    console.error('Error in prepareMemberForQALogin', error.message);
+    console.error('Error in getSiteMemberId', error.message);
     throw error;
   }
 }
@@ -560,8 +539,7 @@ module.exports = {
   getMembersByIds,
   getMemberByEmail,
   getQAUsers,
-  prepareMemberForSSOLogin,
-  prepareMemberForQALogin,
+  getSiteMemberId,
   checkUrlUniqueness,
   trackButtonClick,
 };

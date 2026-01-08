@@ -1,4 +1,4 @@
-const { prepareMemberForQALogin, getQAUsers } = require('../members-data-methods');
+const { getMemberByEmail, getQAUsers } = require('../members-data-methods');
 const { getSecret } = require('../utils');
 
 const validateQAUser = async userEmail => {
@@ -20,29 +20,52 @@ const validateQAUser = async userEmail => {
  */
 const loginQAMember = async ({ userEmail, secret }, generateSessionToken) => {
   try {
-    const [userValidation, qaSecret] = await Promise.all([
-      validateQAUser(userEmail),
-      getSecret('ABMP_QA_SECRET'),
-    ]);
+    const userValidation = await validateQAUser(userEmail);
     if (userValidation.error) {
       return { success: false, error: userValidation.error };
     }
+
+    const qaSecret = await getSecret('ABMP_QA_SECRET');
     if (secret !== qaSecret) {
       return { success: false, error: 'Invalid secret' };
     }
 
-    const memberData = await prepareMemberForQALogin(userValidation.email);
-    const token = await generateSessionToken(memberData.email, qaSecret);
+    const token = await generateSessionToken(userValidation.email, qaSecret);
+
+    const result = await getMemberCMSId(userEmail);
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
     return {
       success: true,
       token,
-      memberCMSId: memberData._id,
+      memberCMSId: result.memberCMSId,
     };
   } catch (error) {
     console.error('QA login error:', error);
     return { error: 'Failed to generate session token' };
   }
 };
+
+async function getMemberCMSId(userEmail) {
+  try {
+    const userValidation = await validateQAUser(userEmail);
+    if (userValidation.error) {
+      return { success: false, error: userValidation.error };
+    }
+
+    const member = await getMemberByEmail(userEmail);
+
+    if (!member) {
+      return { success: false, error: `No Member found in DB matching email: ${userEmail}` };
+    }
+    return { success: true, memberCMSId: member._id };
+  } catch (error) {
+    console.error('Error getting member CMS ID:', error);
+    return { success: false, error: 'Failed to retrieve member data' };
+  }
+}
 
 module.exports = {
   loginQAMember,

@@ -5,7 +5,7 @@ const { decode } = require('jwt-js-decode');
 const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL } = require('../consts');
 const { MEMBER_ACTIONS } = require('../daily-pull/consts');
 const { getCurrentMember } = require('../members-area-methods');
-const { getMemberByContactId, prepareMemberForSSOLogin } = require('../members-data-methods');
+const { getMemberByContactId, getSiteMemberId } = require('../members-data-methods');
 const {
   formatDateToMonthYear,
   getAddressDisplayOptions,
@@ -133,12 +133,12 @@ const authenticateSSOToken = async ({ token }, generateSessionToken) => {
   if (isValidToken) {
     const jwt = decode(responseToken);
     const payload = jwt.payload;
-    const memberData = await prepareMemberForSSOLogin(payload);
-    console.log('memberDataCollectionId', memberData._id);
-    const sessionToken = await generateSessionToken(memberData.email);
+    const membersData = await getSiteMemberId(payload);
+    console.log('membersDataCollectionId', membersData._id);
+    const sessionToken = await generateSessionToken(membersData.email);
     const authObj = {
       type: 'success',
-      memberId: memberData._id,
+      memberId: membersData._id,
       sessionToken,
     };
     return authObj;
