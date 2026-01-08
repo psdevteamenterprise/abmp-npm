@@ -3,15 +3,15 @@ const { members, authentication } = require('@wix/members');
 const elevatedCreateMember = auth.elevate(members.createMember);
 
 function prepareMemberData(partner) {
-  // const phones = Array.isArray(partner.phones) ? partner.phones : []; //some users don't have phones
+  const phones = Array.isArray(partner.phones) ? partner.phones : []; //some users don't have phones
   const options = {
     member: {
-      // //Keeping contact creation in member data for future purposes, in case we need to use it later
-      // contact: {
-      //   ...partner,
-      //   phones,
-      //   emails: [partner.contactFormEmail || partner.email],
-      // },
+      //Keeping contact creation in member data for future purposes, in case we need to use it later
+      contact: {
+        ...partner,
+        phones,
+        emails: [partner.contactFormEmail || partner.email],
+      },
       loginEmail: partner.email,
     },
   };
