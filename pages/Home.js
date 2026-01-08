@@ -9,6 +9,7 @@ const {
   getMainAddress,
   formatPracticeAreasForDisplay,
   checkAddressIsVisible,
+  isWixHostedImage,
 } = require('../public/Utils/sharedUtils.js');
 
 let filter = JSON.parse(JSON.stringify(DEFAULT_FILTER));
@@ -187,7 +188,7 @@ const homePageOnReady = async ({
         : [];
 
       // 2) Profile image
-      if (itemData.profileImage) {
+      if (itemData.profileImage?.trim() && isWixHostedImage(itemData.profileImage)) {
         $item('#profileImage').src = itemData.profileImage;
       }
 

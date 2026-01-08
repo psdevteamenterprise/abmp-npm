@@ -9,7 +9,7 @@ const {
   LIGHTBOX_NAMES,
 } = require('../public/consts');
 const { handleOnCustomValidation, isNotValidUrl } = require('../public/Utils/personalDetailsUtils');
-const { generateId } = require('../public/Utils/sharedUtils');
+const { generateId, isWixHostedImage } = require('../public/Utils/sharedUtils');
 
 const MAX_PHONES_COUNT = 10;
 const MAX_ADDRESSES_COUNT = 10;
@@ -793,8 +793,14 @@ async function personalDetailsOnReady({
           : null
         : itemMemberObj[key];
 
-      if (imageValue) {
-        _$w(imageSelector).src = imageValue;
+      if (imageValue && imageValue?.trim()) {
+        // Only set profile image if it's Wix-hosted; other images will always be wix url
+        const isProfileImage = imageSelector === '#profileImage';
+        const shouldSetImage = !isProfileImage || isWixHostedImage(imageValue);
+
+        if (shouldSetImage) {
+          _$w(imageSelector).src = imageValue;
+        }
         _$w(nameSelector).text = formatFileName(extractFileName(imageValue));
         _$w(containerSelector).expand();
         uploadedImages[key === 'bannerImages' ? 'bannerImage' : key] = imageValue;

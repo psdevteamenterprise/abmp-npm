@@ -158,6 +158,13 @@ function generateId() {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+function isWixHostedImage(imageUrl) {
+  return (
+    imageUrl?.trim() &&
+    (imageUrl?.startsWith('wix:') || imageUrl?.startsWith('https://static.wixstatic.com'))
+  );
+}
+
 module.exports = {
   checkAddressIsVisible,
   formatPracticeAreasForDisplay,
@@ -169,4 +176,5 @@ module.exports = {
   toRadians,
   generateId,
   formatAddress,
+  isWixHostedImage,
 };

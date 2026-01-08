@@ -5,6 +5,7 @@ const aws4 = require('aws4');
 const axios = require('axios');
 
 const { PAGES_PATHS } = require('../../public/consts');
+const { isWixHostedImage } = require('../../public/Utils/sharedUtils');
 const { findMemberByWixDataId, updateMember } = require('../members-data-methods');
 const { getSecret, getSiteBaseUrl, encodeXml, formatDateOnly } = require('../utils');
 
@@ -140,11 +141,7 @@ async function updateMemberProfileImage(memberId) {
     const member = await findMemberByWixDataId(memberId);
     const trimmedProfileImage = member.profileImage.trim();
     // Check if member has an external profile image URL
-    if (
-      !trimmedProfileImage ||
-      trimmedProfileImage.startsWith('wix:') ||
-      trimmedProfileImage.startsWith('https://static.wixstatic.com')
-    ) {
+    if (!trimmedProfileImage || isWixHostedImage(trimmedProfileImage)) {
       console.log(`Member ${memberId} already has Wix-hosted image or no image`);
       return { success: true, message: 'No update needed' };
     }
