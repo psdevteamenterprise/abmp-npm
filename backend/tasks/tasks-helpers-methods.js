@@ -151,7 +151,10 @@ async function updateMemberProfileImage(memberId) {
       return { success: true, message: 'Invalid image URL format - skipped' };
     }
 
-    const response = await axios.get(member.profileImage, {
+    // Encode URL to handle spaces and special characters in the path
+    const encodedImageUrl = encodeURI(member.profileImage);
+
+    const response = await axios.get(encodedImageUrl, {
       responseType: 'arraybuffer',
       headers: {
         'User-Agent':
