@@ -1,14 +1,16 @@
 const crypto = require('crypto');
 
+const { auth } = require('@wix/essentials');
 const { files } = require('@wix/media');
 const aws4 = require('aws4');
 const axios = require('axios');
+
+const elevatedGenerateFileUploadUrl = auth.elevate(files.generateFileUploadUrl);
 
 const { PAGES_PATHS } = require('../../public/consts');
 const { isWixHostedImage } = require('../../public/Utils/sharedUtils');
 const { findMemberByWixDataId, updateMember } = require('../members-data-methods');
 const { getSecret, getSiteBaseUrl, encodeXml, formatDateOnly } = require('../utils');
-
 async function getServerlessAuth() {
   const serverlessAuth = await getSecret('serverless_auth');
   return serverlessAuth;
@@ -216,7 +218,7 @@ async function updateMemberProfileImage(memberId) {
 
     const sanitizedFileName = `profile-${memberId}-${Date.now()}.${extension}`.replace(/\./g, '_');
     const uploadUrl = (
-      await files.generateFileUploadUrl(contentType, {
+      await elevatedGenerateFileUploadUrl(contentType, {
         fileName: sanitizedFileName,
         filePath: 'member-profiles',
       })
