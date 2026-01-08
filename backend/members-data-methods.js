@@ -456,7 +456,7 @@ const getQAUsers = async () => {
 /**
  * Ensures member has a contact - creates one if missing
  * @param {Object} memberData - Member data from DB
- * @returns {Promise<Object>} - Member data with contactId
+ * @returns {Promise<Object>} - Member data with contact and member IDs
  */
 async function ensureWixMemberAndContactExist(memberData) {
   if (!memberData) {
@@ -523,7 +523,7 @@ async function trackButtonClick({ pageName, buttonName }) {
 
   if (!dbMember) {
     console.warn(
-      `[trackButtonClick]: Member not found in MembersDataLatest for contactId: ${wixMember._id}`
+      `[trackButtonClick]: Member not found in MembersDataLatest for wixMemberId: ${wixMember._id}`
     );
     return null;
   }
