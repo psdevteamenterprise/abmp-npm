@@ -84,11 +84,10 @@ async function updateContactEmail(contactId, newEmail) {
  * Updates contact names in Wix CRM for both contact and member
  * @param {Object} params - Parameters object
  * @param {string} params.wixContactId - The contact ID in Wix CRM
- * @param {string} params.wixMemberId - The member ID in Wix CRM
  * @param {string} params.firstName - The new first name
  * @param {string} params.lastName - The new last name
  */
-async function updateMemberAndContactNames({ wixContactId, wixMemberId, firstName, lastName }) {
+async function updateMemberAndContactNames({ wixContactId, firstName, lastName }) {
   //TODO: rethink if we should keep all info just in contact, meaning no need to update the member
   if (!firstName && !lastName) {
     throw new Error('At least one name field is required');
@@ -104,7 +103,7 @@ async function updateMemberAndContactNames({ wixContactId, wixMemberId, firstNam
 
   const updatePromises = [
     wixContactId && updateContactInfo(wixContactId, createNameUpdate, 'update contact names'),
-    wixMemberId && updateContactInfo(wixMemberId, createNameUpdate, 'update member names'),
+    // wixMemberId && updateContactInfo(wixMemberId, createNameUpdate, 'update member names'),
   ].filter(Boolean);
 
   return await Promise.all(updatePromises);
@@ -129,7 +128,7 @@ const updateIfChanged = (existingValues, newValues, updater, argsBuilder) => {
  * @param {Object} existingMemberData - Existing member data
  */
 const updateMemberContactInfo = async (data, existingMemberData) => {
-  const { wixContactId, wixMemberId } = existingMemberData;
+  const { wixContactId } = existingMemberData;
 
   const updateConfig = [
     {
@@ -140,7 +139,7 @@ const updateMemberContactInfo = async (data, existingMemberData) => {
     {
       fields: ['firstName', 'lastName'],
       updater: updateMemberAndContactNames,
-      args: ([firstName, lastName]) => [{ firstName, lastName, wixContactId, wixMemberId }],
+      args: ([firstName, lastName]) => [{ firstName, lastName, wixContactId }],
     },
   ];
 
