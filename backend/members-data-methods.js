@@ -1,7 +1,7 @@
 const { COLLECTIONS } = require('../public/consts');
 
 const { MEMBERSHIPS_TYPES } = require('./consts');
-const { updateMemberContactInfo, createContact } = require('./contacts-methods');
+const { updateMemberContactInfo, createSiteContact } = require('./contacts-methods');
 const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { wixData } = require('./elevated-modules');
 const { createSiteMember, getCurrentMember } = require('./members-area-methods');
@@ -42,14 +42,16 @@ async function createContactAndMemberIfNew(memberData) {
       phones: memberData.phones,
       contactFormEmail: memberData.contactFormEmail || memberData.email,
     };
-    const [wixMemberId, wixContactId] = await Promise.all([
-      createSiteMember(toCreateMemberData),
-      createContact(toCreateMemberData),
+    const needsWixMember = !memberData.wixMemberId;
+    const needsWixContact = !memberData.wixContactId;
+    const [newWixMemberId, newWixContactId] = await Promise.all([
+      needsWixMember ? createSiteMember(toCreateMemberData) : Promise.resolve(null),
+      needsWixContact ? createSiteContact(toCreateMemberData) : Promise.resolve(null),
     ]);
     let memberDataWithContactId = {
       ...memberData,
-      wixMemberId,
-      wixContactId,
+      wixMemberId: newWixMemberId || memberData.wixMemberId,
+      wixContactId: newWixContactId || memberData.wixContactId,
     };
     const updatedResult = await updateMember(memberDataWithContactId);
     memberDataWithContactId = {
@@ -173,26 +175,26 @@ async function getMemberBySlug({
   }
 }
 
-async function getMemberByContactId(contactId) {
-  if (!contactId) {
-    throw new Error('Contact ID is required');
+async function getCMSMemberByWixMemberId(wixMemberId) {
+  if (!wixMemberId) {
+    throw new Error('Wix Member ID is required');
   }
   try {
     const members = await wixData
       .query(COLLECTIONS.MEMBERS_DATA)
-      .eq('contactId', contactId)
+      .eq('wixMemberId', wixMemberId)
       .limit(2)
       .find()
       .then(res => res.items);
     if (members.length > 1) {
       throw new Error(
-        `[getMemberByContactId] Multiple members found with contactId ${contactId} membersIds are : [${members.map(member => member.memberId).join(', ')}]`
+        `[getCMSMemberByWixMemberId] Multiple members found with wixMemberId ${wixMemberId} membersIds are : [${members.map(member => member.memberId).join(', ')}]`
       );
     }
     return members[0] || null;
   } catch (error) {
     throw new Error(
-      `[getMemberByContactId] Failed to retrieve member by contactId ${contactId} data: ${error.message}`
+      `[getCMSMemberByWixMemberId] Failed to retrieve member by wixMemberId ${wixMemberId} data: ${error.message}`
     );
   }
 }
@@ -454,13 +456,13 @@ const getQAUsers = async () => {
 /**
  * Ensures member has a contact - creates one if missing
  * @param {Object} memberData - Member data from DB
- * @returns {Promise<Object>} - Member data with contactId
+ * @returns {Promise<Object>} - Member data with contact and member IDs
  */
-async function ensureMemberHasContact(memberData) {
+async function ensureWixMemberAndContactExist(memberData) {
   if (!memberData) {
     throw new Error('Member data is required');
   }
-  if (!memberData.contactId) {
+  if (!memberData.wixContactId || !memberData.wixMemberId) {
     const memberDataWithContactId = await createContactAndMemberIfNew(memberData);
     return memberDataWithContactId;
   }
@@ -478,7 +480,7 @@ async function prepareMemberForSSOLogin(data) {
       throw new Error(`Member data not found for memberId ${memberId}`);
     }
     console.log('memberData', memberData);
-    return await ensureMemberHasContact(memberData);
+    return await ensureWixMemberAndContactExist(memberData);
   } catch (error) {
     console.error('Error in prepareMemberForSSOLogin', error.message);
     throw error;
@@ -495,7 +497,7 @@ async function prepareMemberForQALogin(email) {
       throw new Error(`Member data not found for email ${email}`);
     }
     console.log('memberData', memberData);
-    return await ensureMemberHasContact(memberData);
+    return await ensureWixMemberAndContactExist(memberData);
   } catch (error) {
     console.error('Error in prepareMemberForQALogin', error.message);
     throw error;
@@ -517,11 +519,11 @@ async function trackButtonClick({ pageName, buttonName }) {
     return null;
   }
 
-  const dbMember = await getMemberByContactId(wixMember._id);
+  const dbMember = await getCMSMemberByWixMemberId(wixMember._id);
 
   if (!dbMember) {
     console.warn(
-      `[trackButtonClick]: Member not found in MembersDataLatest for contactId: ${wixMember._id}`
+      `[trackButtonClick]: Member not found in MembersDataLatest for wixMemberId: ${wixMember._id}`
     );
     return null;
   }
@@ -560,7 +562,7 @@ module.exports = {
   bulkSaveMembers,
   findMemberById,
   getMemberBySlug,
-  getMemberByContactId,
+  getCMSMemberByWixMemberId,
   getAllEmptyAboutYouMembers,
   updateMember,
   getAllMembersWithExternalImages,
