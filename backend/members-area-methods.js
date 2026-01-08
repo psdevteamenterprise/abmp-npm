@@ -2,11 +2,10 @@ const { auth } = require('@wix/essentials');
 const { members, authentication } = require('@wix/members');
 const elevatedCreateMember = auth.elevate(members.createMember);
 
-function prepareMemberData(partner) {
+function prepareContactData(partner) {
   const phones = Array.isArray(partner.phones) ? partner.phones : []; //some users don't have phones
   const options = {
     member: {
-      //Keeping contact creation in member data for future purposes, in case we need to use it later
       contact: {
         ...partner,
         phones,
@@ -23,8 +22,9 @@ async function createMemberFunction(member) {
 }
 const createSiteMember = async memberDetails => {
   try {
-    const options = prepareMemberData(memberDetails);
-    return await createMemberFunction(options);
+    const options = prepareContactData(memberDetails);
+    const contactId = await createMemberFunction(options);
+    return contactId;
   } catch (error) {
     console.error(`Error in createSiteMember ${error.message}`);
     throw error;

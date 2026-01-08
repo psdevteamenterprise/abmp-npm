@@ -3,33 +3,7 @@ const { auth } = require('@wix/essentials');
 
 const elevatedGetContact = auth.elevate(contacts.getContact);
 const elevatedUpdateContact = auth.elevate(contacts.updateContact);
-const elevatedCreateContact = auth.elevate(contacts.createContact);
 
-/**
- * Create a contact in Wix CRM
- * @param {Object} contactData - Contact data
- * @param {boolean} allowDuplicates - Allow duplicates if contact with same email already exists, will be true only when handling existing members, after that should be removed
- * @returns {Promise<Object>} - Contact data
- */
-async function createContact(contactData, allowDuplicates = false) {
-  if (!contactData || !(contactData.contactFormEmail || contactData.email)) {
-    throw new Error('Contact data is required');
-  }
-  const phones =
-    Array.isArray(contactData.phones) && contactData.phones.length > 0 ? contactData.phones : [];
-  const contactInfo = {
-    name: {
-      first: contactData.firstName,
-      last: contactData.lastName,
-    },
-    emails: [
-      { items: [{ email: contactData.contactFormEmail || contactData.email, primary: true }] },
-    ],
-    phones: [{ items: phones.map(phone => ({ phone })) }],
-  };
-  const createContactResponse = await elevatedCreateContact(contactInfo, { allowDuplicates });
-  return createContactResponse.contact._id;
-}
 /**
  * Generic contact update helper function
  * @param {string} contactId - The contact ID in Wix CRM
@@ -151,5 +125,4 @@ const updateMemberContactInfo = async (data, existingMemberData) => {
 
 module.exports = {
   updateMemberContactInfo,
-  createContact,
 };
