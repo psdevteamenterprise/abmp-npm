@@ -168,7 +168,7 @@ const bulkProcessAndSaveMemberData = async ({
     const toChangeWixMembersEmails = [];
     const toSaveMembersData = uniqueUrlsMembersData.map(member => {
       const { isLoginEmailChanged, isNewToDb: _isNewToDb, ...restMemberData } = member;
-      if (member.wixMemberId && isLoginEmailChanged) {
+      if (member.contactId && isLoginEmailChanged) {
         toChangeWixMembersEmails.push(member);
       }
       return restMemberData; //we don't want to store the isLoginEmailChanged in the database, it's just a flag to know if we need to change the login email in Members area
