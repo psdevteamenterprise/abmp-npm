@@ -21,10 +21,12 @@ function isValidImageUrl(url) {
   let parsedUrl;
   try {
     parsedUrl = new URL(url);
+    console.log('parsedUrl', parsedUrl);
   } catch {
     return false;
   }
-
+  console.log('parsedUrl', parsedUrl);
+  console.log('parsedUrl.protocol', parsedUrl.protocol);
   // Only allow HTTP and HTTPS protocols (reject blob:, data:, file:, etc.)
   const validProtocols = ['http:', 'https:'];
   if (!validProtocols.includes(parsedUrl.protocol)) {
@@ -34,10 +36,10 @@ function isValidImageUrl(url) {
   // Extract file extension from URL (handle query parameters)
   const urlPath = url.split('?')[0].toLowerCase();
   const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-
+  console.log('urlPath', urlPath);
   // Check if URL ends with valid extension
   const hasValidExtension = validExtensions.some(ext => urlPath.endsWith(ext));
-
+  console.log('hasValidExtension', hasValidExtension);
   // Reject obviously invalid extensions
   const invalidExtensions = [
     '.pdf',
@@ -52,7 +54,7 @@ function isValidImageUrl(url) {
     '_gif',
   ];
   const hasInvalidExtension = invalidExtensions.some(ext => urlPath.includes(ext));
-
+  console.log('hasInvalidExtension', hasInvalidExtension);
   return hasValidExtension && !hasInvalidExtension;
 }
 
@@ -139,7 +141,7 @@ async function updateMemberRichContent(memberId) {
 async function updateMemberProfileImage(memberId) {
   try {
     const member = await findMemberByWixDataId(memberId);
-    const trimmedProfileImage = member.profileImage.trim();
+    const trimmedProfileImage = member.profileImage?.trim();
     // Check if member has an external profile image URL
     if (!trimmedProfileImage || isWixHostedImage(trimmedProfileImage)) {
       console.log(`Member ${memberId} already has Wix-hosted image or no image`);
