@@ -15,6 +15,8 @@ async function getServerlessAuth() {
 }
 
 function isValidImageUrl(url) {
+  console.log('url', url);
+  console.log('typeof url', typeof url);
   if (!url || typeof url !== 'string') return false;
 
   // Check for valid URL format
