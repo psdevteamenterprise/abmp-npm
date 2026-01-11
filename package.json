@@ -50,7 +50,7 @@
     "csv-parser": "^3.0.0",
     "ngeohash": "^0.6.3",
     "phone": "^3.1.67",
-    "psdev-task-manager": "1.1.7",
+    "psdev-task-manager": "1.1.9",
     "psdev-utils": "1.1.1"
   }
 }
