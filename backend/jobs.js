@@ -13,12 +13,17 @@ async function runScheduledTasks() {
   }
 }
 
-async function scheduleDailyPullTask() {
+/**
+ * Schedule a daily pull task for the given backup date
+ * @param {string} backupDate - Optional. The date of the backup to pull in format YYYY-MM-DD
+ * @returns {Promise<void>}
+ */
+async function scheduleDailyPullTask(backupDate = null) {
   try {
     console.log('scheduleDailyPullTask started!');
     return await taskManager().schedule({
       name: TASKS_NAMES.ScheduleDailyMembersDataSync,
-      data: {},
+      data: backupDate ? { backupDate } : {}, // keeping it like this so it would be easier to understand which task was backed up which is not while looking into CMS.
       type: 'scheduled',
     });
   } catch (error) {

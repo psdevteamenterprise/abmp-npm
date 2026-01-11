@@ -43,7 +43,7 @@ const TASKS = {
   },
   [TASKS_NAMES.ScheduleMembersDataPerAction]: {
     name: TASKS_NAMES.ScheduleMembersDataPerAction,
-    getIdentifier: task => task.data.action,
+    getIdentifier: task => task.data,
     process: syncMembersDataPerAction,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 6,
