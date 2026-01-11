@@ -21,6 +21,7 @@ async function runScheduledTasks() {
 async function scheduleDailyPullTask(backupDate = null) {
   try {
     console.log('scheduleDailyPullTask started!');
+    console.log(`backupDate: ${backupDate}`);
     return await taskManager().schedule({
       name: TASKS_NAMES.ScheduleDailyMembersDataSync,
       data: backupDate ? { backupDate } : {}, // keeping it like this so it would be easier to understand which task was backed up which is not while looking into CMS.
