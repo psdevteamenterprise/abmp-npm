@@ -9,9 +9,10 @@ const { bulkProcessAndSaveMemberData } = require('./bulk-process-methods');
 const { SITES_WITH_INTERESTS_TO_MIGRATE } = require('./consts');
 const { isUpdatedMember, isSiteAssociatedMember } = require('./utils');
 
-async function syncMembersDataPerAction(action) {
+async function syncMembersDataPerAction(taskData) {
+  const { action, backupDate } = taskData;
   try {
-    const firstPageResponse = await fetchPACMembers(1, action);
+    const firstPageResponse = await fetchPACMembers({ page: 1, action, backupDate });
 
     if (
       !firstPageResponse ||
@@ -48,6 +49,7 @@ async function syncMembersDataPerAction(action) {
       data: {
         pageNumber,
         action,
+        ...(backupDate ? { backupDate } : {}),
       },
       type: 'scheduled',
     }));
@@ -74,11 +76,11 @@ async function syncMembersDataPerAction(action) {
  * @returns {Promise<Object>} - Page synchronization result
  */
 async function synchronizeSinglePage(taskObject) {
-  const { pageNumber, action } = taskObject.data;
+  const { pageNumber, action, backupDate } = taskObject.data;
   try {
     const [siteAssociation, memberDataResponse] = await Promise.all([
       getSiteConfigs(CONFIG_KEYS.SITE_ASSOCIATION),
-      fetchPACMembers(pageNumber, action),
+      fetchPACMembers({ page: pageNumber, action, backupDate }),
     ]);
     const addInterests = SITES_WITH_INTERESTS_TO_MIGRATE.includes(siteAssociation);
     if (
