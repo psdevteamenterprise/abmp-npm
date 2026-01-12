@@ -1686,7 +1686,13 @@ async function personalDetailsOnReady({
       option.isMain = false;
     });
 
-    const selectedOption = itemMemberObj.addressDisplayOption.find(opt => opt.key === selectedId);
+    let selectedOption = itemMemberObj.addressDisplayOption.find(opt => opt.key === selectedId);
+
+    // If the option doesn't exist, create it
+    if (!selectedOption) {
+      selectedOption = { key: selectedId, isMain: false };
+      itemMemberObj.addressDisplayOption.push(selectedOption);
+    }
 
     selectedOption.isMain = true;
   }
