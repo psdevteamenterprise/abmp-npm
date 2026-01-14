@@ -211,9 +211,16 @@ const homePageOnReady = async ({
       // 5) Location text
       const mainAddress = getMainAddress(itemData.addressDisplayOption, addresses);
       $item('#location').text = mainAddress || '';
+
+      // 6) Miles away
+      const isNearbyEnabled = _$w('#nearBy').checked;
       const miles = itemData.distance ?? 0;
-      $item('#differenceInMiles').text = miles ? miles.toFixed(1) : '';
-      if (!miles) {
+
+      if (isNearbyEnabled && miles) {
+        $item('#differenceInMiles').text = miles.toFixed(1);
+        $item('#milesAwayText').text = 'miles away';
+      } else {
+        $item('#differenceInMiles').text = '';
         $item('#milesAwayText').text = '';
       }
 
