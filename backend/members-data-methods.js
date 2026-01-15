@@ -159,8 +159,9 @@ async function getMemberBySlug({
     }
     return matchingMembers[0] || null;
   } catch (error) {
-    console.error('Error getting member by slug:', error);
-    throw error;
+    const errorMessage = `Error getting member by slug: ${slug} : ${error.message}`;
+    console.error(errorMessage);
+    throw new Error(errorMessage);
   }
 }
 
