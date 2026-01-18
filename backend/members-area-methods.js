@@ -1,6 +1,7 @@
 const { auth } = require('@wix/essentials');
 const { members, authentication } = require('@wix/members');
 const elevatedCreateMember = auth.elevate(members.createMember);
+const elevatedChangeLoginEmail = auth.elevate(authentication.changeLoginEmail);
 
 function prepareContactData(partner) {
   const phones = Array.isArray(partner.phones) ? partner.phones : []; //some users don't have phones
@@ -52,7 +53,7 @@ async function updateWixMemberLoginEmail(member, result = {}) {
       `Updating Wix login email for member ${member.memberId} (contactId: ${member.contactId})`
     );
 
-    const updatedWixMember = await authentication.changeLoginEmail(member.contactId, member.email);
+    const updatedWixMember = await elevatedChangeLoginEmail(member.contactId, member.email);
 
     console.log(
       `✅ Successfully updated Wix login email for member ${member.memberId}: ${updatedWixMember.loginEmail}`
