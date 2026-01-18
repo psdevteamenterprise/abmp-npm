@@ -88,10 +88,9 @@ async function updateContactEmail(contactId, newEmail) {
  * @param {string} params.firstName - The new first name
  * @param {string} params.lastName - The new last name
  */
-async function updateMemberAndContactNames({ wixContactId, wixMemberId, firstName, lastName }) {
-  //TODO: rethink if we should keep all info just in contact, meaning no need to update the member
+async function updateContactNames({ wixContactId, firstName, lastName }) {
   if (!firstName && !lastName) {
-    throw new Error('At least one name field is required');
+    throw new Error('First name or last name is required');
   }
 
   const createNameUpdate = currentInfo => ({
@@ -102,12 +101,7 @@ async function updateMemberAndContactNames({ wixContactId, wixMemberId, firstNam
     },
   });
 
-  const updatePromises = [
-    wixContactId && updateContactInfo(wixContactId, createNameUpdate, 'update contact names'),
-    wixMemberId && updateContactInfo(wixMemberId, createNameUpdate, 'update member names'),
-  ].filter(Boolean);
-
-  return await Promise.all(updatePromises);
+  return await updateContactInfo(wixContactId, createNameUpdate, 'update contact names');
 }
 
 /**
@@ -129,8 +123,10 @@ const updateIfChanged = (existingValues, newValues, updater, argsBuilder) => {
  * @param {Object} existingMemberData - Existing member data
  */
 const updateMemberContactInfo = async (data, existingMemberData) => {
-  const { wixContactId, wixMemberId } = existingMemberData;
-
+  const { wixContactId } = existingMemberData;
+  if (!wixContactId) {
+    throw new Error('Wix Contact ID is required');
+  }
   const updateConfig = [
     {
       fields: ['contactFormEmail'],
@@ -139,8 +135,8 @@ const updateMemberContactInfo = async (data, existingMemberData) => {
     },
     {
       fields: ['firstName', 'lastName'],
-      updater: updateMemberAndContactNames,
-      args: ([firstName, lastName]) => [{ firstName, lastName, wixContactId, wixMemberId }],
+      updater: updateContactNames,
+      args: ([firstName, lastName]) => [{ firstName, lastName, wixContactId }],
     },
   ];
 
