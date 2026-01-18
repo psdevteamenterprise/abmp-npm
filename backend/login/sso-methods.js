@@ -5,7 +5,7 @@ const { decode } = require('jwt-js-decode');
 const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL } = require('../consts');
 const { MEMBER_ACTIONS } = require('../daily-pull/consts');
 const { getCurrentMember } = require('../members-area-methods');
-const { getMemberByContactId, getSiteMemberId } = require('../members-data-methods');
+const { getCMSMemberByWixMemberId, prepareMemberForSSOLogin } = require('../members-data-methods');
 const {
   formatDateToMonthYear,
   getAddressDisplayOptions,
@@ -37,12 +37,12 @@ async function validateMemberToken(memberIdInput) {
     }
 
     const [dbMember, siteConfigs] = await Promise.all([
-      getMemberByContactId(member._id),
+      getCMSMemberByWixMemberId(member._id),
       getSiteConfigs(),
     ]);
     const siteAssociation = siteConfigs[CONFIG_KEYS.SITE_ASSOCIATION];
     const membersExternalPortalUrl = siteConfigs[CONFIG_KEYS.MEMBERS_EXTERNAL_PORTAL_URL];
-    console.log('dbMember by contact id is:', dbMember);
+    console.log('dbMember by wix member id is:', dbMember);
     console.log('member._id', member._id);
 
     if (!dbMember?._id) {
@@ -133,7 +133,7 @@ const authenticateSSOToken = async ({ token }, generateSessionToken) => {
   if (isValidToken) {
     const jwt = decode(responseToken);
     const payload = jwt.payload;
-    const membersData = await getSiteMemberId(payload);
+    const membersData = await prepareMemberForSSOLogin(payload);
     console.log('membersDataCollectionId', membersData._id);
     const sessionToken = await generateSessionToken(membersData.email);
     const authObj = {
