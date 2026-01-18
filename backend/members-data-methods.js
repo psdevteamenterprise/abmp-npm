@@ -100,10 +100,16 @@ async function findMemberById(memberId) {
     const queryResult = await wixData
       .query(COLLECTIONS.MEMBERS_DATA)
       .eq('memberId', memberId)
+      .limit(2)
       .find();
-
-    return queryResult.items.length > 0 ? queryResult.items[0] : null;
+    if (queryResult.items.length > 1) {
+      throw new Error(
+        `Multiple members found with memberId ${memberId} members _ids are : [${queryResult.items.map(member => member._id).join(', ')}]`
+      );
+    }
+    return queryResult.items.length === 1 ? queryResult.items[0] : null;
   } catch (error) {
+    console.error('Error finding member by ID:', error);
     throw new Error(`Failed to retrieve member data: ${error.message}`);
   }
 }
@@ -469,9 +475,7 @@ async function prepareMemberForSSOLogin(data) {
     console.log('data', data);
     const memberId = data?.pac?.cst_recno;
     if (!memberId) {
-      const errorMessage = `Member ID is missing in passed data ${JSON.stringify(data)}`;
-      console.error(errorMessage);
-      throw new Error(errorMessage);
+      throw new Error(`Member ID is missing in passed data ${JSON.stringify(data)}`);
     }
     const memberData = await findMemberById(Number(memberId));
     if (!memberData) {
@@ -497,6 +501,7 @@ async function prepareMemberForQALogin(email) {
     console.log('memberData', memberData);
     return await ensureWixMemberAndContactExist(memberData);
   } catch (error) {
+    console.error('Error in prepareMemberForQALogin', error.message);
     console.error('Error in prepareMemberForQALogin', error.message);
     throw error;
   }

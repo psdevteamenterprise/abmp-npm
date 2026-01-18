@@ -133,12 +133,12 @@ const authenticateSSOToken = async ({ token }, generateSessionToken) => {
   if (isValidToken) {
     const jwt = decode(responseToken);
     const payload = jwt.payload;
-    const membersData = await prepareMemberForSSOLogin(payload);
-    console.log('membersDataCollectionId', membersData._id);
-    const sessionToken = await generateSessionToken(membersData.email);
+    const memberData = await prepareMemberForSSOLogin(payload);
+    console.log('memberDataCollectionId', memberData._id);
+    const sessionToken = await generateSessionToken(memberData.email);
     const authObj = {
       type: 'success',
-      memberId: membersData._id,
+      memberId: memberData._id,
       sessionToken,
     };
     return authObj;
