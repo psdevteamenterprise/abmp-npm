@@ -1087,8 +1087,10 @@ async function personalDetailsOnReady({
     const personalChanges = getPersonalData();
     const originalUrl = beforeData.url;
 
+    // Only send personal fields + required identifiers (partial update)
     const formData = {
-      ...itemMemberObj,
+      _id: itemMemberObj._id,
+      memberId: itemMemberObj.memberId,
       ...personalChanges,
     };
 
@@ -1096,7 +1098,7 @@ async function personalDetailsOnReady({
     console.group('Personal Details Save Attempt');
     console.log('Current Data:', beforeData);
     console.log('Changes Being Applied:', personalChanges);
-    console.log('Final Form Data:', formData);
+    console.log('Final Form Data (partial):', formData);
     console.groupEnd();
 
     const result = await saveData(formData);
@@ -1128,8 +1130,10 @@ async function personalDetailsOnReady({
     const beforeData = JSON.parse(JSON.stringify(itemMemberObj));
     const businessChanges = getBusinessAndServicesData();
 
+    // Only send business fields + required identifiers (partial update)
     const formData = {
-      ...itemMemberObj,
+      _id: itemMemberObj._id,
+      memberId: itemMemberObj.memberId,
       ...businessChanges,
     };
 
@@ -1137,7 +1141,7 @@ async function personalDetailsOnReady({
     console.group('Business Services Save Attempt');
     console.log('Current Data:', beforeData);
     console.log('Changes Being Applied:', businessChanges);
-    console.log('Final Form Data:', formData);
+    console.log('Final Form Data (partial):', formData);
     console.log('Image Changes:', {
       profileImage: uploadedImages.profileImage,
       logoImage: uploadedImages.logoImage,
@@ -1959,8 +1963,10 @@ async function personalDetailsOnReady({
     const beforeData = JSON.parse(JSON.stringify(itemMemberObj));
     const contactChanges = getContactAndBookingData();
 
+    // Only send contact fields + required identifiers (partial update)
     const formData = {
-      ...itemMemberObj,
+      _id: itemMemberObj._id,
+      memberId: itemMemberObj.memberId,
       ...contactChanges,
     };
 
@@ -1968,7 +1974,7 @@ async function personalDetailsOnReady({
     console.group('Contact & Booking Save Attempt');
     console.log('Current Data:', beforeData);
     console.log('Changes Being Applied:', contactChanges);
-    console.log('Final Form Data:', formData);
+    console.log('Final Form Data (partial):', formData);
     console.log('Address Changes:', {
       addressCount: contactChanges.addresses?.length || 0,
       addressDisplayOptions: contactChanges.addressDisplayOption,
@@ -2032,8 +2038,10 @@ async function personalDetailsOnReady({
   }
 
   async function saveGalleryToCMS() {
+    // Only send gallery field + required identifiers (partial update)
     const formData = {
-      ...itemMemberObj,
+      _id: itemMemberObj._id,
+      memberId: itemMemberObj.memberId,
       gallery: itemMemberObj.gallery,
     };
 

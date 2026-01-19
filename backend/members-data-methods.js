@@ -218,8 +218,8 @@ async function updateMember(memberToUpdate) {
   }
 }
 /**
- * Saves member registration data
- * @param {Object} data - Member data to save
+ * Saves member registration data (supports partial updates)
+ * @param {Object} data - Member data to save (can be partial - only fields being updated)
  * @param {string} id - Member ID
  * @returns {Promise<Object>} Result object with type and data/error
  */
@@ -240,15 +240,29 @@ async function saveRegistrationData(data, id) {
       }
     }
 
-    if (data.addresses && Array.isArray(data.addresses)) {
-      data.locHash = generateGeoHash(data.addresses);
-    }
-
+    // Fetch existing data to merge with partial update
     const existingMemberData = await findMemberByWixDataId(id);
 
-    await updateMemberContactInfo(data, existingMemberData);
+    if (!existingMemberData) {
+      return {
+        type: 'error',
+        error: 'Member not found',
+      };
+    }
 
-    const saveData = await updateMember(data);
+    // Merge partial data with existing data (incoming data takes precedence)
+    const mergedData = {
+      ...existingMemberData,
+      ...data,
+    };
+
+    if (data.addresses && Array.isArray(data.addresses)) {
+      mergedData.locHash = generateGeoHash(data.addresses);
+    }
+
+    await updateMemberContactInfo(mergedData, existingMemberData);
+
+    const saveData = await updateMember(mergedData);
     return {
       type: 'success',
       saveData,
