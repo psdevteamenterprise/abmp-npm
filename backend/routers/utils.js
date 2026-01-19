@@ -104,13 +104,15 @@ const getMemberProfileData = async (slug, siteAssociation) => {
     });
 
     if (!member) {
+      console.log(`[getMemberProfileData] Member not found for slug: ${slug}`);
       return null;
     }
 
     return transformMemberToProfileData(member, siteAssociation);
   } catch (error) {
-    console.error(error);
-    throw error;
+    const errorMessage = `Error in getMemberProfileData for slug: ${slug} : ${error.message}`;
+    console.error(errorMessage);
+    throw new Error(errorMessage);
   }
 };
 

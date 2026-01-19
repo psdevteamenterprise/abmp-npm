@@ -126,9 +126,16 @@ const createRoutersHandlers = wixRouterMethods => {
         };
         return ok('profile', { ...profileData, defaultProfileImage }, seoData);
       }
+      console.log(
+        `[profileRouter] Profile not found returning 404 for: ${JSON.stringify({
+          slug,
+          profileData,
+          showWixUrl: profileData?.showWixUrl,
+        })}`
+      );
       return notFound();
     } catch (error) {
-      console.error(error);
+      console.error(`Error in profileRouter for slug: ${slug} : ${error.message}`);
       return sendStatus('500', 'Internal Server Error');
     }
   }
