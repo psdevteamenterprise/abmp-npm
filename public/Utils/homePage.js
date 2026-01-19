@@ -120,9 +120,11 @@ const createHomepageUtils = (_$w, filterProfiles) => {
   });
   async function handlePagination({ delta, pagination, searchResults, filter }) {
     const newPage = pagination.currentPage + delta;
-    if (newPage < 0 || newPage > 9) return;
+    const maxPage = pagination.totalPages ? pagination.totalPages - 1 : 0;
+    if (newPage < 0 || newPage > maxPage) return;
+
     newPage === 0 ? _$w('#previousPage').disable() : _$w('#previousPage').enable();
-    newPage === 9 ? _$w('#nextPage').disable() : _$w('#nextPage').enable();
+    newPage === maxPage ? _$w('#nextPage').disable() : _$w('#nextPage').enable();
     pagination.currentPage = newPage;
 
     paginateSearchResults(searchResults, pagination);
@@ -466,22 +468,21 @@ const createHomepageUtils = (_$w, filterProfiles) => {
         currentPageButtonIterator.collapse();
       }
     }
-    if (noOfPages === 0 || noOfPages === 1) {
+    if (totalPages === 0 || totalPages === 1) {
       _$w('#previousPage').disable();
       _$w('#nextPage').disable();
       return;
     }
     if (currentPage === 0) {
       _$w('#previousPage').disable();
-      return;
+    } else {
+      _$w('#previousPage').enable();
     }
-    if (currentPage === noOfPages - 1) {
+    if (currentPage >= totalPages - 1) {
       _$w('#nextPage').disable();
-      return;
+    } else {
+      _$w('#nextPage').enable();
     }
-
-    _$w('#previousPage').enable();
-    _$w('#nextPage').enable();
   }
   function paginateSearchResults(searchResults, pagination) {
     updatePaginationUI(pagination);
