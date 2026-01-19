@@ -547,6 +547,7 @@ const scheduleCreateContactsFromMembers = async () => {
     const toScheduleTask = {
       name: TASKS_NAMES.createContactsFromMembers,
       data: { chunk, chunkIndex },
+      type: 'scheduled',
     };
     await taskManager().schedule(toScheduleTask);
     console.log(`Scheduled task for chunk ${chunkIndex} with ${chunk.length} members`);
