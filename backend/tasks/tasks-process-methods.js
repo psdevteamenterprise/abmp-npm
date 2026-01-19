@@ -562,7 +562,7 @@ const scheduleCreateContactsFromMembers = async () => {
 const createContactsFromMembers = async data => {
   const { chunk, chunkIndex } = data;
   console.log(`Creating contacts from ${chunk.length} members in chunk ${chunkIndex}`);
-  const createPromises = chunk.map(member => createContactAndMemberIfNew(member));
+  const createPromises = chunk.map(member => createContactAndMemberIfNew(member, true));
   const createResults = await Promise.all(createPromises);
   console.log(
     `Created ${createResults.length} contacts from ${chunk.length} members in chunk ${chunkIndex}`

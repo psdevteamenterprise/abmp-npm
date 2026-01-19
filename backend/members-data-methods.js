@@ -31,7 +31,7 @@ async function findMemberByWixDataId(memberId) {
   }
 }
 
-async function createContactAndMemberIfNew(memberData) {
+async function createContactAndMemberIfNew(memberData, allowDuplicates = false) {
   if (!memberData) {
     throw new Error('Member data is required');
   }
@@ -47,7 +47,9 @@ async function createContactAndMemberIfNew(memberData) {
     const needsWixContact = !memberData.wixContactId;
     const [newWixMemberId, newWixContactId] = await Promise.all([
       needsWixMember ? createSiteMember(toCreateMemberData) : Promise.resolve(null),
-      needsWixContact ? createSiteContact(toCreateMemberData) : Promise.resolve(null),
+      needsWixContact
+        ? createSiteContact(toCreateMemberData, allowDuplicates)
+        : Promise.resolve(null),
     ]);
     let memberDataWithContactId = {
       ...memberData,
