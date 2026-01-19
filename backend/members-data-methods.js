@@ -501,9 +501,9 @@ async function prepareMemberForQALogin(email) {
     console.log('memberData', memberData);
     return await ensureWixMemberAndContactExist(memberData);
   } catch (error) {
-    console.error('Error in prepareMemberForQALogin', error.message);
-    console.error('Error in prepareMemberForQALogin', error.message);
-    throw error;
+    const errMsg = `[prepareMemberForQALogin] QA Login failed with error: ${error.message} for email: ${email}`;
+    console.error(errMsg);
+    throw new Error(errMsg);
   }
 }
 
