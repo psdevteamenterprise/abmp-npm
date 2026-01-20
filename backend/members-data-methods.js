@@ -528,9 +528,10 @@ async function prepareMemberForQALogin(email) {
  * @param {Object} params - Parameters
  * @param {string} params.pageName - Name of the page/popup where button was clicked
  * @param {string} params.buttonName - Name/ID of the button that was clicked
+ * @param {Object} [params.data] - Optional data object to store with the click (e.g., form data being saved)
  * @returns {Promise<Object>} - Saved record or null if member not found
  */
-async function trackButtonClick({ pageName, buttonName }) {
+async function trackButtonClick({ pageName, buttonName, data }) {
   const wixMember = await getCurrentMember();
 
   if (!wixMember) {
@@ -556,6 +557,7 @@ async function trackButtonClick({ pageName, buttonName }) {
     pageName,
     buttonName,
     clickedAt: new Date(),
+    ...(data && { data }),
   };
 
   try {

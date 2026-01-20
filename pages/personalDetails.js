@@ -38,6 +38,13 @@ const MAIN_STATE_BOX_STATES = {
 
 const FALLBACK_ADDRESS_STATUS = ADDRESS_STATUS_TYPES.STATE_CITY_ZIP;
 
+const PAGE_NAME = 'Personal Details';
+const BUTTON_NAMES = {
+  PERSONAL: 'Save Personal Details',
+  BUSINESS: 'Save Business & Services',
+  CONTACT: 'Save Contact & Booking',
+};
+
 const FORM_SECTION_HANDLER_MAP = {
   PERSONAL: { section: 'personal', handler: null }, // handler will be set in init
   BUSINESS_SERVICES: { section: 'businessServices', handler: null },
@@ -52,6 +59,7 @@ async function personalDetailsOnReady({
   saveRegistrationData,
   validateMemberToken,
   checkUrlUniqueness,
+  trackClick,
 }) {
   let itemMemberObj = {};
   let originalMemberData = {};
@@ -1094,6 +1102,12 @@ async function personalDetailsOnReady({
       ...personalChanges,
     };
 
+    trackClick({
+      pageName: PAGE_NAME,
+      buttonName: BUTTON_NAMES.PERSONAL,
+      data: formData,
+    });
+
     // Log the specific personal data changes
     console.group('Personal Details Save Attempt');
     console.log('Current Data:', beforeData);
@@ -1136,6 +1150,12 @@ async function personalDetailsOnReady({
       memberId: itemMemberObj.memberId,
       ...businessChanges,
     };
+
+    trackClick({
+      pageName: PAGE_NAME,
+      buttonName: BUTTON_NAMES.BUSINESS,
+      data: formData,
+    });
 
     // Log the specific business data changes
     console.group('Business Services Save Attempt');
@@ -1969,6 +1989,12 @@ async function personalDetailsOnReady({
       memberId: itemMemberObj.memberId,
       ...contactChanges,
     };
+
+    trackClick({
+      pageName: PAGE_NAME,
+      buttonName: BUTTON_NAMES.CONTACT,
+      data: formData,
+    });
 
     // Log the specific contact & booking data changes
     console.group('Contact & Booking Save Attempt');
