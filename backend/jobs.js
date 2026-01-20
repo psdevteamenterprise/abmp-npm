@@ -33,6 +33,20 @@ async function scheduleDailyPullTask(backupDate = null) {
   }
 }
 
+async function scheduleCreateContactsFromMembersTask() {
+  try {
+    console.log('scheduleCreateContactsFromMembers started!');
+    return await taskManager().schedule({
+      name: TASKS_NAMES.scheduleCreateContactsFromMembers,
+      data: {},
+      type: 'scheduled',
+    });
+  } catch (error) {
+    console.error(`Failed to scheduleCreateContactsFromMembers: ${error.message}`);
+    throw new Error(`Failed to scheduleCreateContactsFromMembers: ${error.message}`);
+  }
+}
+
 async function updateSiteMapS3() {
   try {
     return await taskManager().schedule({
@@ -45,4 +59,9 @@ async function updateSiteMapS3() {
   }
 }
 
-module.exports = { runScheduledTasks, scheduleDailyPullTask, updateSiteMapS3 };
+module.exports = {
+  runScheduledTasks,
+  scheduleDailyPullTask,
+  updateSiteMapS3,
+  scheduleCreateContactsFromMembersTask,
+};
