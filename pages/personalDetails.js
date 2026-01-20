@@ -1419,7 +1419,7 @@ async function personalDetailsOnReady({
         // If this address is the main address, prevent unchecking
         if (mainAddressOption && mainAddressOption.key === clickedItemData._id) {
           checkbox.checked = true;
-          await wixWindow.openLightbox('mainAddressError');
+          await wixWindow.openLightbox(LIGHTBOX_NAMES.MAIN_ADDRESS_ERROR);
           return;
         }
       }
