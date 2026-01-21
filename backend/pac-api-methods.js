@@ -1,5 +1,16 @@
-const { PAC_API_URL, BACKUP_API_URL } = require('./consts');
-const { getSecret } = require('./utils');
+const { PAC_API_URL, BACKUP_API_URL, CONFIG_KEYS } = require('./consts');
+const { getSecret, getSiteConfigs } = require('./utils');
+
+const getPacApiBaseUrl = async backupDate => {
+  if (backupDate) {
+    return BACKUP_API_URL;
+  }
+  const overrideUrl = await getSiteConfigs(CONFIG_KEYS.PAC_API_URL_OVERRIDE);
+  if (typeof overrideUrl === 'string' && overrideUrl.trim()) {
+    return overrideUrl.trim();
+  }
+  return PAC_API_URL;
+};
 
 const getHeaders = async () => {
   const AUTH_TOKEN = await getSecret('members-data-api-key');
@@ -17,7 +28,7 @@ const getHeaders = async () => {
  * @returns {Promise<Object>} - The response from the API
  */
 const fetchPACMembers = async ({ page, action, backupDate }) => {
-  const baseUrl = backupDate ? BACKUP_API_URL : PAC_API_URL;
+  const baseUrl = await getPacApiBaseUrl(backupDate);
   const queryParams = { page, actionFilter: action };
   if (backupDate) {
     queryParams.date = backupDate;
