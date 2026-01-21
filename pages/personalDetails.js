@@ -1405,13 +1405,27 @@ async function personalDetailsOnReady({
   }
 
   function setupAddressRepeaterEventListeners() {
-    _$w('#mainAddressCheckbox').onChange(event => {
+    _$w('#mainAddressCheckbox').onChange(async event => {
       const data = _$w('#addressesList').data;
       const clickedItemData = data.find(item => item._id === event.context.itemId);
       const $item = _$w.at(event.context);
+      const checkbox = $item('#mainAddressCheckbox');
+      const isBeingUnchecked = !event.target.checked;
+
+      if (isBeingUnchecked) {
+        const addressDisplayOptions = itemMemberObj.addressDisplayOption || [];
+        const mainAddressOption = addressDisplayOptions.find(opt => opt.isMain === true);
+
+        // If this address is the main address, prevent unchecking
+        if (mainAddressOption && mainAddressOption.key === clickedItemData._id) {
+          checkbox.checked = true;
+          await wixWindow.openLightbox(LIGHTBOX_NAMES.MAIN_ADDRESS_ERROR);
+          return;
+        }
+      }
 
       _$w('#mainAddressCheckbox').checked = false;
-      $item('#mainAddressCheckbox').checked = true;
+      checkbox.checked = true;
 
       if (clickedItemData.address.addressStatus === ADDRESS_STATUS_TYPES.DONT_SHOW) {
         updateAddressStatus(clickedItemData._id, ADDRESS_STATUS_TYPES.STATE_CITY_ZIP);

@@ -84,6 +84,7 @@ const LIGHTBOX_NAMES = {
   DELETE_CONFIRM: 'deleteConfirm',
   SELECT_BANNER_IMAGES: 'Select Banner Images',
   CONTACT_US: 'Contact Us',
+  MAIN_ADDRESS_ERROR: 'mainAddressError',
 };
 
 const FREE_WEBSITE_TEXT_STATES = {
