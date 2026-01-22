@@ -59,7 +59,7 @@ async function personalDetailsOnReady({
   saveRegistrationData,
   validateMemberToken,
   checkUrlUniqueness,
-  trackClick,
+  trackButtonClick,
 }) {
   let itemMemberObj = {};
   let originalMemberData = {};
@@ -1102,7 +1102,7 @@ async function personalDetailsOnReady({
       ...personalChanges,
     };
 
-    trackClick({
+    trackButtonClick({
       pageName: PAGE_NAME,
       buttonName: BUTTON_NAMES.PERSONAL,
       data: formData,
@@ -1151,7 +1151,7 @@ async function personalDetailsOnReady({
       ...businessChanges,
     };
 
-    trackClick({
+    trackButtonClick({
       pageName: PAGE_NAME,
       buttonName: BUTTON_NAMES.BUSINESS,
       data: formData,
@@ -2004,7 +2004,7 @@ async function personalDetailsOnReady({
       ...contactChanges,
     };
 
-    trackClick({
+    trackButtonClick({
       pageName: PAGE_NAME,
       buttonName: BUTTON_NAMES.CONTACT,
       data: formData,
