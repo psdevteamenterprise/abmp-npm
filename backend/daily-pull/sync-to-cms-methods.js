@@ -10,9 +10,15 @@ const { SITES_WITH_INTERESTS_TO_MIGRATE } = require('./consts');
 const { isUpdatedMember, isSiteAssociatedMember } = require('./utils');
 
 async function syncMembersDataPerAction(taskData) {
-  const { action, backupDate } = taskData;
+  const { action, backupDate, isTestEnvironment, pacApiBaseUrl } = taskData;
   try {
-    const firstPageResponse = await fetchPACMembers({ page: 1, action, backupDate });
+    const firstPageResponse = await fetchPACMembers({
+      page: 1,
+      action,
+      backupDate,
+      isTestEnvironment,
+      pacApiBaseUrl,
+    });
 
     if (
       !firstPageResponse ||
@@ -50,6 +56,8 @@ async function syncMembersDataPerAction(taskData) {
         pageNumber,
         action,
         ...(backupDate ? { backupDate } : {}),
+        ...(isTestEnvironment ? { isTestEnvironment } : {}),
+        ...(pacApiBaseUrl ? { pacApiBaseUrl } : {}),
       },
       type: 'scheduled',
     }));
@@ -76,11 +84,17 @@ async function syncMembersDataPerAction(taskData) {
  * @returns {Promise<Object>} - Page synchronization result
  */
 async function synchronizeSinglePage(taskObject) {
-  const { pageNumber, action, backupDate } = taskObject.data;
+  const { pageNumber, action, backupDate, isTestEnvironment, pacApiBaseUrl } = taskObject.data;
   try {
     const [siteAssociation, memberDataResponse] = await Promise.all([
       getSiteConfigs(CONFIG_KEYS.SITE_ASSOCIATION),
-      fetchPACMembers({ page: pageNumber, action, backupDate }),
+      fetchPACMembers({
+        page: pageNumber,
+        action,
+        backupDate,
+        isTestEnvironment,
+        pacApiBaseUrl,
+      }),
     ]);
     const addInterests = SITES_WITH_INTERESTS_TO_MIGRATE.includes(siteAssociation);
     if (

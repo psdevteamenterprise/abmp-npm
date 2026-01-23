@@ -1,4 +1,5 @@
 const PAC_API_URL = 'https://members.abmp.com/eweb/api/Wix';
+const TEST_PAC_API_URL = 'https://members.abmp.com/nfpactest/eweb/api/Wix';
 const BACKUP_API_URL = 'https://psdevteamenterpris.wixstudio.com/abmp-backup/_functions';
 const SSO_TOKEN_AUTH_API_URL = 'https://members.professionalassistcorp.com/';
 
@@ -39,6 +40,7 @@ module.exports = {
   WIX_QUERY_MAX_LIMIT,
   GEO_HASH_PRECISION,
   PAC_API_URL,
+  TEST_PAC_API_URL,
   COMPILED_FILTERS_FIELDS,
   MEMBERSHIPS_TYPES,
   SSO_TOKEN_AUTH_API_URL,

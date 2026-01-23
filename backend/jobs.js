@@ -1,5 +1,6 @@
 const { taskManager } = require('psdev-task-manager');
 
+const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { TASKS_NAMES } = require('./tasks/consts');
 const { TASKS } = require('./tasks/tasks-configs');
 
@@ -14,19 +15,41 @@ async function runScheduledTasks() {
 }
 
 /**
- * Schedule a daily pull task for the given backup date
- * @param {string} backupDate - Optional. The date of the backup to pull in format YYYY-MM-DD
+ * Schedule daily pull tasks for all member actions.
+ * @param {string|Object} [optionsOrBackupDate] - Optional. Either a backup date (YYYY-MM-DD) or options.
+ * @param {string} [optionsOrBackupDate.backupDate] - Optional backup date to pull.
+ * @param {boolean} [optionsOrBackupDate.isTestEnvironment=false] - Whether to use test environment.
+ * @param {string} [optionsOrBackupDate.pacApiBaseUrl] - Optional PAC API base URL override.
  * @returns {Promise<void>}
  */
-async function scheduleDailyPullTask(backupDate = null) {
+async function scheduleDailyPullTask(optionsOrBackupDate = null) {
   try {
     console.log('scheduleDailyPullTask started!');
+    const hasOptions =
+      optionsOrBackupDate &&
+      typeof optionsOrBackupDate === 'object' &&
+      !Array.isArray(optionsOrBackupDate);
+    const backupDate = hasOptions ? optionsOrBackupDate.backupDate : optionsOrBackupDate;
+    const isTestEnvironment = hasOptions ? Boolean(optionsOrBackupDate.isTestEnvironment) : false;
+    const pacApiBaseUrl = hasOptions ? optionsOrBackupDate.pacApiBaseUrl : null;
     console.log(`backupDate: ${backupDate}`);
-    return await taskManager().schedule({
-      name: TASKS_NAMES.ScheduleDailyMembersDataSync,
-      data: backupDate ? { backupDate } : {}, // keeping it like this so it would be easier to understand which task was backed up which is not while looking into CMS.
+    console.log(`isTestEnvironment: ${isTestEnvironment}`);
+
+    const actionsToSync = Object.values(MEMBER_ACTIONS).filter(
+      action => action !== MEMBER_ACTIONS.NONE
+    );
+    const toScheduleTasks = actionsToSync.map(action => ({
+      name: TASKS_NAMES.ScheduleMembersDataPerAction,
+      data: {
+        action,
+        ...(backupDate ? { backupDate } : {}),
+        ...(isTestEnvironment ? { isTestEnvironment } : {}),
+        ...(pacApiBaseUrl ? { pacApiBaseUrl } : {}),
+      },
       type: 'scheduled',
-    });
+    }));
+
+    return await taskManager().scheduleInBulk(toScheduleTasks);
   } catch (error) {
     console.error(`Failed to scheduleDailyPullTask: ${error.message}`);
     throw new Error(`Failed to scheduleDailyPullTask: ${error.message}`);
