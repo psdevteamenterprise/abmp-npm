@@ -1,12 +1,9 @@
 const { PAC_API_URL, TEST_PAC_API_URL, BACKUP_API_URL, CONFIG_KEYS } = require('./consts');
 const { getSecret, getSiteConfigs } = require('./utils');
 
-const getPacApiBaseUrl = async ({ backupDate, isTestEnvironment, pacApiBaseUrl }) => {
+const getPacApiBaseUrl = async ({ backupDate, isTestEnvironment }) => {
   if (backupDate) {
     return BACKUP_API_URL;
-  }
-  if (typeof pacApiBaseUrl === 'string' && pacApiBaseUrl.trim()) {
-    return pacApiBaseUrl.trim();
   }
   if (isTestEnvironment) {
     const overrideUrl = await getSiteConfigs(CONFIG_KEYS.PAC_API_URL_OVERRIDE);
@@ -33,11 +30,10 @@ const getHeaders = async () => {
  * @param {string} [params.backupDate] - Optional. The backup date to fetch in format YYYY-MM-DD, use only to fetch from backup endpoint not from PAC endpoint.
  * @returns {Promise<Object>} - The response from the API
  */
-const fetchPACMembers = async ({ page, action, backupDate, isTestEnvironment, pacApiBaseUrl }) => {
+const fetchPACMembers = async ({ page, action, backupDate, isTestEnvironment }) => {
   const baseUrl = await getPacApiBaseUrl({
     backupDate,
     isTestEnvironment,
-    pacApiBaseUrl,
   });
   const queryParams = { page, actionFilter: action };
   if (backupDate) {

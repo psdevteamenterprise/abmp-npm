@@ -16,35 +16,33 @@ async function runScheduledTasks() {
 
 /**
  * Schedule daily pull tasks for all member actions.
- * @param {string|Object} [optionsOrBackupDate] - Optional. Either a backup date (YYYY-MM-DD) or options.
- * @param {string} [optionsOrBackupDate.backupDate] - Optional backup date to pull.
- * @param {boolean} [optionsOrBackupDate.isTestEnvironment=false] - Whether to use test environment.
- * @param {string} [optionsOrBackupDate.pacApiBaseUrl] - Optional PAC API base URL override.
+ * @param {string|Object} [options] - Optional. Either a backup date (YYYY-MM-DD) or options.
+ * @param {string} [options.backupDate] - Optional backup date to pull.
+ * @param {boolean} [options.isTestEnvironment=false] - Whether to use test environment.
+ * @param {boolean} [options.includeNone=false] - Whether to include NONE action.
  * @returns {Promise<void>}
  */
-async function scheduleDailyPullTask(optionsOrBackupDate = null) {
+async function scheduleDailyPullTask(options = null) {
   try {
     console.log('scheduleDailyPullTask started!');
-    const hasOptions =
-      optionsOrBackupDate &&
-      typeof optionsOrBackupDate === 'object' &&
-      !Array.isArray(optionsOrBackupDate);
-    const backupDate = hasOptions ? optionsOrBackupDate.backupDate : optionsOrBackupDate;
-    const isTestEnvironment = hasOptions ? Boolean(optionsOrBackupDate.isTestEnvironment) : false;
-    const pacApiBaseUrl = hasOptions ? optionsOrBackupDate.pacApiBaseUrl : null;
+    const hasOptions = options && typeof options === 'object' && !Array.isArray(options);
+    const backupDate = hasOptions ? options.backupDate : options;
+    const isTestEnvironment = hasOptions ? Boolean(options.isTestEnvironment) : false;
+    const includeNone = hasOptions ? Boolean(options.includeNone) : false;
     console.log(`backupDate: ${backupDate}`);
     console.log(`isTestEnvironment: ${isTestEnvironment}`);
+    console.log(`includeNone: ${includeNone}`);
 
-    const actionsToSync = Object.values(MEMBER_ACTIONS).filter(
-      action => action !== MEMBER_ACTIONS.NONE
-    );
+    const actionsToSync = includeNone
+      ? Object.values(MEMBER_ACTIONS)
+      : Object.values(MEMBER_ACTIONS).filter(action => action !== MEMBER_ACTIONS.NONE);
     const toScheduleTasks = actionsToSync.map(action => ({
       name: TASKS_NAMES.ScheduleMembersDataPerAction,
       data: {
         action,
         ...(backupDate ? { backupDate } : {}),
         ...(isTestEnvironment ? { isTestEnvironment } : {}),
-        ...(pacApiBaseUrl ? { pacApiBaseUrl } : {}),
+        ...(includeNone ? { includeNone } : {}),
       },
       type: 'scheduled',
     }));
