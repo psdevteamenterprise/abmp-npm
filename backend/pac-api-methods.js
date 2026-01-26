@@ -1,5 +1,8 @@
-const { PAC_API_URL, BACKUP_API_URL } = require('./consts');
+const { PAC_API_URL, TEST_PAC_API_URL, BACKUP_API_URL } = require('./consts');
 const { getSecret } = require('./utils');
+
+const getPacApiBaseUrl = ({ backupDate, isTestEnvironment }) =>
+  backupDate ? BACKUP_API_URL : isTestEnvironment ? TEST_PAC_API_URL : PAC_API_URL;
 
 const getHeaders = async () => {
   const AUTH_TOKEN = await getSecret('members-data-api-key');
@@ -16,8 +19,11 @@ const getHeaders = async () => {
  * @param {string} [params.backupDate] - Optional. The backup date to fetch in format YYYY-MM-DD, use only to fetch from backup endpoint not from PAC endpoint.
  * @returns {Promise<Object>} - The response from the API
  */
-const fetchPACMembers = async ({ page, action, backupDate }) => {
-  const baseUrl = backupDate ? BACKUP_API_URL : PAC_API_URL;
+const fetchPACMembers = async ({ page, action, backupDate, isTestEnvironment }) => {
+  const baseUrl = getPacApiBaseUrl({
+    backupDate,
+    isTestEnvironment,
+  });
   const queryParams = { page, actionFilter: action };
   if (backupDate) {
     queryParams.date = backupDate;

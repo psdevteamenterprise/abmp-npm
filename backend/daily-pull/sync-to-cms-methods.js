@@ -6,13 +6,18 @@ const { TASKS_NAMES } = require('../tasks/consts');
 const { getSiteConfigs } = require('../utils');
 
 const { bulkProcessAndSaveMemberData } = require('./bulk-process-methods');
-const { SITES_WITH_INTERESTS_TO_MIGRATE } = require('./consts');
+const { MEMBER_ACTIONS, SITES_WITH_INTERESTS_TO_MIGRATE } = require('./consts');
 const { isUpdatedMember, isSiteAssociatedMember } = require('./utils');
 
 async function syncMembersDataPerAction(taskData) {
-  const { action, backupDate } = taskData;
+  const { action, backupDate, isTestEnvironment, includeNone } = taskData;
   try {
-    const firstPageResponse = await fetchPACMembers({ page: 1, action, backupDate });
+    const firstPageResponse = await fetchPACMembers({
+      page: 1,
+      action,
+      backupDate,
+      isTestEnvironment,
+    });
 
     if (
       !firstPageResponse ||
@@ -50,6 +55,8 @@ async function syncMembersDataPerAction(taskData) {
         pageNumber,
         action,
         ...(backupDate ? { backupDate } : {}),
+        ...(isTestEnvironment ? { isTestEnvironment } : {}),
+        ...(includeNone ? { includeNone } : {}),
       },
       type: 'scheduled',
     }));
@@ -76,11 +83,16 @@ async function syncMembersDataPerAction(taskData) {
  * @returns {Promise<Object>} - Page synchronization result
  */
 async function synchronizeSinglePage(taskObject) {
-  const { pageNumber, action, backupDate } = taskObject.data;
+  const { pageNumber, action, backupDate, isTestEnvironment, includeNone } = taskObject.data;
   try {
     const [siteAssociation, memberDataResponse] = await Promise.all([
       getSiteConfigs(CONFIG_KEYS.SITE_ASSOCIATION),
-      fetchPACMembers({ page: pageNumber, action, backupDate }),
+      fetchPACMembers({
+        page: pageNumber,
+        action,
+        backupDate,
+        isTestEnvironment,
+      }),
     ]);
     const addInterests = SITES_WITH_INTERESTS_TO_MIGRATE.includes(siteAssociation);
     if (
@@ -90,9 +102,15 @@ async function synchronizeSinglePage(taskObject) {
     ) {
       throw new Error(`No data found for page ${pageNumber}`);
     }
-    const toSyncMembers = memberDataResponse.results.filter(
-      member => isUpdatedMember(member) && isSiteAssociatedMember(member, siteAssociation)
-    );
+    const toSyncMembers = memberDataResponse.results.filter(member => {
+      if (!isSiteAssociatedMember(member, siteAssociation)) {
+        return false;
+      }
+      if (action === MEMBER_ACTIONS.NONE && includeNone) {
+        return true;
+      }
+      return isUpdatedMember(member);
+    });
     if (toSyncMembers.length === 0) {
       return {
         success: true,
