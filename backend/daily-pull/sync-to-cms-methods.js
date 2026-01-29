@@ -6,7 +6,7 @@ const { TASKS_NAMES } = require('../tasks/consts');
 const { getSiteConfigs } = require('../utils');
 
 const { bulkProcessAndSaveMemberData } = require('./bulk-process-methods');
-const { MEMBER_ACTIONS, SITES_WITH_INTERESTS_TO_MIGRATE } = require('./consts');
+const { MEMBER_ACTIONS } = require('./consts');
 const { isUpdatedMember, isSiteAssociatedMember } = require('./utils');
 
 async function syncMembersDataPerAction(taskData) {
@@ -94,7 +94,6 @@ async function synchronizeSinglePage(taskObject) {
         isTestEnvironment,
       }),
     ]);
-    const addInterests = SITES_WITH_INTERESTS_TO_MIGRATE.includes(siteAssociation);
     if (
       !memberDataResponse ||
       !memberDataResponse.results ||
@@ -123,7 +122,6 @@ async function synchronizeSinglePage(taskObject) {
     const result = await bulkProcessAndSaveMemberData({
       memberDataList: toSyncMembers,
       currentPageNumber: pageNumber,
-      addInterests,
     });
 
     return {
