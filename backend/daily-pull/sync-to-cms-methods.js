@@ -9,6 +9,22 @@ const { bulkProcessAndSaveMemberData } = require('./bulk-process-methods');
 const { MEMBER_ACTIONS } = require('./consts');
 const { isUpdatedMember, isSiteAssociatedMember } = require('./utils');
 
+const filterLicensesByAssociation = (member, siteAssociation) => {
+  if (!member?.licenses || !Array.isArray(member.licenses)) {
+    return member;
+  }
+  const filteredLicenses = member.licenses.filter(license => {
+    if (!license || !license.association) {
+      return true;
+    }
+    return license.association === siteAssociation;
+  });
+  return {
+    ...member,
+    licenses: filteredLicenses,
+  };
+};
+
 async function syncMembersDataPerAction(taskData) {
   const { action, backupDate, isTestEnvironment, includeNone } = taskData;
   try {
@@ -110,6 +126,9 @@ async function synchronizeSinglePage(taskObject) {
       }
       return isUpdatedMember(member);
     });
+    const toSyncMembersWithFilteredLicenses = toSyncMembers.map(member =>
+      filterLicensesByAssociation(member, siteAssociation)
+    );
     if (toSyncMembers.length === 0) {
       return {
         success: true,
@@ -120,7 +139,7 @@ async function synchronizeSinglePage(taskObject) {
       };
     }
     const result = await bulkProcessAndSaveMemberData({
-      memberDataList: toSyncMembers,
+      memberDataList: toSyncMembersWithFilteredLicenses,
       currentPageNumber: pageNumber,
     });
 
