@@ -45,17 +45,23 @@ async function createContactAndMemberIfNew(memberData, allowDuplicates = false) 
     };
     const needsWixMember = !memberData.wixMemberId;
     const needsWixContact = !memberData.wixContactId;
+    console.log('needsWixMember', needsWixMember);
+    console.log('needsWixContact', needsWixContact);
     const [newWixMemberId, newWixContactId] = await Promise.all([
       needsWixMember ? createSiteMember(toCreateMemberData) : Promise.resolve(null),
       needsWixContact
         ? createSiteContact(toCreateMemberData, allowDuplicates)
         : Promise.resolve(null),
     ]);
+    console.log('newWixMemberId', newWixMemberId);
+    console.log('newWixContactId', newWixContactId);
     let memberDataWithContactId = {
       ...memberData,
       wixMemberId: newWixMemberId || memberData.wixMemberId,
       wixContactId: newWixContactId || memberData.wixContactId,
     };
+    console.log('latest WixMemberId', memberDataWithContactId.wixMemberId);
+    console.log('latest WixContactId', memberDataWithContactId.wixContactId);
     const updatedResult = await updateMember(memberDataWithContactId);
     memberDataWithContactId = {
       ...memberDataWithContactId,

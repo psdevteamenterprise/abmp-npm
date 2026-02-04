@@ -12,6 +12,7 @@ const elevatedCreateContact = auth.elevate(contacts.createContact);
  * @returns {Promise<Object>} - Contact data
  */
 async function createSiteContact(contactData, allowDuplicates = false) {
+  console.log('[createSiteContact]contactData', JSON.stringify(contactData, null, 2));
   if (!contactData || !(contactData.contactFormEmail || contactData.email)) {
     throw new Error('Contact data is required');
   }
@@ -27,7 +28,12 @@ async function createSiteContact(contactData, allowDuplicates = false) {
     },
     phones: { items: phones.map(phone => ({ phone })) },
   };
+  console.log('[createSiteContact]contactInfo', JSON.stringify(contactInfo, null, 2));
   const createContactResponse = await elevatedCreateContact(contactInfo, { allowDuplicates });
+  console.log(
+    '[createSiteContact]createContactResponse',
+    JSON.stringify(createContactResponse, null, 2)
+  );
   return createContactResponse.contact._id;
 }
 /**
