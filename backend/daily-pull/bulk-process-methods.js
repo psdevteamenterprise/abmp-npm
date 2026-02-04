@@ -124,15 +124,10 @@ async function ensureUniqueUrlsInBatch(memberDataList) {
  * @param {Object} options - The options object
  * @param {Array} options.memberDataList - Array of member data from API
  * @param {number} options.currentPageNumber - Current page number being processed
- * @param {boolean} [options.addInterests=true] - Whether to add interests to the member data
  * @param {Array} memberDataList - Array of member data from API
  * @returns {Promise<Object>} - Bulk save operation result with statistics
  */
-const bulkProcessAndSaveMemberData = async ({
-  memberDataList,
-  currentPageNumber,
-  addInterests = true,
-}) => {
+const bulkProcessAndSaveMemberData = async ({ memberDataList, currentPageNumber }) => {
   if (!Array.isArray(memberDataList) || memberDataList.length === 0) {
     throw new Error('Invalid member data list provided');
   }
@@ -144,7 +139,6 @@ const bulkProcessAndSaveMemberData = async ({
       generateUpdatedMemberData({
         inputMemberData: memberData,
         currentPageNumber,
-        addInterests,
       })
     );
 
