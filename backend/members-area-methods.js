@@ -13,9 +13,11 @@ function prepareMemberData(partner) {
 }
 async function createMemberFunction(member) {
   const newMember = await elevatedCreateMember(member);
+  console.log('[createMemberFunction]newMember', JSON.stringify(newMember, null, 2));
   return newMember._id;
 }
 const createSiteMember = async memberDetails => {
+  console.log('createSiteMember memberDetails', memberDetails);
   try {
     const options = prepareMemberData(memberDetails);
     return await createMemberFunction(options);
