@@ -556,12 +556,14 @@ async function trackButtonClick({ pageName, buttonName, data }) {
 
   const memberName = dbMember.fullName || 'Unknown';
   const memberId = dbMember.memberId;
+  const memberEmail = dbMember.email;
 
   const clickData = {
     memberName,
     memberId,
     pageName,
     buttonName,
+    memberEmail,
     clickedAt: new Date(),
     ...(data && { data }),
   };
