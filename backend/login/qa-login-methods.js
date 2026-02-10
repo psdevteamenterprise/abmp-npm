@@ -1,5 +1,6 @@
+const { CONFIG_KEYS } = require('../consts');
 const { prepareMemberForQALogin, getQAUsers } = require('../members-data-methods');
-const { getSecret } = require('../utils');
+const { getSecret, getSiteConfigs } = require('../utils');
 
 const validateQAUser = async userEmail => {
   const qaUsers = await getQAUsers();
@@ -20,18 +21,21 @@ const validateQAUser = async userEmail => {
  */
 const loginQAMember = async ({ userEmail, secret }, generateSessionToken) => {
   try {
-    const [userValidation, qaSecret] = await Promise.all([
-      validateQAUser(userEmail),
+    const [qaSecret, allowAnyMember] = await Promise.all([
       getSecret('ABMP_QA_SECRET'),
+      getSiteConfigs(CONFIG_KEYS.QA_ALLOW_ANY_MEMBER),
     ]);
-    if (userValidation.error) {
-      return { success: false, error: userValidation.error };
-    }
     if (secret !== qaSecret) {
       return { success: false, error: 'Invalid secret' };
     }
+    if (!allowAnyMember) {
+      const userValidation = await validateQAUser(userEmail);
+      if (userValidation.error) {
+        return { success: false, error: userValidation.error };
+      }
+    }
 
-    const memberData = await prepareMemberForQALogin(userValidation.email);
+    const memberData = await prepareMemberForQALogin(userEmail);
     const token = await generateSessionToken(memberData.email, qaSecret);
     return {
       success: true,
