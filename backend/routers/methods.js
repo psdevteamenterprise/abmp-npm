@@ -69,8 +69,7 @@ const createRoutersHandlers = wixRouterMethods => {
             },
             {
               name: 'robots',
-              content:
-                isPrivateMember || profileData?.optOut ? 'noindex, nofollow' : 'index, follow',
+              content: isPrivateMember ? 'noindex, nofollow' : 'index, follow',
             },
             // Open Graph tags
             {
