@@ -52,7 +52,9 @@ async function updateContactInfo(contactId, updateInfoCallback, operationName) {
     const currentInfo = contact.info;
     const updatedInfo = updateInfoCallback(currentInfo);
 
-    await elevatedUpdateContact(contactId, updatedInfo, contact.revision);
+    await elevatedUpdateContact(contactId, updatedInfo, contact.revision, {
+      allowDuplicates: true,
+    });
   } catch (error) {
     console.error(`Error in ${operationName}:`, error);
     throw new Error(`Failed to ${operationName}: ${error.message}`);
