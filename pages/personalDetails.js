@@ -1433,6 +1433,7 @@ async function personalDetailsOnReady({
       }
 
       updateMainAddressSelection(clickedItemData._id);
+      refreshAddressListIsMainState();
       checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     });
 
@@ -1462,8 +1463,11 @@ async function personalDetailsOnReady({
     });
 
     _$w('#addressItemRemoveBtn').onClick(async event => {
-      const data = _$w('#addressesList').data;
+      const data = _$w('#addressesList').data || [];
       const clickedItemData = data.find(item => item._id === event.context.itemId);
+      if (data.length <= 1 || clickedItemData?.isMain) {
+        return; // At least one address required; primary address cannot be deleted
+      }
       const result = await wixWindow.openLightbox(LIGHTBOX_NAMES.DELETE_CONFIRM);
       if (result && result.toDelete) {
         removeAddress(clickedItemData._id);
@@ -1517,13 +1521,18 @@ async function personalDetailsOnReady({
       addressStatus: ADDRESS_STATUS_TYPES.STATE_CITY_ZIP,
     };
 
+    const isFirstAddress = currentData.length === 0;
     const newAddressItem = {
       _id: newAddressId,
       address: newAddress,
-      isMain: false,
+      isMain: isFirstAddress,
       addressStatus: ADDRESS_STATUS_TYPES.STATE_CITY_ZIP,
       isNewAddress: true,
     };
+
+    if (isFirstAddress) {
+      updateMainAddressSelection(newAddressId);
+    }
 
     renderAddressesList([...currentData, newAddressItem]);
   }
@@ -1550,6 +1559,14 @@ async function personalDetailsOnReady({
 
     const addressStatus = itemData.address.addressStatus || ADDRESS_STATUS_TYPES.STATE_CITY_ZIP;
     $item('#addressStatusOptions').value = addressStatus;
+
+    const addressCount = (_$w('#addressesList').data || []).length;
+    const canDelete = addressCount > 1 && !itemData.isMain;
+    if (canDelete) {
+      $item('#addressItemRemoveBtn').enable();
+    } else {
+      $item('#addressItemRemoveBtn').disable();
+    }
   }
 
   function setupAddressEditState($item, itemData, _index) {
@@ -1653,15 +1670,21 @@ async function personalDetailsOnReady({
     if (!itemMemberObj.addresses) {
       itemMemberObj.addresses = [];
     }
+    const isFirstAddress = itemMemberObj.addresses.length === 0;
     itemMemberObj.addresses.push(addressData);
 
     if (!itemMemberObj.addressDisplayOption) {
       itemMemberObj.addressDisplayOption = [];
     }
-    itemMemberObj.addressDisplayOption.push({
-      key: addressData.key,
-      isMain: false,
-    });
+    const existingOption = itemMemberObj.addressDisplayOption.find(
+      opt => opt.key === (addressData.key || addressId)
+    );
+    if (!existingOption) {
+      itemMemberObj.addressDisplayOption.push({
+        key: addressData.key || addressId,
+        isMain: isFirstAddress,
+      });
+    }
 
     checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
   }
@@ -1735,6 +1758,34 @@ async function personalDetailsOnReady({
     selectedOption.isMain = true;
   }
 
+  /**
+   * Refreshes each repeater item's isMain from itemMemberObj.addressDisplayOption,
+   * updates repeater data, and explicitly updates each item's delete button state
+   * (repeater may not re-run onItemReady when only isMain changes).
+   * Uses forEachItem because Wix Repeater does not have .at(index).
+   */
+  function refreshAddressListIsMainState() {
+    const repeater = _$w('#addressesList');
+    const currentData = repeater.data || [];
+    const displayOptions = itemMemberObj.addressDisplayOption || [];
+    const updatedData = currentData.map(item => {
+      const opt = displayOptions.find(o => o.key === item._id);
+      return { ...item, isMain: opt?.isMain || false };
+    });
+    repeater.data = updatedData;
+
+    const addressCount = updatedData.length;
+    repeater.forEachItem(($item, _itemData, index) => {
+      const isMain = index < updatedData.length ? updatedData[index].isMain : false;
+      const canDelete = addressCount > 1 && !isMain;
+      if (canDelete) {
+        $item('#addressItemRemoveBtn').enable();
+      } else {
+        $item('#addressItemRemoveBtn').disable();
+      }
+    });
+  }
+
   function updateAddressStatus(addressId, newStatus) {
     const addresses = Array.isArray(itemMemberObj.addresses) ? itemMemberObj.addresses : [];
     const addressIndex = addresses.findIndex(
@@ -1763,6 +1814,12 @@ async function personalDetailsOnReady({
   }
 
   function removeAddress(addressId) {
+    const currentData = _$w('#addressesList').data || [];
+    const itemToRemove = currentData.find(item => item._id === addressId);
+    if (currentData.length <= 1 || itemToRemove?.isMain) {
+      return; // At least one address required; primary address cannot be deleted
+    }
+
     if (itemMemberObj.addresses) {
       itemMemberObj.addresses = itemMemberObj.addresses.filter(
         addr => (addr.key || `address_${itemMemberObj.addresses.indexOf(addr)}`) !== addressId
