@@ -31,7 +31,7 @@ async function findMemberByWixDataId(memberId) {
   }
 }
 
-async function createContactAndMemberIfNew(memberData, allowDuplicates = false) {
+async function createContactAndMemberIfNew(memberData, allowDuplicates = true) {
   if (!memberData) {
     throw new Error('Member data is required');
   }
@@ -480,14 +480,15 @@ const getQAUsers = async () => {
 /**
  * Ensures member has a contact - creates one if missing
  * @param {Object} memberData - Member data from DB
+ * @param {boolean} [allowDuplicates=false] - If true, allows creating duplicate contacts (e.g. for SSO/QA login)
  * @returns {Promise<Object>} - Member data with contact and member IDs
  */
-async function ensureWixMemberAndContactExist(memberData) {
+async function ensureWixMemberAndContactExist(memberData, allowDuplicates = false) {
   if (!memberData) {
     throw new Error('Member data is required');
   }
   if (!memberData.wixContactId || !memberData.wixMemberId) {
-    const memberDataWithContactId = await createContactAndMemberIfNew(memberData);
+    const memberDataWithContactId = await createContactAndMemberIfNew(memberData, allowDuplicates);
     return memberDataWithContactId;
   }
   return memberData;
@@ -504,7 +505,7 @@ async function prepareMemberForSSOLogin(data) {
       throw new Error(`Member data not found for memberId ${memberId}`);
     }
     console.log('memberData', memberData);
-    return await ensureWixMemberAndContactExist(memberData);
+    return await ensureWixMemberAndContactExist(memberData, true);
   } catch (error) {
     console.error(`Error in prepareMemberForSSOLogin: ${error.message}`);
     throw error;
@@ -521,7 +522,7 @@ async function prepareMemberForQALogin(email) {
       throw new Error(`Member data not found for email ${email}`);
     }
     console.log('memberData', memberData);
-    return await ensureWixMemberAndContactExist(memberData);
+    return await ensureWixMemberAndContactExist(memberData, true);
   } catch (error) {
     const errMsg = `[prepareMemberForQALogin] QA Login failed with error: ${error.message} for email: ${email}`;
     console.error(errMsg);
