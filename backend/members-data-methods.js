@@ -5,7 +5,7 @@ const { MEMBERSHIPS_TYPES } = require('./consts');
 const { createSiteContact } = require('./contacts-methods');
 const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { wixData } = require('./elevated-modules');
-const { createMemberContactOrchestration } = require('./member-contact-orchestration');
+const { updateMemberContactInfo } = require('./member-contact-orchestration');
 const { createSiteMember, getCurrentMember } = require('./members-area-methods');
 const {
   chunkArray,
@@ -16,7 +16,6 @@ const {
   runIf,
 } = require('./utils');
 
-const { updateMemberContactInfo } = createMemberContactOrchestration({ updateMember });
 /**
  * Retrieves member data by member ID
  * @param {string} memberId - The member ID to search for
@@ -293,9 +292,8 @@ async function saveRegistrationData(data, id) {
       mergedData.locHash = generateGeoHash(data.addresses);
     }
 
-    await updateMemberContactInfo(mergedData, existingMemberData);
-
-    const saveData = await updateMember(mergedData);
+    const dataToSave = await updateMemberContactInfo(mergedData, existingMemberData);
+    const saveData = await updateMember(dataToSave);
     return {
       type: 'success',
       saveData,

@@ -4,12 +4,12 @@ How Wix **Members** (login identity) and **CRM Contacts** (form/submission ident
 
 ## Concepts
 
-| Concept | Meaning |
-|--------|--------|
-| **Single entity** | Member and contact use the same Wix ID (`wixContactId === wixMemberId`). One person, one record. |
-| **Separate contact** | Member has a login email; contact has a different “form” email. Two Wix entities: one Member, one Contact. |
-| **Login email** | `memberData.email` — used to sign in (Wix Member). |
-| **Contact form email** | `memberData.contactFormEmail` — email used on forms; can differ from login. |
+| Concept                | Meaning                                                                                                    |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Single entity**      | Member and contact use the same Wix ID (`wixContactId === wixMemberId`). One person, one record.           |
+| **Separate contact**   | Member has a login email; contact has a different “form” email. Two Wix entities: one Member, one Contact. |
+| **Login email**        | `memberData.email` — used to sign in (Wix Member).                                                         |
+| **Contact form email** | `memberData.contactFormEmail` — email used on forms; can differ from login.                                |
 
 ---
 
@@ -71,11 +71,11 @@ flowchart TD
 
 ### Outcome
 
-| Scenario | wixMemberId | wixContactId |
-|---------|-------------|--------------|
+| Scenario                                | wixMemberId   | wixContactId                        |
+| --------------------------------------- | ------------- | ----------------------------------- |
 | New user, same email for login and form | New member ID | Same as wixMemberId (single entity) |
-| New user, form email ≠ login email | New member ID | New contact ID (separate contact) |
-| Existing user (already has both IDs) | Unchanged | Unchanged |
+| New user, form email ≠ login email      | New member ID | New contact ID (separate contact)   |
+| Existing user (already has both IDs)    | Unchanged     | Unchanged                           |
 
 ---
 
@@ -109,12 +109,12 @@ flowchart TD
 
 ### Decision table
 
-| Single entity? | New email vs login | Action |
-|----------------|--------------------|--------|
-| Yes | Same | No-op |
-| Yes | Different | Create new Contact; set member’s `wixContactId` to new contact ID |
-| No | Same | Delete Contact; set member’s `wixContactId = wixMemberId` |
-| No | Different | Update existing Contact’s email in CRM (no member change) |
+| Single entity? | New email vs login | Action                                                            |
+| -------------- | ------------------ | ----------------------------------------------------------------- |
+| Yes            | Same               | No-op                                                             |
+| Yes            | Different          | Create new Contact; set member’s `wixContactId` to new contact ID |
+| No             | Same               | Delete Contact; set member’s `wixContactId = wixMemberId`         |
+| No             | Different          | Update existing Contact’s email in CRM (no member change)         |
 
 ### Where it’s used
 
@@ -127,10 +127,10 @@ flowchart TD
 
 ## File roles
 
-| File | Role |
-|------|------|
-| `contacts-methods.js` | Contact CRUD only: create/update/delete contact in Wix CRM. |
-| `member-contact-orchestration.js` | Orchestration: when to create/update/delete contact and when to update member’s `wixContactId`. Uses injected `updateMember`. |
-| `members-data-methods.js` | Member CRUD, `createContactAndMemberIfNew`; requires `updateMemberContactInfo` and calls `updateMember` once with its return value. |
+| File                              | Role                                                                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `contacts-methods.js`             | Contact CRUD only: create/update/delete contact in Wix CRM.                                                                         |
+| `member-contact-orchestration.js` | Orchestration: when to create/update/delete contact and when to update member’s `wixContactId`. Uses injected `updateMember`.       |
+| `members-data-methods.js`         | Member CRUD, `createContactAndMemberIfNew`; requires `updateMemberContactInfo` and calls `updateMember` once with its return value. |
 
 Dependency direction: **members-data** → **member-contact-orchestration** → **contacts** (no cycle).

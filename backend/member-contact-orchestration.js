@@ -1,109 +1,106 @@
 /**
  * Orchestrates syncing between Wix Members and CRM Contacts.
- * Depends only on contact CRUD; updateMember is injected by members-data-methods to avoid circular deps.
+ * Returns member data to save; caller does a single updateMember to avoid double-write.
  */
 const { createSiteContact, updateContactInfo, deleteSiteContact } = require('./contacts-methods');
 
 /**
- * Creates orchestration functions that sync member and contact data.
- * @param {Object} deps - Dependencies from the member layer
- * @param {Function} deps.updateMember - Saves member data (from members-data-methods)
- * @returns {{ updateMemberContactInfo: Function }}
+ * Updates contact email in CRM. Returns member patch { wixContactId } when member record
+ * must change; otherwise null. Caller merges and saves once.
  */
-function createMemberContactOrchestration({ updateMember }) {
-  async function updateContactEmail(newContactEmail, existingMemberData) {
-    if (!newContactEmail) {
-      throw new Error('New email is required');
-    }
-    if (!existingMemberData || existingMemberData.wixContactId == null) {
-      throw new Error('Existing member data with wixContactId is required');
-    }
+async function updateContactEmail(newContactEmail, existingMemberData) {
+  if (!newContactEmail) {
+    throw new Error('New email is required');
+  }
+  if (!existingMemberData || existingMemberData.wixContactId == null) {
+    throw new Error('Existing member data with wixContactId is required');
+  }
 
-    const { wixContactId, wixMemberId, email: loginEmail } = existingMemberData;
-    const isSingleEntity = wixContactId === wixMemberId;
-    const contactEmailDiffersFromLogin = loginEmail !== newContactEmail;
+  const { wixContactId, wixMemberId, email: loginEmail } = existingMemberData;
+  const isSingleEntity = wixContactId === wixMemberId;
+  const contactEmailDiffersFromLogin = loginEmail !== newContactEmail;
 
-    if (!contactEmailDiffersFromLogin) {
-      if (isSingleEntity) {
-        return;
-      }
-      await deleteSiteContact(wixContactId);
-      await updateMember({ ...existingMemberData, wixContactId: wixMemberId });
-      return;
-    }
-
+  if (!contactEmailDiffersFromLogin) {
     if (isSingleEntity) {
-      const newWixContactId = await createSiteContact({
-        firstName: existingMemberData.firstName,
-        lastName: existingMemberData.lastName,
-        contactFormEmail: newContactEmail,
-      });
-      await updateMember({ ...existingMemberData, wixContactId: newWixContactId });
-      return;
+      return null;
     }
-
-    return updateContactInfo(
-      wixContactId,
-      currentInfo => ({
-        ...currentInfo,
-        emails: {
-          items: [{ email: newContactEmail, primary: true }],
-        },
-      }),
-      'update contact email'
-    );
+    await deleteSiteContact(wixContactId);
+    return { wixContactId: wixMemberId };
   }
 
-  async function updateContactNames({ wixContactId, firstName, lastName }) {
-    if (!firstName && !lastName) {
-      throw new Error('First name or last name is required');
-    }
-    const createNameUpdate = currentInfo => ({
-      ...currentInfo,
-      name: {
-        first: firstName || currentInfo?.name?.first || '',
-        last: lastName || currentInfo?.name?.last || '',
-      },
+  if (isSingleEntity) {
+    const newWixContactId = await createSiteContact({
+      firstName: existingMemberData.firstName,
+      lastName: existingMemberData.lastName,
+      contactFormEmail: newContactEmail,
     });
-    return await updateContactInfo(wixContactId, createNameUpdate, 'update contact names');
+    return { wixContactId: newWixContactId };
   }
 
-  const updateIfChanged = (existingValues, newValues, updater, argsBuilder) => {
-    const hasChanged = existingValues.some((val, idx) => val !== newValues[idx]);
-    if (!hasChanged) return null;
-    return updater(...argsBuilder(newValues));
-  };
-
-  async function updateMemberContactInfo(data, existingMemberData) {
-    const { wixContactId } = existingMemberData;
-    if (!wixContactId) {
-      throw new Error('Wix Contact ID is required');
-    }
-    const updateConfig = [
-      {
-        fields: ['contactFormEmail'],
-        updater: updateContactEmail,
-        args: ([email]) => [email, existingMemberData],
+  await updateContactInfo(
+    wixContactId,
+    currentInfo => ({
+      ...currentInfo,
+      emails: {
+        items: [{ email: newContactEmail, primary: true }],
       },
-      {
-        fields: ['firstName', 'lastName'],
-        updater: updateContactNames,
-        args: ([firstName, lastName]) => [{ firstName, lastName, wixContactId }],
-      },
-    ];
-
-    const updatePromises = updateConfig
-      .map(({ fields, updater, args }) => {
-        const existingValues = fields.map(field => existingMemberData[field]);
-        const newValues = fields.map(field => data[field]);
-        return updateIfChanged(existingValues, newValues, updater, args);
-      })
-      .filter(Boolean);
-
-    await Promise.all(updatePromises);
-  }
-
-  return { updateMemberContactInfo };
+    }),
+    'update contact email'
+  );
+  return null;
 }
 
-module.exports = { createMemberContactOrchestration };
+async function updateContactNames({ wixContactId, firstName, lastName }) {
+  if (!firstName && !lastName) {
+    throw new Error('First name or last name is required');
+  }
+  const createNameUpdate = currentInfo => ({
+    ...currentInfo,
+    name: {
+      first: firstName || currentInfo?.name?.first || '',
+      last: lastName || currentInfo?.name?.last || '',
+    },
+  });
+  return await updateContactInfo(wixContactId, createNameUpdate, 'update contact names');
+}
+
+/**
+ * Syncs contact with member (email, names). Contact CRUD only; returns member data to save.
+ * Caller must call updateMember once with the result.
+ */
+async function updateMemberContactInfo(data, existingMemberData) {
+  const { wixContactId } = existingMemberData;
+  if (!wixContactId) {
+    throw new Error('Wix Contact ID is required');
+  }
+  const updateConfig = [
+    {
+      fields: ['contactFormEmail'],
+      updater: updateContactEmail,
+      args: ([email]) => [email, existingMemberData],
+      returnsMemberPatch: true,
+    },
+    {
+      fields: ['firstName', 'lastName'],
+      updater: updateContactNames,
+      args: ([firstName, lastName]) => [{ firstName, lastName, wixContactId }],
+      returnsMemberPatch: false,
+    },
+  ];
+
+  const results = await Promise.all(
+    updateConfig.map(async ({ fields, updater, args, returnsMemberPatch }) => {
+      const existingValues = fields.map(field => existingMemberData[field]);
+      const newValues = fields.map(field => data[field]);
+      const hasChanged = existingValues.some((val, idx) => val !== newValues[idx]);
+      if (!hasChanged) return null;
+      const result = await updater(...args(newValues));
+      return returnsMemberPatch ? result : null;
+    })
+  );
+
+  const memberPatch = results.reduce((acc, patch) => (patch ? { ...acc, ...patch } : acc), {});
+  return { ...data, ...memberPatch };
+}
+
+module.exports = { updateMemberContactInfo };
