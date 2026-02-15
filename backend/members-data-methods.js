@@ -2,9 +2,10 @@ const { COLLECTIONS } = require('../public/consts');
 const { isWixHostedImage } = require('../public/Utils/sharedUtils');
 
 const { MEMBERSHIPS_TYPES } = require('./consts');
-const { updateMemberContactInfo, createSiteContact } = require('./contacts-methods');
+const { createSiteContact } = require('./contacts-methods');
 const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { wixData } = require('./elevated-modules');
+const { createMemberContactOrchestration } = require('./member-contact-orchestration');
 const { createSiteMember, getCurrentMember } = require('./members-area-methods');
 const {
   chunkArray,
@@ -12,8 +13,10 @@ const {
   queryAllItems,
   generateGeoHash,
   searchAllItems,
+  runIf,
 } = require('./utils');
 
+const { updateMemberContactInfo } = createMemberContactOrchestration({ updateMember });
 /**
  * Retrieves member data by member ID
  * @param {string} memberId - The member ID to search for
@@ -31,7 +34,10 @@ async function findMemberByWixDataId(memberId) {
   }
 }
 
-async function createContactAndMemberIfNew(memberData, allowDuplicates = true) {
+const hasDifferentEmails = memberData =>
+  memberData.contactFormEmail && memberData.contactFormEmail !== memberData.email;
+
+async function createContactAndMemberIfNew(memberData) {
   if (!memberData) {
     throw new Error('Member data is required');
   }
@@ -41,19 +47,25 @@ async function createContactAndMemberIfNew(memberData, allowDuplicates = true) {
       lastName: memberData.lastName,
       email: memberData.email,
       phones: memberData.phones,
-      contactFormEmail: memberData.contactFormEmail || memberData.email,
+      contactFormEmail: memberData.contactFormEmail,
     };
     const needsWixMember = !memberData.wixMemberId;
     const needsWixContact = !memberData.wixContactId;
+    const hasContactEmailDifferentFromLogin = hasDifferentEmails(memberData);
     console.log('needsWixMember', needsWixMember);
     console.log('needsWixContact', needsWixContact);
-    const [newWixMemberId, newWixContactId] = await Promise.all([
-      needsWixMember ? createSiteMember(toCreateMemberData) : Promise.resolve(null),
-      needsWixContact
-        ? createSiteContact(toCreateMemberData, allowDuplicates)
-        : Promise.resolve(null),
+    console.log('hasContactEmailDifferentFromLogin', hasContactEmailDifferentFromLogin);
+
+    const [newWixMemberId, createdWixContactId] = await Promise.all([
+      runIf(needsWixMember, () => createSiteMember(toCreateMemberData)),
+      runIf(needsWixContact && hasContactEmailDifferentFromLogin, () =>
+        createSiteContact(toCreateMemberData)
+      ),
     ]);
+    const memberContactId = newWixMemberId;
+    const newWixContactId = createdWixContactId || memberContactId;
     console.log('newWixMemberId', newWixMemberId);
+    console.log('memberContactId', memberContactId);
     console.log('newWixContactId', newWixContactId);
     let memberDataWithContactId = {
       ...memberData,
@@ -480,15 +492,14 @@ const getQAUsers = async () => {
 /**
  * Ensures member has a contact - creates one if missing
  * @param {Object} memberData - Member data from DB
- * @param {boolean} [allowDuplicates=false] - If true, allows creating duplicate contacts (e.g. for SSO/QA login)
  * @returns {Promise<Object>} - Member data with contact and member IDs
  */
-async function ensureWixMemberAndContactExist(memberData, allowDuplicates = false) {
+async function ensureWixMemberAndContactExist(memberData) {
   if (!memberData) {
     throw new Error('Member data is required');
   }
   if (!memberData.wixContactId || !memberData.wixMemberId) {
-    const memberDataWithContactId = await createContactAndMemberIfNew(memberData, allowDuplicates);
+    const memberDataWithContactId = await createContactAndMemberIfNew(memberData);
     return memberDataWithContactId;
   }
   return memberData;
@@ -505,7 +516,7 @@ async function prepareMemberForSSOLogin(data) {
       throw new Error(`Member data not found for memberId ${memberId}`);
     }
     console.log('memberData', memberData);
-    return await ensureWixMemberAndContactExist(memberData, true);
+    return await ensureWixMemberAndContactExist(memberData);
   } catch (error) {
     console.error(`Error in prepareMemberForSSOLogin: ${error.message}`);
     throw error;
@@ -522,7 +533,7 @@ async function prepareMemberForQALogin(email) {
       throw new Error(`Member data not found for email ${email}`);
     }
     console.log('memberData', memberData);
-    return await ensureWixMemberAndContactExist(memberData, true);
+    return await ensureWixMemberAndContactExist(memberData);
   } catch (error) {
     const errMsg = `[prepareMemberForQALogin] QA Login failed with error: ${error.message} for email: ${email}`;
     console.error(errMsg);

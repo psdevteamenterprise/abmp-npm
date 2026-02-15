@@ -199,6 +199,9 @@ function encodeXml(value) {
 function formatDateOnly(dateStr) {
   return new Date(dateStr).toISOString().slice(0, 10);
 }
+
+const runIf = (condition, asyncFn) => (condition ? asyncFn() : Promise.resolve(null));
+
 module.exports = {
   getSiteConfigs,
   retrieveAllItems,
@@ -218,4 +221,5 @@ module.exports = {
   getMoreAddressesToDisplay,
   isPAC_STAFF,
   searchAllItems,
+  runIf,
 };
