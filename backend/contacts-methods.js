@@ -9,23 +9,6 @@ const elevatedDeleteContact = auth.elevate(contacts.deleteContact);
 const deleteSiteContact = contactId => elevatedDeleteContact(contactId);
 
 /**
- * Builds contact payload from member data. Reusable for createSiteContact callers.
- * @param {Object} memberData - Member data (firstName, lastName, email, phones, contactFormEmail)
- * @param {Object} [overrides] - Optional overrides (e.g. { contactFormEmail: newEmail })
- * @returns {Object} - Shape expected by createSiteContact
- */
-function contactDataFromMember(memberData, overrides = {}) {
-  return {
-    firstName: memberData.firstName,
-    lastName: memberData.lastName,
-    email: memberData.email,
-    phones: memberData.phones,
-    contactFormEmail: memberData.contactFormEmail || memberData.email,
-    ...overrides,
-  };
-}
-
-/**
  * Create a contact in Wix CRM
  * @param {Object} contactData - Contact data
  * @returns {Promise<Object>} - Contact data
@@ -78,5 +61,4 @@ module.exports = {
   createSiteContact,
   updateContactInfo,
   deleteSiteContact,
-  contactDataFromMember,
 };
