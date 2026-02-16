@@ -7,6 +7,10 @@ function prepareMemberData(partner) {
   const options = {
     member: {
       loginEmail: partner.email,
+      contact: {
+        firstName: partner.firstName,
+        lastName: partner.lastName,
+      },
     },
   };
   return options;
