@@ -55,7 +55,7 @@ const TASKS = {
     getIdentifier: task => task,
     process: synchronizeSinglePage,
     shouldSkipCheck: () => false,
-    estimatedDurationSec: 6,
+    estimatedDurationSec: 130, //Longer duration to ensure single page will be processed during job tick, for a smoother data updates, to reduce throttling and timeouts issues.
   },
   [TASKS_NAMES.scheduleTaskForEmptyAboutYouMembers]: {
     name: TASKS_NAMES.scheduleTaskForEmptyAboutYouMembers,
