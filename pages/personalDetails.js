@@ -552,7 +552,6 @@ async function personalDetailsOnReady({
         isEmailValid = _$w('#contactFormEmailInput').valid;
         const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
         const otherWebsiteValue = (_$w('#UrlInput').value || '').trim();
-        // Use explicit validation: Wix .valid can lag until blur; we need real-time enable/disable
         const isOtherWebsiteRequiredValid =
           !showExistingUrl || (otherWebsiteValue !== '' && !isNotValidUrl(otherWebsiteValue));
         isUrlValid =
