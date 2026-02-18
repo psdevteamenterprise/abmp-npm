@@ -476,6 +476,10 @@ async function personalDetailsOnReady({
             handlerMap => handlerMap.section === section
           );
           checkFormChanges(handlerMap);
+          // Ensure other-website input highlight updates when URL is invalid (runs after value is committed)
+          if (section === FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section) {
+            setTimeout(updateOtherWebsiteInputHighlight, 0);
+          }
         });
       });
     });
@@ -515,6 +519,22 @@ async function personalDetailsOnReady({
     });
   }
 
+  function updateOtherWebsiteInputHighlight() {
+    const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
+    const $urlInput = _$w('#UrlInput');
+    if (!showExistingUrl) {
+      $urlInput.customClassList.remove('invalid-input');
+      return;
+    }
+    const value = (_$w('#UrlInput').value || '').trim();
+    const isEmptyOrInvalid = value === '' || isNotValidUrl(value);
+    if (isEmptyOrInvalid) {
+      $urlInput.customClassList.add('invalid-input');
+    } else {
+      $urlInput.customClassList.remove('invalid-input');
+    }
+  }
+
   function checkFormChanges(formSectionHandler) {
     let isFormDataChanged = false;
     const toggleSaveDataButton = (formDataType, isFormDataChanged) => {
@@ -544,13 +564,7 @@ async function personalDetailsOnReady({
           isOtherWebsiteRequiredValid &&
           !isNotValidUrl(_$w('#UrlInput').value) &&
           !isNotValidUrl(_$w('#schedulingLinkInput').value);
-        // Highlight other-website input when "other website" is checked but empty or invalid
-        const $urlInput = _$w('#UrlInput');
-        if (showExistingUrl && (otherWebsiteValue === '' || isNotValidUrl(otherWebsiteValue))) {
-          $urlInput.customClassList.add('invalid-input');
-        } else {
-          $urlInput.customClassList.remove('invalid-input');
-        }
+        updateOtherWebsiteInputHighlight();
       }
       if (formDataType === FORM_SECTION_HANDLER_MAP.PERSONAL.section) {
         isNameValid = _$w('#firstNameInput').valid && _$w('#lastNameInput').valid;
@@ -625,7 +639,18 @@ async function personalDetailsOnReady({
       addressDisplayOption: originalMemberData.addressDisplayOption,
       addresses: originalMemberData.addresses,
     };
-    return !_.isEqual(currentContactData, originalContactData);
+    // Normalize so empty string and undefined are treated the same
+    const str = v => (v != null ? v : '').toString().trim();
+    const normalizeContactForCompare = data => ({
+      ...data,
+      website: str(data.website),
+      bookingUrl: str(data.bookingUrl),
+      contactFormEmail: str(data.contactFormEmail),
+    });
+    return !_.isEqual(
+      normalizeContactForCompare(currentContactData),
+      normalizeContactForCompare(originalContactData)
+    );
   }
 
   function setBusinessServices() {
@@ -1279,6 +1304,7 @@ async function personalDetailsOnReady({
       _$w('#UrlInput').disable();
       _$w('#urlWebsiteText').customClassList.remove('highlighted-text');
     }
+    updateOtherWebsiteInputHighlight();
 
     // clear buttons
     _$w('#clearSchedulingLinkInput').onClick(() => {
