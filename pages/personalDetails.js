@@ -476,9 +476,8 @@ async function personalDetailsOnReady({
             handlerMap => handlerMap.section === section
           );
           checkFormChanges(handlerMap);
-          // Ensure other-website input highlight updates when URL is invalid (runs after value is committed)
           if (section === FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section) {
-            setTimeout(updateOtherWebsiteInputHighlight, 0);
+            setTimeout(syncOtherWebsiteUrlValidity, 0);
           }
         });
       });
@@ -519,19 +518,14 @@ async function personalDetailsOnReady({
     });
   }
 
-  function updateOtherWebsiteInputHighlight() {
+  function syncOtherWebsiteUrlValidity() {
     const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
     const $urlInput = _$w('#UrlInput');
-    if (!showExistingUrl) {
-      $urlInput.customClassList.remove('invalid-input');
-      return;
-    }
-    const value = (_$w('#UrlInput').value || '').trim();
-    const isEmptyOrInvalid = value === '' || isNotValidUrl(value);
-    if (isEmptyOrInvalid) {
-      $urlInput.customClassList.add('invalid-input');
+    $urlInput.required = showExistingUrl;
+    if (showExistingUrl) {
+      $urlInput.updateValidityIndication();
     } else {
-      $urlInput.customClassList.remove('invalid-input');
+      $urlInput.resetValidityIndication();
     }
   }
 
@@ -557,14 +551,13 @@ async function personalDetailsOnReady({
       if (formDataType === FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section) {
         isEmailValid = _$w('#contactFormEmailInput').valid;
         const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
-        const otherWebsiteValue = (_$w('#UrlInput').value || '').trim();
-        const isOtherWebsiteRequiredValid =
-          !showExistingUrl || (otherWebsiteValue !== '' && !isNotValidUrl(otherWebsiteValue));
+        const $urlInput = _$w('#UrlInput');
+        const isOtherWebsiteRequiredValid = !showExistingUrl || $urlInput.valid;
         isUrlValid =
           isOtherWebsiteRequiredValid &&
           !isNotValidUrl(_$w('#UrlInput').value) &&
           !isNotValidUrl(_$w('#schedulingLinkInput').value);
-        updateOtherWebsiteInputHighlight();
+        syncOtherWebsiteUrlValidity();
       }
       if (formDataType === FORM_SECTION_HANDLER_MAP.PERSONAL.section) {
         isNameValid = _$w('#firstNameInput').valid && _$w('#lastNameInput').valid;
@@ -581,9 +574,7 @@ async function personalDetailsOnReady({
     if (formSectionHandler) {
       const { section, handler } = formSectionHandler;
       isFormDataChanged = handler();
-      console.log('isFormDataChanged', isFormDataChanged);
       formHasUnsavedChanges[section] = isFormDataChanged;
-      console.log('formHasUnsavedChanges', formHasUnsavedChanges);
       if (
         [
           FORM_SECTION_HANDLER_MAP.PERSONAL.section,
@@ -1307,7 +1298,7 @@ async function personalDetailsOnReady({
       _$w('#UrlInput').disable();
       _$w('#urlWebsiteText').customClassList.remove('highlighted-text');
     }
-    updateOtherWebsiteInputHighlight();
+    syncOtherWebsiteUrlValidity();
 
     // clear buttons
     _$w('#clearSchedulingLinkInput').onClick(() => {
@@ -1324,7 +1315,6 @@ async function personalDetailsOnReady({
       if (e.target.checked) {
         _$w('#showExsistingUrlCheckbox').checked = false;
         _$w('#UrlInput').disable();
-        _$w('#UrlInput').customClassList.remove('invalid-input');
         _$w('#urlWebsiteText').customClassList.add('highlighted-text');
       }
       checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
@@ -1334,8 +1324,6 @@ async function personalDetailsOnReady({
         _$w('#showUrlWixCheckbox').checked = false;
         _$w('#UrlInput').enable();
         _$w('#urlWebsiteText').customClassList.remove('highlighted-text');
-      } else {
-        _$w('#UrlInput').customClassList.remove('invalid-input');
       }
       checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     });
@@ -2095,14 +2083,13 @@ async function personalDetailsOnReady({
     // if showWixUrl value changes then update optWebsiteCheckbox value
     _$w('#optWebsiteCheckbox').checked = itemMemberObj.showWixUrl;
 
-    // When "other website" is selected, require non-empty valid URL; block save and highlight if invalid
     const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
-    const otherWebsiteValue = (_$w('#UrlInput').value || '').trim();
-    if (showExistingUrl && (otherWebsiteValue === '' || isNotValidUrl(otherWebsiteValue))) {
-      _$w('#UrlInput').customClassList.add('invalid-input');
+    const $urlInput = _$w('#UrlInput');
+    if (showExistingUrl && !$urlInput.valid) {
+      $urlInput.required = true;
+      $urlInput.updateValidityIndication();
       return;
     }
-    _$w('#UrlInput').customClassList.remove('invalid-input');
 
     const beforeData = JSON.parse(JSON.stringify(itemMemberObj));
     const contactChanges = getContactAndBookingData();
