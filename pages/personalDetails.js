@@ -581,7 +581,9 @@ async function personalDetailsOnReady({
     if (formSectionHandler) {
       const { section, handler } = formSectionHandler;
       isFormDataChanged = handler();
+      console.log('isFormDataChanged', isFormDataChanged);
       formHasUnsavedChanges[section] = isFormDataChanged;
+      console.log('formHasUnsavedChanges', formHasUnsavedChanges);
       if (
         [
           FORM_SECTION_HANDLER_MAP.PERSONAL.section,
@@ -647,6 +649,23 @@ async function personalDetailsOnReady({
       bookingUrl: str(data.bookingUrl),
       contactFormEmail: str(data.contactFormEmail),
     });
+    console.log('currentContactData', currentContactData);
+    console.log('originalContactData', originalContactData);
+    console.log(
+      'normalizeContactForCompare(currentContactData)',
+      normalizeContactForCompare(currentContactData)
+    );
+    console.log(
+      'normalizeContactForCompare(originalContactData)',
+      normalizeContactForCompare(originalContactData)
+    );
+    console.log(
+      'isEqual',
+      _.isEqual(
+        normalizeContactForCompare(currentContactData),
+        normalizeContactForCompare(originalContactData)
+      )
+    );
     return !_.isEqual(
       normalizeContactForCompare(currentContactData),
       normalizeContactForCompare(originalContactData)
