@@ -551,8 +551,10 @@ async function personalDetailsOnReady({
       if (formDataType === FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section) {
         isEmailValid = _$w('#contactFormEmailInput').valid;
         const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
-        const $urlInput = _$w('#UrlInput');
-        const isOtherWebsiteRequiredValid = !showExistingUrl || $urlInput.valid;
+        const otherWebsiteValue = (_$w('#UrlInput').value || '').trim();
+        // Use explicit validation: Wix .valid can lag until blur; we need real-time enable/disable
+        const isOtherWebsiteRequiredValid =
+          !showExistingUrl || (otherWebsiteValue !== '' && !isNotValidUrl(otherWebsiteValue));
         isUrlValid =
           isOtherWebsiteRequiredValid &&
           !isNotValidUrl(_$w('#UrlInput').value) &&
@@ -2084,8 +2086,11 @@ async function personalDetailsOnReady({
     _$w('#optWebsiteCheckbox').checked = itemMemberObj.showWixUrl;
 
     const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
-    const $urlInput = _$w('#UrlInput');
-    if (showExistingUrl && !$urlInput.valid) {
+    const otherWebsiteValue = (_$w('#UrlInput').value || '').trim();
+    const isOtherWebsiteInvalid =
+      showExistingUrl && (otherWebsiteValue === '' || isNotValidUrl(otherWebsiteValue));
+    if (isOtherWebsiteInvalid) {
+      const $urlInput = _$w('#UrlInput');
       $urlInput.required = true;
       $urlInput.updateValidityIndication();
       return;
