@@ -640,6 +640,7 @@ async function personalDetailsOnReady({
       showWixUrl: originalMemberData.showWixUrl,
       addressDisplayOption: originalMemberData.addressDisplayOption,
       addresses: originalMemberData.addresses,
+      phones: Array.isArray(originalMemberData.phones) ? originalMemberData.phones : [],
     };
     // Normalize so empty string and undefined are treated the same
     const str = v => (v != null ? v : '').toString().trim();
@@ -649,23 +650,6 @@ async function personalDetailsOnReady({
       bookingUrl: str(data.bookingUrl),
       contactFormEmail: str(data.contactFormEmail),
     });
-    console.log('currentContactData', currentContactData);
-    console.log('originalContactData', originalContactData);
-    console.log(
-      'normalizeContactForCompare(currentContactData)',
-      normalizeContactForCompare(currentContactData)
-    );
-    console.log(
-      'normalizeContactForCompare(originalContactData)',
-      normalizeContactForCompare(originalContactData)
-    );
-    console.log(
-      'isEqual',
-      _.isEqual(
-        normalizeContactForCompare(currentContactData),
-        normalizeContactForCompare(originalContactData)
-      )
-    );
     return !_.isEqual(
       normalizeContactForCompare(currentContactData),
       normalizeContactForCompare(originalContactData)
