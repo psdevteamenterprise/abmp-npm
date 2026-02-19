@@ -534,7 +534,9 @@ async function personalDetailsOnReady({
     elements.$contactFormEmailInput.onInput(async event => {
       const value = event.target.value;
 
-      if (value) {
+      if (!value) {
+        setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED, value);
+      } else {
         try {
           const isAlreadyUsed = await isEmailAlreadyUsed(value, itemMemberObj.memberId);
           if (isAlreadyUsed) {
@@ -542,6 +544,7 @@ async function personalDetailsOnReady({
           } else {
             ContactEmailValidity.valid = true;
             ContactEmailValidity.validationMessage = '';
+            forceTriggerContactEmailCustomValidation(value);
           }
         } catch (error) {
           console.error('Email validation error:', error);
