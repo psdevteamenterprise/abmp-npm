@@ -642,4 +642,5 @@ module.exports = {
   prepareMemberForQALogin,
   checkUrlUniqueness,
   trackButtonClick,
+  isEmailAlreadyUsed,
 };
