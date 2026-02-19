@@ -335,6 +335,7 @@ async function personalDetailsOnReady({
 
     handleIsStudent();
     _$w('#optWebsiteCheckbox').checked = itemMemberObj.showWixUrl;
+    handleOptWebsiteCheckboxEnable(itemMemberObj.showWebsite);
     toggleFreeWebsiteText(itemMemberObj.showWixUrl);
 
     setupOptOutCheckbox(
@@ -358,6 +359,19 @@ async function personalDetailsOnReady({
           'showWixUrl'
         )
     );
+  }
+
+  function handleOptWebsiteCheckboxEnable(showExistingWebsite) {
+    _$w('#optWebsiteCheckbox').checked = !showExistingWebsite;
+    if (showExistingWebsite) {
+      _$w('#optWebsiteCheckbox').customClassList.add('disabled-text');
+      _$w('#optWebsiteCheckbox').customClassList.add('disabled-checkbox');
+      _$w('#optWebsiteCheckbox').disable();
+    } else {
+      _$w('#optWebsiteCheckbox').customClassList.remove('disabled-text');
+      _$w('#optWebsiteCheckbox').customClassList.remove('disabled-checkbox');
+      _$w('#optWebsiteCheckbox').enable();
+    }
   }
 
   function setupOptOutCheckbox(
@@ -2139,6 +2153,9 @@ async function personalDetailsOnReady({
     console.groupEnd();
 
     const result = await saveData(formData);
+    if (beforeData.showWebsite !== contactChanges.showWebsite) {
+      handleOptWebsiteCheckboxEnable(showExistingUrl);
+    }
     formHasUnsavedChanges[FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section] = false;
     handleSaveDataFeedback(_$w('#contactMessage'), result.message);
   }
