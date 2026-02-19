@@ -505,10 +505,8 @@ async function personalDetailsOnReady({
     });
 
     elements.$contactFormEmailInput.onCustomValidation((value, reject) => {
-      if (!value) {
-        reject(CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED);
-        return;
-      }
+      console.log('ContactEmailValidity', ContactEmailValidity);
+      console.log('value', value);
       if (!ContactEmailValidity.valid) {
         reject(ContactEmailValidity.validationMessage);
         return;
@@ -526,7 +524,7 @@ async function personalDetailsOnReady({
       forceTriggerContactEmailCustomValidation(value);
     };
 
-    elements.$contactFormEmailInput.onChange(async event => {
+    elements.$contactFormEmailInput.onInput(async event => {
       const value = event.target.value;
 
       if (!value) {
@@ -539,6 +537,7 @@ async function personalDetailsOnReady({
           } else {
             ContactEmailValidity.valid = true;
             ContactEmailValidity.validationMessage = '';
+            forceTriggerContactEmailCustomValidation(value);
           }
         } catch (error) {
           console.error('Email validation error:', error);
