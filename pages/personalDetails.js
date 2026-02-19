@@ -320,6 +320,7 @@ async function personalDetailsOnReady({
 
     handleIsStudent();
     _$w('#optWebsiteCheckbox').checked = itemMemberObj.showWixUrl;
+    handleOptWebsiteCheckboxEnable(itemMemberObj.showWebsite);
     toggleFreeWebsiteText(itemMemberObj.showWixUrl);
 
     setupOptOutCheckbox(
@@ -343,6 +344,14 @@ async function personalDetailsOnReady({
           'showWixUrl'
         )
     );
+  }
+
+  function handleOptWebsiteCheckboxEnable(showExistingWebsite) {
+    if (showExistingWebsite) {
+      _$w('#optWebsiteCheckbox').disable();
+    } else {
+      _$w('#optWebsiteCheckbox').enable();
+    }
   }
 
   function setupOptOutCheckbox(
@@ -1321,6 +1330,7 @@ async function personalDetailsOnReady({
       checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     });
     _$w('#showExsistingUrlCheckbox').onChange(e => {
+      handleOptWebsiteCheckboxEnable(e.target.checked);
       if (e.target.checked) {
         _$w('#showUrlWixCheckbox').checked = false;
         _$w('#UrlInput').enable();
