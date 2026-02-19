@@ -476,6 +476,9 @@ async function personalDetailsOnReady({
             handlerMap => handlerMap.section === section
           );
           checkFormChanges(handlerMap);
+          if (section === FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section) {
+            setTimeout(syncOtherWebsiteUrlValidity, 0);
+          }
         });
       });
     });
@@ -515,6 +518,17 @@ async function personalDetailsOnReady({
     });
   }
 
+  function syncOtherWebsiteUrlValidity() {
+    const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
+    const $urlInput = _$w('#UrlInput');
+    $urlInput.required = showExistingUrl;
+    if (showExistingUrl) {
+      $urlInput.updateValidityIndication();
+    } else {
+      $urlInput.resetValidityIndication();
+    }
+  }
+
   function checkFormChanges(formSectionHandler) {
     let isFormDataChanged = false;
     const toggleSaveDataButton = (formDataType, isFormDataChanged) => {
@@ -536,9 +550,15 @@ async function personalDetailsOnReady({
         isSlugValidLocal = true;
       if (formDataType === FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section) {
         isEmailValid = _$w('#contactFormEmailInput').valid;
+        const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
+        const otherWebsiteValue = (_$w('#UrlInput').value || '').trim();
+        const isOtherWebsiteRequiredValid =
+          !showExistingUrl || (otherWebsiteValue !== '' && !isNotValidUrl(otherWebsiteValue));
         isUrlValid =
+          isOtherWebsiteRequiredValid &&
           !isNotValidUrl(_$w('#UrlInput').value) &&
           !isNotValidUrl(_$w('#schedulingLinkInput').value);
+        syncOtherWebsiteUrlValidity();
       }
       if (formDataType === FORM_SECTION_HANDLER_MAP.PERSONAL.section) {
         isNameValid = _$w('#firstNameInput').valid && _$w('#lastNameInput').valid;
@@ -612,8 +632,20 @@ async function personalDetailsOnReady({
       showWixUrl: originalMemberData.showWixUrl,
       addressDisplayOption: originalMemberData.addressDisplayOption,
       addresses: originalMemberData.addresses,
+      phones: Array.isArray(originalMemberData.phones) ? originalMemberData.phones : [],
     };
-    return !_.isEqual(currentContactData, originalContactData);
+    // Normalize so empty string and undefined are treated the same
+    const str = v => (v != null ? v : '').toString().trim();
+    const normalizeContactForCompare = data => ({
+      ...data,
+      website: str(data.website),
+      bookingUrl: str(data.bookingUrl),
+      contactFormEmail: str(data.contactFormEmail),
+    });
+    return !_.isEqual(
+      normalizeContactForCompare(currentContactData),
+      normalizeContactForCompare(originalContactData)
+    );
   }
 
   function setBusinessServices() {
@@ -1267,6 +1299,7 @@ async function personalDetailsOnReady({
       _$w('#UrlInput').disable();
       _$w('#urlWebsiteText').customClassList.remove('highlighted-text');
     }
+    syncOtherWebsiteUrlValidity();
 
     // clear buttons
     _$w('#clearSchedulingLinkInput').onClick(() => {
@@ -2050,6 +2083,17 @@ async function personalDetailsOnReady({
   async function saveContactBooking() {
     // if showWixUrl value changes then update optWebsiteCheckbox value
     _$w('#optWebsiteCheckbox').checked = itemMemberObj.showWixUrl;
+
+    const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
+    const otherWebsiteValue = (_$w('#UrlInput').value || '').trim();
+    const isOtherWebsiteInvalid =
+      showExistingUrl && (otherWebsiteValue === '' || isNotValidUrl(otherWebsiteValue));
+    if (isOtherWebsiteInvalid) {
+      const $urlInput = _$w('#UrlInput');
+      $urlInput.required = true;
+      $urlInput.updateValidityIndication();
+      return;
+    }
 
     const beforeData = JSON.parse(JSON.stringify(itemMemberObj));
     const contactChanges = getContactAndBookingData();
