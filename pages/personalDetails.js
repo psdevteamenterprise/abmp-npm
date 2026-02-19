@@ -347,9 +347,14 @@ async function personalDetailsOnReady({
   }
 
   function handleOptWebsiteCheckboxEnable(showExistingWebsite) {
+    _$w('#optWebsiteCheckbox').checked = !showExistingWebsite;
     if (showExistingWebsite) {
+      _$w('#optWebsiteCheckbox').customClassList.add('disabled-text');
+      _$w('#optWebsiteCheckbox').customClassList.add('disabled-checkbox');
       _$w('#optWebsiteCheckbox').disable();
     } else {
+      _$w('#optWebsiteCheckbox').customClassList.remove('disabled-text');
+      _$w('#optWebsiteCheckbox').customClassList.remove('disabled-checkbox');
       _$w('#optWebsiteCheckbox').enable();
     }
   }
@@ -1330,7 +1335,6 @@ async function personalDetailsOnReady({
       checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     });
     _$w('#showExsistingUrlCheckbox').onChange(e => {
-      handleOptWebsiteCheckboxEnable(e.target.checked);
       if (e.target.checked) {
         _$w('#showUrlWixCheckbox').checked = false;
         _$w('#UrlInput').enable();
@@ -2134,6 +2138,9 @@ async function personalDetailsOnReady({
     console.groupEnd();
 
     const result = await saveData(formData);
+    if (beforeData.showWebsite !== contactChanges.showWebsite) {
+      handleOptWebsiteCheckboxEnable(showExistingUrl);
+    }
     formHasUnsavedChanges[FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section] = false;
     handleSaveDataFeedback(_$w('#contactMessage'), result.message);
   }
