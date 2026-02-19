@@ -507,6 +507,11 @@ async function personalDetailsOnReady({
     elements.$contactFormEmailInput.onCustomValidation((value, reject) => {
       console.log('ContactEmailValidity', ContactEmailValidity);
       console.log('value', value);
+      if (!value) {
+        console.log('inside not value');
+        reject(CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED);
+        return;
+      }
       if (!ContactEmailValidity.valid) {
         reject(ContactEmailValidity.validationMessage);
         return;
@@ -515,6 +520,7 @@ async function personalDetailsOnReady({
     // Helper to force trigger contact email custom validation programmatically (onCustomValidation
     // does not run with async validators, so we trigger it manually on input).
     const forceTriggerContactEmailCustomValidation = value => {
+      console.log('forceTriggerContactEmailCustomValidation ..', value);
       elements.$contactFormEmailInput.value = value;
     };
 
@@ -528,13 +534,19 @@ async function personalDetailsOnReady({
       const value = event.target.value;
 
       if (!value) {
-        setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED, value);
+        console.log('inside not value ..');
+        ContactEmailValidity.valid = false;
+        ContactEmailValidity.validationMessage = CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED;
+        elements.$contactFormEmailInput.updateValidityIndication();
       } else {
+        console.log('inside value ..');
         try {
           const isAlreadyUsed = await isEmailAlreadyUsed(value, itemMemberObj.memberId);
           if (isAlreadyUsed) {
+            console.log('inside isAlreadyUsed ..');
             setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.ALREADY_TAKEN, value);
           } else {
+            console.log('valid email  ..');
             ContactEmailValidity.valid = true;
             ContactEmailValidity.validationMessage = '';
             forceTriggerContactEmailCustomValidation(value);
