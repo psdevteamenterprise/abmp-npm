@@ -52,6 +52,15 @@ const FORM_SECTION_HANDLER_MAP = {
   DIRECTORY_OPT_OUT: { section: 'directoryOptOut', handler: null },
   WEBSITE_OPT_OUT: { section: 'websiteOptOut', handler: null },
 };
+const ContactEmailValidity = {
+  valid: true,
+  validationMessage: '',
+};
+const CONTACT_EMAIL_VALIDATION_MESSAGES = {
+  REQUIRED: 'Email is required',
+  ALREADY_TAKEN: 'Email is already taken. Please choose a different one.',
+  ERROR: 'There was an error. Please try again.',
+};
 
 async function personalDetailsOnReady({
   $w: _$w,
@@ -160,21 +169,6 @@ async function personalDetailsOnReady({
       }
     } catch (error) {
       console.error('Logout failed:', error);
-    }
-  });
-  _$w('#contactFormEmailInput').onCustomValidation(async (value, reject) => {
-    if (!value) {
-      reject('Email is required');
-      return;
-    }
-    try {
-      const _isEmailAlreadyUsed = await isEmailAlreadyUsed(value, itemMemberObj.memberId);
-      if (_isEmailAlreadyUsed) {
-        reject('Email is already taken. Please choose a different one.');
-      }
-    } catch (error) {
-      console.error('Email validation error:', error);
-      reject('There was an error. Please try again.');
     }
   });
   itemMemberObj = memberData;
@@ -492,12 +486,10 @@ async function personalDetailsOnReady({
       ],
       [FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section]: [
         { $elem: elements.$showContactFormCheckbox, changeEvent: CHANGE_EVENTS.ON_CHANGE },
-        { $elem: elements.$contactFormEmailInput, changeEvent: CHANGE_EVENTS.ON_INPUT },
         { $elem: elements.$schedulingLinkInput, changeEvent: CHANGE_EVENTS.ON_INPUT },
         { $elem: elements.$UrlInput, changeEvent: CHANGE_EVENTS.ON_INPUT },
       ],
     };
-
     Object.keys(formChangeEventBindings).forEach(section => {
       formChangeEventBindings[section].forEach(({ $elem, changeEvent }) => {
         $elem[changeEvent](() => {
@@ -510,6 +502,50 @@ async function personalDetailsOnReady({
           }
         });
       });
+    });
+
+    elements.$contactFormEmailInput.onCustomValidation((value, reject) => {
+      if (!value) {
+        reject(CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED);
+        return;
+      }
+      if (!ContactEmailValidity.valid) {
+        reject(ContactEmailValidity.validationMessage);
+        return;
+      }
+    });
+    // Helper to force trigger contact email custom validation programmatically (onCustomValidation
+    // does not run with async validators, so we trigger it manually on input).
+    const forceTriggerContactEmailCustomValidation = value => {
+      elements.$contactFormEmailInput.value = value;
+    };
+
+    const setContactEmailInvalid = (message, value) => {
+      ContactEmailValidity.valid = false;
+      ContactEmailValidity.validationMessage = message;
+      forceTriggerContactEmailCustomValidation(value);
+    };
+
+    elements.$contactFormEmailInput.onInput(async event => {
+      const value = event.target.value;
+
+      if (!value) {
+        setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED, value);
+      } else {
+        try {
+          const isAlreadyUsed = await isEmailAlreadyUsed(value, itemMemberObj.memberId);
+          if (isAlreadyUsed) {
+            setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.ALREADY_TAKEN, value);
+          } else {
+            ContactEmailValidity.valid = true;
+            ContactEmailValidity.validationMessage = '';
+          }
+        } catch (error) {
+          console.error('Email validation error:', error);
+          setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.ERROR, value);
+        }
+      }
+      checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     });
 
     _$w('#slugInput').onInput(event => {
