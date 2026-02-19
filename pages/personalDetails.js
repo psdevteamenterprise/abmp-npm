@@ -533,7 +533,7 @@ async function personalDetailsOnReady({
 
     elements.$contactFormEmailInput.onInput(async event => {
       const value = event.target.value;
-
+      _$w('#saveContactBookingButton').disable();
       if (!value) {
         setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED, value);
       } else {
