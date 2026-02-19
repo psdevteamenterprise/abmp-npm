@@ -59,6 +59,7 @@ async function personalDetailsOnReady({
   saveRegistrationData,
   validateMemberToken,
   checkUrlUniqueness,
+  isEmailAlreadyUsed,
   trackClick,
 }) {
   let itemMemberObj = {};
@@ -161,7 +162,21 @@ async function personalDetailsOnReady({
       console.error('Logout failed:', error);
     }
   });
-
+  _$w('#contactFormEmailInput').onCustomValidation(async (value, reject) => {
+    if (!value) {
+      reject('Email is required');
+      return;
+    }
+    try {
+      const _isEmailAlreadyUsed = await isEmailAlreadyUsed(value, itemMemberObj.memberId);
+      if (_isEmailAlreadyUsed) {
+        reject('Email is already taken. Please choose a different one.');
+      }
+    } catch (error) {
+      console.error('Email validation error:', error);
+      reject('There was an error. Please try again.');
+    }
+  });
   itemMemberObj = memberData;
   originalMemberData = JSON.parse(JSON.stringify(memberData));
   // Initialize selectedServices based on memberData
@@ -1271,7 +1286,7 @@ async function personalDetailsOnReady({
     // derive booleans only once
     const showWixUrlCheckbox = !itemMemberObj.showWebsite && itemMemberObj.showWixUrl;
     const showExistingUrlCheckbox = itemMemberObj.showWebsite;
-
+    _$w('#contactFormEmailInput').required = true;
     // basic fields
     _$w('#showCotactFormCheckbox').checked = itemMemberObj.showContactForm;
     _$w('#contactFormEmailInput').value = itemMemberObj.contactFormEmail;
