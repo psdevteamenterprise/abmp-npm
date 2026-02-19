@@ -526,7 +526,7 @@ async function personalDetailsOnReady({
       forceTriggerContactEmailCustomValidation(value);
     };
 
-    elements.$contactFormEmailInput.onInput(async event => {
+    elements.$contactFormEmailInput.onChange(async event => {
       const value = event.target.value;
 
       if (!value) {
