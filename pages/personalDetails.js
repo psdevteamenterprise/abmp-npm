@@ -52,6 +52,15 @@ const FORM_SECTION_HANDLER_MAP = {
   DIRECTORY_OPT_OUT: { section: 'directoryOptOut', handler: null },
   WEBSITE_OPT_OUT: { section: 'websiteOptOut', handler: null },
 };
+const ContactEmailValidity = {
+  valid: true,
+  validationMessage: '',
+};
+const CONTACT_EMAIL_VALIDATION_MESSAGES = {
+  REQUIRED: 'Email is required',
+  ALREADY_TAKEN: 'Email is already taken. Please choose a different one.',
+  ERROR: 'There was an error. Please try again.',
+};
 
 async function personalDetailsOnReady({
   $w: _$w,
@@ -59,6 +68,7 @@ async function personalDetailsOnReady({
   saveRegistrationData,
   validateMemberToken,
   checkUrlUniqueness,
+  isEmailAlreadyUsed,
   trackClick,
 }) {
   let itemMemberObj = {};
@@ -161,7 +171,6 @@ async function personalDetailsOnReady({
       console.error('Logout failed:', error);
     }
   });
-
   itemMemberObj = memberData;
   originalMemberData = JSON.parse(JSON.stringify(memberData));
   // Initialize selectedServices based on memberData
@@ -477,12 +486,10 @@ async function personalDetailsOnReady({
       ],
       [FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section]: [
         { $elem: elements.$showContactFormCheckbox, changeEvent: CHANGE_EVENTS.ON_CHANGE },
-        { $elem: elements.$contactFormEmailInput, changeEvent: CHANGE_EVENTS.ON_INPUT },
         { $elem: elements.$schedulingLinkInput, changeEvent: CHANGE_EVENTS.ON_INPUT },
         { $elem: elements.$UrlInput, changeEvent: CHANGE_EVENTS.ON_INPUT },
       ],
     };
-
     Object.keys(formChangeEventBindings).forEach(section => {
       formChangeEventBindings[section].forEach(({ $elem, changeEvent }) => {
         $elem[changeEvent](() => {
@@ -495,6 +502,56 @@ async function personalDetailsOnReady({
           }
         });
       });
+    });
+
+    elements.$contactFormEmailInput.onCustomValidation((value, reject) => {
+      if (!value) {
+        reject(CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED);
+        return;
+      }
+      // When value is non-empty, ignore stale "required" state (from when field was empty).
+      // Blur can run validation before async isEmailAlreadyUsed completes.
+      if (
+        !ContactEmailValidity.valid &&
+        ContactEmailValidity.validationMessage !== CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED
+      ) {
+        reject(ContactEmailValidity.validationMessage);
+        return;
+      }
+    });
+    // Helper to force trigger contact email custom validation programmatically (onCustomValidation
+    // does not run with async validators, so we trigger it manually on input).
+    const forceTriggerContactEmailCustomValidation = value => {
+      elements.$contactFormEmailInput.value = value;
+    };
+
+    const setContactEmailInvalid = (message, value) => {
+      ContactEmailValidity.valid = false;
+      ContactEmailValidity.validationMessage = message;
+      forceTriggerContactEmailCustomValidation(value);
+    };
+
+    elements.$contactFormEmailInput.onInput(async event => {
+      const value = event.target.value;
+      _$w('#saveContactBookingButton').disable();
+      if (!value) {
+        setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED, value);
+      } else {
+        try {
+          const isAlreadyUsed = await isEmailAlreadyUsed(value, itemMemberObj.memberId);
+          if (isAlreadyUsed) {
+            setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.ALREADY_TAKEN, value);
+          } else {
+            ContactEmailValidity.valid = true;
+            ContactEmailValidity.validationMessage = '';
+            forceTriggerContactEmailCustomValidation(value);
+          }
+        } catch (error) {
+          console.error('Email validation error:', error);
+          setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.ERROR, value);
+        }
+      }
+      checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     });
 
     _$w('#slugInput').onInput(event => {
@@ -1285,7 +1342,7 @@ async function personalDetailsOnReady({
     // derive booleans only once
     const showWixUrlCheckbox = !itemMemberObj.showWebsite && itemMemberObj.showWixUrl;
     const showExistingUrlCheckbox = itemMemberObj.showWebsite;
-
+    _$w('#contactFormEmailInput').required = true;
     // basic fields
     _$w('#showCotactFormCheckbox').checked = itemMemberObj.showContactForm;
     _$w('#contactFormEmailInput').value = itemMemberObj.contactFormEmail;

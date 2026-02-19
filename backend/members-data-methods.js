@@ -249,6 +249,25 @@ async function updateMember(memberToUpdate) {
     throw new Error(`Failed to update member data: ${error.message}`);
   }
 }
+async function isEmailAlreadyUsed(email, memberId) {
+  const member = await getMemberByContactEmail(email);
+  return member !== null && member.memberId !== memberId;
+}
+async function getMemberByContactEmail(email) {
+  const members = await wixData
+    .query(COLLECTIONS.MEMBERS_DATA)
+    .eq('contactFormEmail', email)
+    .or(wixData.query(COLLECTIONS.MEMBERS_DATA).eq('email', email))
+    .limit(2)
+    .find()
+    .then(res => res.items);
+  if (members.length > 1) {
+    throw new Error(
+      `[getMemberByContactEmail] Multiple members found with same loginemail or contactFormEmail ${email} membersIds are : [${members.map(member => member.memberId).join(', ')}]`
+    );
+  }
+  return members[0] || null;
+}
 /**
  * Saves member registration data (supports partial updates)
  * @param {Object} data - Member data to save (can be partial - only fields being updated)
@@ -271,7 +290,15 @@ async function saveRegistrationData(data, id) {
         };
       }
     }
-
+    if (data.contactFormEmail) {
+      const isDuplicate = await isEmailAlreadyUsed(data.contactFormEmail, data.memberId);
+      if (isDuplicate) {
+        return {
+          type: 'error',
+          error: 'Contact Email is already taken. Please choose a different one.',
+        };
+      }
+    }
     // Fetch existing data to merge with partial update
     const existingMemberData = await findMemberByWixDataId(id);
 
@@ -615,4 +642,5 @@ module.exports = {
   prepareMemberForQALogin,
   checkUrlUniqueness,
   trackButtonClick,
+  isEmailAlreadyUsed,
 };
