@@ -1,6 +1,6 @@
 {
   "name": "abmp-npm",
-  "version": "1.10.39",
+  "version": "1.10.40",
   "main": "index.js",
   "scripts": {
     "check-cycles": "madge --circular .",
