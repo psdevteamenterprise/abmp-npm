@@ -89,8 +89,10 @@ async function personalDetailsOnReady({
   };
 
   const slugValidationTimeout = {};
+  const contactEmailValidationTimeout = {};
   let isSlugValid = true;
   let currentSlugValidationId = 0;
+  let currentContactEmailValidationId = 0;
 
   const SLUG_FLAGS = {
     VALID: '#validSlugFlag',
@@ -531,14 +533,32 @@ async function personalDetailsOnReady({
       forceTriggerContactEmailCustomValidation(value);
     };
 
-    elements.$contactFormEmailInput.onInput(async event => {
+    elements.$contactFormEmailInput.onInput(event => {
       const value = event.target.value;
       _$w('#saveContactBookingButton').disable();
+
+      if (contactEmailValidationTimeout.validation) {
+        clearTimeout(contactEmailValidationTimeout.validation);
+      }
+
       if (!value) {
         setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.REQUIRED, value);
-      } else {
+        checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
+        return;
+      }
+
+      const validationId = ++currentContactEmailValidationId;
+      contactEmailValidationTimeout.validation = setTimeout(async () => {
         try {
+          if (validationId !== currentContactEmailValidationId) {
+            return;
+          }
+
           const isAlreadyUsed = await isEmailAlreadyUsed(value, itemMemberObj.memberId);
+          if (validationId !== currentContactEmailValidationId) {
+            return;
+          }
+
           if (isAlreadyUsed) {
             setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.ALREADY_TAKEN, value);
           } else {
@@ -548,10 +568,15 @@ async function personalDetailsOnReady({
           }
         } catch (error) {
           console.error('Email validation error:', error);
-          setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.ERROR, value);
+          if (validationId === currentContactEmailValidationId) {
+            setContactEmailInvalid(CONTACT_EMAIL_VALIDATION_MESSAGES.ERROR, value);
+          }
+        } finally {
+          if (validationId === currentContactEmailValidationId) {
+            checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
+          }
         }
-      }
-      checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
+      }, 500);
     });
 
     _$w('#slugInput').onInput(event => {
