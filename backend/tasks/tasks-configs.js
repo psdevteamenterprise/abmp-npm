@@ -4,6 +4,10 @@ const {
   syncMembersDataPerAction,
 } = require('../daily-pull/sync-to-cms-methods');
 
+const {
+  scheduleFixPrimaryAddressForMembers,
+  fixPrimaryAddressChunk,
+} = require('./address-primary-methods');
 const { TASKS_NAMES } = require('./consts');
 const {
   scheduleTaskForEmptyAboutYouMembers,
@@ -166,6 +170,20 @@ const TASKS = {
     name: TASKS_NAMES.createContactsFromMembers,
     getIdentifier: task => task.data,
     process: createContactsFromMembers,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.scheduleFixPrimaryAddressForMembers]: {
+    name: TASKS_NAMES.scheduleFixPrimaryAddressForMembers,
+    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    process: scheduleFixPrimaryAddressForMembers,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.fixPrimaryAddressChunk]: {
+    name: TASKS_NAMES.fixPrimaryAddressChunk,
+    getIdentifier: task => task.data,
+    process: fixPrimaryAddressChunk,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
   },
