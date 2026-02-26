@@ -66,6 +66,11 @@ function transformMemberToProfileData(member, siteAssociation) {
           numeric: true,
         })
       ) || [];
+
+  const phones = Array.isArray(member.phones) ? member.phones : [];
+  const toShowPhone = member.toShowPhone || '';
+  const phone = toShowPhone && phones.includes(toShowPhone) ? toShowPhone : '';
+
   return {
     mainAddress,
     testimonials: member.testimonial || [],
@@ -84,7 +89,7 @@ function transformMemberToProfileData(member, siteAssociation) {
     bookingUrl: member.bookingUrl,
     aboutService: member.aboutService,
     businessName: (member.showBusinessName && member.businessName) || '',
-    phone: member.toShowPhone || '',
+    phone,
     areasOfPractices,
     gallery: member.gallery,
     bannerImages: member.bannerImages,

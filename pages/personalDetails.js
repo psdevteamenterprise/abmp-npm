@@ -2122,14 +2122,17 @@ async function personalDetailsOnReady({
     const phoneToRemove = currentData.find(item => item._id === phoneId);
 
     if (phoneToRemove) {
-      if (itemMemberObj.toShowPhone === phoneToRemove.phoneNumber) {
-        itemMemberObj.toShowPhone = null;
-      }
-
       if (itemMemberObj.phones) {
         itemMemberObj.phones = itemMemberObj.phones.filter(
           phone => phone !== phoneToRemove.phoneNumber
         );
+      }
+
+      // Clear toShowPhone if it was the removed phone or if it's no longer in the list
+      // (handles format mismatch e.g. "(406)655-4940" vs "(406) 655-4940")
+      const remainingPhones = Array.isArray(itemMemberObj.phones) ? itemMemberObj.phones : [];
+      if (itemMemberObj.toShowPhone && !remainingPhones.includes(itemMemberObj.toShowPhone)) {
+        itemMemberObj.toShowPhone = null;
       }
 
       const updatedData = currentData.filter(item => item._id !== phoneId);
@@ -2152,7 +2155,13 @@ async function personalDetailsOnReady({
   }
 
   function getToShowPhone() {
-    return itemMemberObj.toShowPhone || null;
+    const phones = Array.isArray(itemMemberObj.phones) ? itemMemberObj.phones : [];
+    const toShow = itemMemberObj.toShowPhone || null;
+    // Never expose toShowPhone when phones is empty, so save payload clears it in CMS
+    if (phones.length === 0) return null;
+    // If toShowPhone is not in the list (e.g. format mismatch), treat as none selected
+    if (toShow && !phones.includes(toShow)) return null;
+    return toShow;
   }
 
   function getContactAndBookingData() {
