@@ -85,10 +85,15 @@ async function generateUpdatedMemberData({ inputMemberData, currentPageNumber })
   if (!existingDbMember && isValidArray(inputMemberData.addresses)) {
     const normalizedAddresses = inputMemberData.addresses.map((address, index) => {
       const key = address?.key || `address_${index}`;
+      const rawStatus = address?.addressStatus;
+      const resolvedStatus =
+        index === 0 && rawStatus === ADDRESS_STATUS_TYPES.DONT_SHOW
+          ? ADDRESS_STATUS_TYPES.STATE_CITY_ZIP
+          : rawStatus || ADDRESS_STATUS_TYPES.STATE_CITY_ZIP;
       return {
         ...address,
         key,
-        addressStatus: address?.addressStatus || ADDRESS_STATUS_TYPES.STATE_CITY_ZIP,
+        addressStatus: resolvedStatus,
       };
     });
     updatedMemberData.addresses = normalizedAddresses;
