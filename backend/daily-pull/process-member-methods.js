@@ -1,3 +1,4 @@
+const { ADDRESS_STATUS_TYPES } = require('../../public/consts');
 const { findMemberById, getMemberBySlug } = require('../members-data-methods');
 const { isValidArray, generateGeoHash } = require('../utils');
 
@@ -82,7 +83,16 @@ async function generateUpdatedMemberData({ inputMemberData, currentPageNumber })
 
   // Only add address data for new members
   if (!existingDbMember && isValidArray(inputMemberData.addresses)) {
-    updatedMemberData.addresses = inputMemberData.addresses;
+    const normalizedAddresses = inputMemberData.addresses.map((address, index) => {
+      const key = address?.key || `address_${index}`;
+      return {
+        ...address,
+        key,
+        addressStatus: address?.addressStatus || ADDRESS_STATUS_TYPES.STATE_CITY_ZIP,
+      };
+    });
+    updatedMemberData.addresses = normalizedAddresses;
+    updatedMemberData.addressDisplayOption = [{ key: normalizedAddresses[0].key, isMain: true }];
   }
 
   return { ...updatedMemberData, isNewToDb: !existingDbMember };
