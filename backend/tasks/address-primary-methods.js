@@ -28,6 +28,7 @@ async function scheduleFixPrimaryAddressForMembers() {
       .isNotEmpty('addresses')
       .limit(1000);
     const members = await queryAllItems(membersQuery);
+    console.log(`Fetched ${members.length} members with addresses`);
 
     const membersToFix = members.filter(member => {
       const addresses = Array.isArray(member.addresses) ? member.addresses : [];
@@ -44,6 +45,7 @@ async function scheduleFixPrimaryAddressForMembers() {
           .filter(memberId => Number.isFinite(memberId) && memberId > 0)
       ),
     ];
+    console.log(`Members with multiple addresses and no primary: ${memberIds.length}`);
 
     if (memberIds.length === 0) {
       console.log('No members need primary address fixes');
@@ -79,6 +81,7 @@ async function scheduleFixPrimaryAddressForMembers() {
     };
 
     console.log('=== Scheduling Complete ===');
+    console.log(`Sample memberIds: ${memberIds.slice(0, 10).join(', ')}`);
     console.log(JSON.stringify(result, null, 2));
 
     return result;
@@ -106,9 +109,13 @@ async function fixPrimaryAddressChunk(data) {
     skippedIds: [],
     failedIds: [],
   };
+  const skippedNoMultiAddress = [];
+  const skippedHasPrimary = [];
+  const updatedIds = [];
 
   try {
     const members = await getMembersByIds(memberIds);
+    console.log(`Loaded ${members.length} members for this chunk`);
     const membersToUpdate = [];
 
     members.forEach(member => {
@@ -116,11 +123,17 @@ async function fixPrimaryAddressChunk(data) {
       if (addresses.length <= 1) {
         result.skipped++;
         result.skippedIds.push(member.memberId);
+        if (skippedNoMultiAddress.length < 20) {
+          skippedNoMultiAddress.push(member.memberId);
+        }
         return;
       }
       if (hasPrimaryAddress(member.addressDisplayOption)) {
         result.skipped++;
         result.skippedIds.push(member.memberId);
+        if (skippedHasPrimary.length < 20) {
+          skippedHasPrimary.push(member.memberId);
+        }
         return;
       }
 
@@ -151,6 +164,9 @@ async function fixPrimaryAddressChunk(data) {
         addresses: normalizedAddresses,
         addressDisplayOption: updatedDisplayOptions,
       });
+      if (updatedIds.length < 20) {
+        updatedIds.push(member.memberId);
+      }
     });
 
     if (membersToUpdate.length === 0) {
@@ -162,6 +178,9 @@ async function fixPrimaryAddressChunk(data) {
       await bulkSaveMembers(membersToUpdate);
       result.successful += membersToUpdate.length;
       console.log(`✅ Successfully updated ${membersToUpdate.length} members`);
+      if (updatedIds.length > 0) {
+        console.log(`Updated memberIds (sample): ${updatedIds.join(', ')}`);
+      }
     } catch (error) {
       console.error('❌ Error bulk saving members:', error);
       result.failed += membersToUpdate.length;
@@ -170,6 +189,13 @@ async function fixPrimaryAddressChunk(data) {
         error: error.message,
         memberCount: membersToUpdate.length,
       });
+    }
+
+    if (skippedNoMultiAddress.length > 0) {
+      console.log(`Skipped (<=1 address) sample: ${skippedNoMultiAddress.join(', ')}`);
+    }
+    if (skippedHasPrimary.length > 0) {
+      console.log(`Skipped (already has primary) sample: ${skippedHasPrimary.join(', ')}`);
     }
 
     return result;
