@@ -1556,9 +1556,23 @@ async function personalDetailsOnReady({
       _$w('#mainAddressCheckbox').checked = false;
       checkbox.checked = true;
 
+      // Primary address cannot be hidden: update model and repeater data so UI and save stay in sync
       if (clickedItemData.address.addressStatus === ADDRESS_STATUS_TYPES.DONT_SHOW) {
         updateAddressStatus(clickedItemData._id, ADDRESS_STATUS_TYPES.STATE_CITY_ZIP);
         $item('#addressStatusOptions').value = ADDRESS_STATUS_TYPES.STATE_CITY_ZIP;
+        const currentData = _$w('#addressesList').data || [];
+        const dataWithStatusFixed = currentData.map(item =>
+          item._id === clickedItemData._id
+            ? {
+                ...item,
+                address: {
+                  ...item.address,
+                  addressStatus: ADDRESS_STATUS_TYPES.STATE_CITY_ZIP,
+                },
+              }
+            : item
+        );
+        _$w('#addressesList').data = dataWithStatusFixed;
       }
 
       updateMainAddressSelection(clickedItemData._id);
@@ -1567,7 +1581,7 @@ async function personalDetailsOnReady({
     });
 
     _$w('#addressStatusOptions').onChange(event => {
-      const data = _$w('#addressesList').data;
+      const data = _$w('#addressesList').data || [];
       const clickedItemData = data.find(item => item._id === event.context.itemId);
       const newStatus = event.target.value;
       const $item = _$w.at(event.context);
@@ -1579,6 +1593,15 @@ async function personalDetailsOnReady({
       }
 
       updateAddressStatus(clickedItemData._id, newStatus);
+
+      // Keep repeater data in sync (required for new addresses not yet in itemMemberObj.addresses)
+      const updatedData = data.map(item =>
+        item._id === clickedItemData._id
+          ? { ...item, address: { ...item.address, addressStatus: newStatus } }
+          : item
+      );
+      _$w('#addressesList').data = updatedData;
+
       checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     });
 
