@@ -1581,7 +1581,7 @@ async function personalDetailsOnReady({
     });
 
     _$w('#addressStatusOptions').onChange(event => {
-      const data = _$w('#addressesList').data;
+      const data = _$w('#addressesList').data || [];
       const clickedItemData = data.find(item => item._id === event.context.itemId);
       const newStatus = event.target.value;
       const $item = _$w.at(event.context);
@@ -1593,6 +1593,15 @@ async function personalDetailsOnReady({
       }
 
       updateAddressStatus(clickedItemData._id, newStatus);
+
+      // Keep repeater data in sync (required for new addresses not yet in itemMemberObj.addresses)
+      const updatedData = data.map(item =>
+        item._id === clickedItemData._id
+          ? { ...item, address: { ...item.address, addressStatus: newStatus } }
+          : item
+      );
+      _$w('#addressesList').data = updatedData;
+
       checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     });
 
