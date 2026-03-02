@@ -18,6 +18,8 @@ const TASKS_NAMES = {
   generateUrlsChunk: 'generateUrlsChunk',
   scheduleCreateContactsFromMembers: 'scheduleCreateContactsFromMembers',
   createContactsFromMembers: 'createContactsFromMembers',
+  scheduleFixPrimaryAddressForMembers: 'scheduleFixPrimaryAddressForMembers',
+  fixPrimaryAddressChunk: 'fixPrimaryAddressChunk',
 };
 
 module.exports = {

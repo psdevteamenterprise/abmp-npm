@@ -68,6 +68,20 @@ async function scheduleCreateContactsFromMembersTask() {
   }
 }
 
+async function scheduleFixPrimaryAddressForMembersTask() {
+  try {
+    console.log('scheduleFixPrimaryAddressForMembers started!');
+    return await taskManager().schedule({
+      name: TASKS_NAMES.scheduleFixPrimaryAddressForMembers,
+      data: {},
+      type: 'scheduled',
+    });
+  } catch (error) {
+    console.error(`Failed to scheduleFixPrimaryAddressForMembers: ${error.message}`);
+    throw new Error(`Failed to scheduleFixPrimaryAddressForMembers: ${error.message}`);
+  }
+}
+
 async function updateSiteMapS3() {
   try {
     return await taskManager().schedule({
@@ -85,4 +99,5 @@ module.exports = {
   scheduleDailyPullTask,
   updateSiteMapS3,
   scheduleCreateContactsFromMembersTask,
+  scheduleFixPrimaryAddressForMembersTask,
 };

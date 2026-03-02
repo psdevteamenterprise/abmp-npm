@@ -4,4 +4,5 @@ module.exports = {
   ...require('./tasks-process-methods'),
   ...require('./migration-methods'),
   ...require('./url-migration-methods'),
+  ...require('./address-primary-methods'),
 };
