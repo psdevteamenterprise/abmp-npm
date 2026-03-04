@@ -20,6 +20,8 @@ const TASKS_NAMES = {
   createContactsFromMembers: 'createContactsFromMembers',
   scheduleFixPrimaryAddressForMembers: 'scheduleFixPrimaryAddressForMembers',
   fixPrimaryAddressChunk: 'fixPrimaryAddressChunk',
+  scheduleFixPrimaryAddressVisibilityForMembers: 'scheduleFixPrimaryAddressVisibilityForMembers',
+  fixPrimaryAddressVisibilityChunk: 'fixPrimaryAddressVisibilityChunk',
 };
 
 module.exports = {

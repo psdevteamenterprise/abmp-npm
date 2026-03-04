@@ -7,6 +7,8 @@ const {
 const {
   scheduleFixPrimaryAddressForMembers,
   fixPrimaryAddressChunk,
+  scheduleFixPrimaryAddressVisibilityForMembers,
+  fixPrimaryAddressVisibilityChunk,
 } = require('./address-primary-methods');
 const { TASKS_NAMES } = require('./consts');
 const {
@@ -184,6 +186,20 @@ const TASKS = {
     name: TASKS_NAMES.fixPrimaryAddressChunk,
     getIdentifier: task => task.data,
     process: fixPrimaryAddressChunk,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.scheduleFixPrimaryAddressVisibilityForMembers]: {
+    name: TASKS_NAMES.scheduleFixPrimaryAddressVisibilityForMembers,
+    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    process: scheduleFixPrimaryAddressVisibilityForMembers,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.fixPrimaryAddressVisibilityChunk]: {
+    name: TASKS_NAMES.fixPrimaryAddressVisibilityChunk,
+    getIdentifier: task => task.data,
+    process: fixPrimaryAddressVisibilityChunk,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
   },

@@ -82,6 +82,20 @@ async function scheduleFixPrimaryAddressForMembersTask() {
   }
 }
 
+async function scheduleFixPrimaryAddressVisibilityForMembersTask() {
+  try {
+    console.log('scheduleFixPrimaryAddressVisibilityForMembers started!');
+    return await taskManager().schedule({
+      name: TASKS_NAMES.scheduleFixPrimaryAddressVisibilityForMembers,
+      data: {},
+      type: 'scheduled',
+    });
+  } catch (error) {
+    console.error(`Failed to scheduleFixPrimaryAddressVisibilityForMembers: ${error.message}`);
+    throw new Error(`Failed to scheduleFixPrimaryAddressVisibilityForMembers: ${error.message}`);
+  }
+}
+
 async function updateSiteMapS3() {
   try {
     return await taskManager().schedule({
@@ -100,4 +114,5 @@ module.exports = {
   updateSiteMapS3,
   scheduleCreateContactsFromMembersTask,
   scheduleFixPrimaryAddressForMembersTask,
+  scheduleFixPrimaryAddressVisibilityForMembersTask,
 };
