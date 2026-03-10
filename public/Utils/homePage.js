@@ -5,17 +5,7 @@ const { DEFAULT_FILTER } = require('../consts.js');
 
 const { debouncedFunction } = require('./sharedUtils.js');
 
-function generateSearchId() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
 const createHomepageUtils = (_$w, filterProfiles) => {
-  let currentSearchId = null;
-
   const getFiltersSelectors = filterName => ({
     checkBoxContainerSelector: _$w(`#${filterName}CheckBoxContainer`),
     searchTextInputSelector: _$w(`#${filterName}TextInput`),
@@ -670,9 +660,6 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     isSearchingNearby,
     preservePagination = false,
   }) {
-    const thisSearchId = generateSearchId();
-    currentSearchId = thisSearchId;
-
     const multiStateBoxSelector = _$w('#resultsStateBox');
     const renderingEnv = await rendering.env();
     const initSearchResultsUI = () => {
@@ -718,8 +705,6 @@ const createHomepageUtils = (_$w, filterProfiles) => {
                 args: { filter, isSearchingNearby },
               });
       const { success, response, error } = await funcPromise();
-      if (thisSearchId !== currentSearchId) return [];
-
       if (!success) {
         _$w('#numberOfResults').text = '';
         console.error('[search] failed with error:', error);
