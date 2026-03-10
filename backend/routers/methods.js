@@ -47,10 +47,12 @@ const createRoutersHandlers = wixRouterMethods => {
         }
         const profileUrl = `${request.baseUrl}/${PAGES_PATHS.PROFILE}/${profileData.url}`;
         const isPrivateMember = profileData.isPrivateMember;
+        const isStudent = profileData.shouldHaveStudentBadge;
+        const shouldNoIndex = isPrivateMember || isStudent;
         const seoData = {
           title: seoTitle,
           description: description,
-          noIndex: isPrivateMember,
+          noIndex: shouldNoIndex,
           metaTags: [
             {
               name: 'description',
@@ -69,7 +71,7 @@ const createRoutersHandlers = wixRouterMethods => {
             },
             {
               name: 'robots',
-              content: isPrivateMember ? 'noindex, nofollow' : 'index, follow',
+              content: shouldNoIndex ? 'noindex, nofollow' : 'index, follow',
             },
             // Open Graph tags
             {
