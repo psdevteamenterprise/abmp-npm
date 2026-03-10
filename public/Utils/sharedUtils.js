@@ -87,9 +87,11 @@ function findMainAddress(addressDisplayOption = [], addresses = []) {
   return '';
 }
 function formatAddress(item) {
+  if (!item) return '';
   let addressParts = [];
-  const limitedPostalCode = item.postalcode.slice(0, 5); //show only 5 digits to not show full user address
-  switch (item.addressStatus) {
+  const limitedPostalCode = (item.postalcode && String(item.postalcode).slice(0, 5)) || ''; //show only 5 digits to not show full user address
+  const status = item.addressStatus;
+  switch (status) {
     case ADDRESS_STATUS_TYPES.FULL_ADDRESS:
       addressParts = [item.line1, item.line2, item.city, item.state, limitedPostalCode];
       break;
@@ -97,7 +99,10 @@ function formatAddress(item) {
       addressParts = [item.city, item.state, limitedPostalCode];
       break;
     default:
-      return '';
+      if (status === ADDRESS_STATUS_TYPES.DONT_SHOW) return '';
+      // Legacy addresses may have no addressStatus; show city/state/zip by default
+      addressParts = [item.city, item.state, limitedPostalCode];
+      break;
   }
   return addressParts.filter(Boolean).join(', ');
 }

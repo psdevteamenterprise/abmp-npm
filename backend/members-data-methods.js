@@ -410,6 +410,7 @@ async function getMembersWithWixUrl() {
     .eq('showWixUrl', true)
     .ne('action', MEMBER_ACTIONS.DROP)
     .ne('memberships.membertype', MEMBERSHIPS_TYPES.PAC_STAFF)
+    .ne('memberships.membertype', MEMBERSHIPS_TYPES.STUDENT)
     .isNotEmpty('url')
     .limit(1000);
   let currentResults = await membersQuery.find();
