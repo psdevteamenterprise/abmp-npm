@@ -1,11 +1,24 @@
 const { location: wixLocation, queryParams: wixQueryParams } = require('@wix/site-location');
 const { window: wixWindow, rendering } = require('@wix/site-window');
 
-const { DEFAULT_FILTER } = require('../consts.js');
+const { DEFAULT_FILTER, DEBOUNCE_DELAY } = require('../consts.js');
 
-const { debouncedFunction } = require('./sharedUtils.js');
+function generateSearchId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 const createHomepageUtils = (_$w, filterProfiles) => {
+  let currentSearchId = null;
+  let searchDebounceTimer = null;
+  let lastSearchFilter = null;
+  let lastSearchIsSearchingNearby = false;
+  let lastSearchPreservePagination = false;
+  let pendingSearchResolve = null;
+
   const getFiltersSelectors = filterName => ({
     checkBoxContainerSelector: _$w(`#${filterName}CheckBoxContainer`),
     searchTextInputSelector: _$w(`#${filterName}TextInput`),
@@ -655,13 +668,14 @@ const createHomepageUtils = (_$w, filterProfiles) => {
   async function search({
     filter,
     pagination,
-    debounceTimeout,
+    debounceTimeout: _debounceTimeout,
     timeoutType,
     isSearchingNearby,
     preservePagination = false,
   }) {
     const multiStateBoxSelector = _$w('#resultsStateBox');
     const renderingEnv = await rendering.env();
+
     const initSearchResultsUI = () => {
       JSON.stringify(filter) === JSON.stringify(DEFAULT_FILTER)
         ? _$w('#resetFilter').hide()
@@ -672,70 +686,115 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       _$w('#profileRepeater').data = [];
       console.log({ filter });
     };
-    const runSearchAndUpdateUI = async (filter, isSearchingNearby) => {
-      if (!isSearchingNearby) {
+
+    const runSearchAndUpdateUI = async (
+      filterToUse,
+      isSearchingNearbyToUse,
+      preservePaginationToUse
+    ) => {
+      if (!isSearchingNearbyToUse) {
         if (
           JSON.stringify({
-            ...filter,
+            ...filterToUse,
             latitude: 0,
             longitude: 0,
           }) === JSON.stringify(DEFAULT_FILTER)
         ) {
           multiStateBoxSelector.changeState('noSearchCriteria');
+          await updateUrlParams(filterToUse, pagination);
           return [];
         }
       }
-      const nonDebouncedFilterProfiles = async () => {
-        try {
-          const result = await filterProfiles({ filter, isSearchingNearby });
-          return { success: true, response: result };
-        } catch (error) {
-          return { success: false, error };
-        }
-      };
-      //Don't run setTimeout on SSR
-      const funcPromise =
-        renderingEnv === 'backend'
-          ? () => nonDebouncedFilterProfiles()
-          : () =>
-              debouncedFunction({
-                func: filterProfiles,
-                debounceTimeout,
-                timeoutType,
-                args: { filter, isSearchingNearby },
-              });
-      const { success, response, error } = await funcPromise();
-      if (!success) {
+      const thisSearchId = generateSearchId();
+      currentSearchId = thisSearchId;
+
+      let result;
+      try {
+        result = await filterProfiles({
+          filter: filterToUse,
+          isSearchingNearby: isSearchingNearbyToUse,
+        });
+      } catch (error) {
+        if (thisSearchId !== currentSearchId) return [];
         _$w('#numberOfResults').text = '';
         console.error('[search] failed with error:', error);
         multiStateBoxSelector.changeState('errorState');
+        await updateUrlParams(filterToUse, pagination);
         return [];
       }
+
+      if (thisSearchId !== currentSearchId) return [];
+
+      const response = result;
       const totalCount = response.items.length;
       if (!totalCount) {
         _$w('#numberOfResults').text = 'Showing 0 results';
         _$w('#noResultsMessage').text = `${
-          filter.searchText && filter.searchText.length > 0
-            ? `'${filter.searchText}' did not match any search. Please try again.`
+          filterToUse.searchText && filterToUse.searchText.length > 0
+            ? `'${filterToUse.searchText}' did not match any search. Please try again.`
             : 'No results found for the selected filters. Please adjust your filters and try again'
         }`;
         multiStateBoxSelector.changeState('noResultsState');
+        await updateUrlParams(filterToUse, pagination);
         return [];
       }
       console.log({ response });
       handleNumberOfResults(pagination, totalCount);
       _$w('#showingResult').show();
 
-      if (!preservePagination || pagination.currentPage >= pagination.totalPages) {
+      if (!preservePaginationToUse || pagination.currentPage >= pagination.totalPages) {
         pagination.currentPage = 0;
       }
       pagination.totalPages = Math.ceil(totalCount / pagination.pageSize);
       paginateSearchResults(response.items, pagination);
       multiStateBoxSelector.changeState('resultsState');
+      await updateUrlParams(filterToUse, pagination);
       return response.items;
     };
+
+    // Always show loading as soon as user changes input
     initSearchResultsUI();
-    return await runSearchAndUpdateUI(filter, isSearchingNearby);
+
+    // SSR: run immediately, no debounce
+    if (renderingEnv === 'backend') {
+      return await runSearchAndUpdateUI(filter, isSearchingNearby, preservePagination);
+    }
+
+    // Client: debounce the API call; loading is already shown above.
+    // Snapshot the filter so rapid clicks / URL sync can't mutate it before the debounced run.
+    lastSearchFilter = JSON.parse(JSON.stringify(filter));
+    lastSearchIsSearchingNearby = isSearchingNearby;
+    lastSearchPreservePagination = preservePagination;
+
+    if (pendingSearchResolve) {
+      pendingSearchResolve([]);
+      pendingSearchResolve = null;
+    }
+
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = null;
+    }
+
+    const delay = DEBOUNCE_DELAY[timeoutType] ?? 300;
+    return new Promise(resolve => {
+      pendingSearchResolve = resolve;
+      searchDebounceTimer = setTimeout(async () => {
+        searchDebounceTimer = null;
+        const filterToUse = lastSearchFilter;
+        const isSearchingNearbyToUse = lastSearchIsSearchingNearby;
+        const preservePaginationToUse = lastSearchPreservePagination;
+        const items = await runSearchAndUpdateUI(
+          filterToUse,
+          isSearchingNearbyToUse,
+          preservePaginationToUse
+        );
+        if (pendingSearchResolve) {
+          pendingSearchResolve(items);
+          pendingSearchResolve = null;
+        }
+      }, delay);
+    });
   }
 
   return {
