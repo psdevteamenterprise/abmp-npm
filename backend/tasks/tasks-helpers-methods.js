@@ -295,7 +295,7 @@ async function getAWSTokens() {
 }
 
 async function generateSitemapXml(members) {
-  const baseUrl = await getSiteBaseUrl();
+  const baseUrl = (await getSiteBaseUrl()).replace(/\/+$/, '');
   const profilePageUrl = `${baseUrl}/${PAGES_PATHS.PROFILE}`;
   const urls = members
     .map(m => {
