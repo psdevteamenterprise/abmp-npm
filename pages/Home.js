@@ -366,7 +366,7 @@ const homePageOnReady = async ({
       isSearchingNearby: _$w('#nearBy').checked,
       preservePagination,
     });
-    !preservePagination && (await updateUrlParams(filter, pagination));
+    // URL is updated inside search() with the filter actually used (avoids rapid select/deselect overwriting with live filter)
     return searchResults;
   }
 
