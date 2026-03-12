@@ -358,8 +358,8 @@ async function personalDetailsOnReady({
   }
 
   function handleOptWebsiteCheckboxEnable(showExistingWebsite) {
-    _$w('#optWebsiteCheckbox').checked = !showExistingWebsite;
     if (showExistingWebsite) {
+      _$w('#optWebsiteCheckbox').checked = false;
       _$w('#optWebsiteCheckbox').customClassList.add('disabled-text');
       _$w('#optWebsiteCheckbox').customClassList.add('disabled-checkbox');
       _$w('#optWebsiteCheckbox').disable();
