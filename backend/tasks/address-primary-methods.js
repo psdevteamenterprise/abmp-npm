@@ -32,7 +32,7 @@ async function scheduleFixPrimaryAddressForMembers() {
 
     const membersToFix = members.filter(member => {
       const addresses = Array.isArray(member.addresses) ? member.addresses : [];
-      if (addresses.length <= 1) {
+      if (addresses.length === 0) {
         return false;
       }
       return !hasPrimaryAddress(member.addressDisplayOption);
@@ -45,7 +45,7 @@ async function scheduleFixPrimaryAddressForMembers() {
           .filter(memberId => Number.isFinite(memberId) && memberId > 0)
       ),
     ];
-    console.log(`Members with multiple addresses and no primary: ${memberIds.length}`);
+    console.log(`Members with addresses and no primary: ${memberIds.length}`);
 
     if (memberIds.length === 0) {
       console.log('No members need primary address fixes');
@@ -109,7 +109,7 @@ async function fixPrimaryAddressChunk(data) {
     skippedIds: [],
     failedIds: [],
   };
-  const skippedNoMultiAddress = [];
+  const skippedNoAddress = [];
   const skippedHasPrimary = [];
   const updatedIds = [];
 
@@ -120,11 +120,11 @@ async function fixPrimaryAddressChunk(data) {
 
     members.forEach(member => {
       const addresses = Array.isArray(member.addresses) ? member.addresses : [];
-      if (addresses.length <= 1) {
+      if (addresses.length === 0) {
         result.skipped++;
         result.skippedIds.push(member.memberId);
-        if (skippedNoMultiAddress.length < 20) {
-          skippedNoMultiAddress.push(member.memberId);
+        if (skippedNoAddress.length < 20) {
+          skippedNoAddress.push(member.memberId);
         }
         return;
       }
@@ -191,8 +191,8 @@ async function fixPrimaryAddressChunk(data) {
       });
     }
 
-    if (skippedNoMultiAddress.length > 0) {
-      console.log(`Skipped (<=1 address) sample: ${skippedNoMultiAddress.join(', ')}`);
+    if (skippedNoAddress.length > 0) {
+      console.log(`Skipped (no addresses) sample: ${skippedNoAddress.join(', ')}`);
     }
     if (skippedHasPrimary.length > 0) {
       console.log(`Skipped (already has primary) sample: ${skippedHasPrimary.join(', ')}`);
@@ -205,7 +205,52 @@ async function fixPrimaryAddressChunk(data) {
   }
 }
 
+/**
+ * Returns count of members with addresses but no primary address.
+ */
+async function countMembersMissingPrimaryAddress() {
+  console.log('=== Counting Members Missing Primary Address ===');
+
+  try {
+    const membersQuery = await wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .isNotEmpty('addresses')
+      .limit(1000);
+    const members = await queryAllItems(membersQuery);
+    console.log(`Fetched ${members.length} members with addresses`);
+
+    const membersToFix = members.filter(member => {
+      const addresses = Array.isArray(member.addresses) ? member.addresses : [];
+      if (addresses.length === 0) {
+        return false;
+      }
+      return !hasPrimaryAddress(member.addressDisplayOption);
+    });
+
+    const memberIds = [
+      ...new Set(
+        membersToFix
+          .map(member => Number(member.memberId))
+          .filter(memberId => Number.isFinite(memberId) && memberId > 0)
+      ),
+    ];
+
+    const result = {
+      success: true,
+      totalMembers: memberIds.length,
+      sampleMemberIds: memberIds.slice(0, 20),
+    };
+
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error('Error counting members missing primary address:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   scheduleFixPrimaryAddressForMembers,
   fixPrimaryAddressChunk,
+  countMembersMissingPrimaryAddress,
 };
