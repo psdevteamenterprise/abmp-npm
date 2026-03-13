@@ -411,7 +411,7 @@ async function getMembersWithWixUrl() {
     .ne('action', MEMBER_ACTIONS.DROP)
     .ne('memberships.membertype', MEMBERSHIPS_TYPES.PAC_STAFF)
     .ne('memberships.membertype', MEMBERSHIPS_TYPES.STUDENT)
-    .isNotEmpty('url')
+    //.isNotEmpty('url') - not used because it's not working as expected
     .limit(1000);
   let currentResults = await membersQuery.find();
   let i = 0;
@@ -423,7 +423,9 @@ async function getMembersWithWixUrl() {
     i++;
   }
   console.log('i is ', i);
-  const filtered = allItems.filter(item => typeof item.url === 'string' && !item.url.includes('/'));
+  const filtered = allItems.filter(
+    item => typeof item.url === 'string' && !item.url.includes('/') && item.url !== ''
+  );
   console.log('filtered is ', filtered.length);
   return filtered;
 }
