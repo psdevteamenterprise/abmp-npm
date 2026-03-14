@@ -10,6 +10,7 @@ const { createSiteMember, getCurrentMember } = require('./members-area-methods')
 const {
   chunkArray,
   normalizeUrlForComparison,
+  urlSortDescending,
   queryAllItems,
   generateGeoHash,
   searchAllItems,
@@ -176,7 +177,7 @@ async function getMemberBySlug({
           //remove trailing "-1", "-2", etc.
           item => item.url && normalizeUrlForComparison(item.url) === slug.toLowerCase()
         )
-        .sort((a, b) => b.url.toLowerCase().localeCompare(a.url.toLowerCase()));
+        .sort(urlSortDescending);
     }
     if (matchingMembers.length > 1) {
       const queryResultMsg = `Multiple members found with same slug ${slug} membersIds are : [${matchingMembers

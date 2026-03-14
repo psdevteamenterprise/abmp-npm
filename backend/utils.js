@@ -164,6 +164,15 @@ const normalizeUrlForComparison = url => {
   return url.toLowerCase().replace(/-\d+$/, '');
 };
 
+const extractUrlCounterFromUrl = url => {
+  if (!url) return -1;
+  const lastSegment = url.split('-').pop() || '0';
+  return /^\d+$/.test(lastSegment) ? parseInt(lastSegment, 10) : -1;
+};
+
+const urlSortDescending = (a, b) =>
+  extractUrlCounterFromUrl(b.url) - extractUrlCounterFromUrl(a.url);
+
 async function getSecret(secretKey) {
   return (await elevatedGetSecretValue(secretKey)).value;
 }
@@ -209,6 +218,7 @@ module.exports = {
   generateGeoHash,
   isValidArray,
   normalizeUrlForComparison,
+  urlSortDescending,
   queryAllItems,
   formatDateToMonthYear,
   isStudent,
