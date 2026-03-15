@@ -218,6 +218,7 @@ module.exports = {
   isValidArray,
   normalizeUrlForComparison,
   sortByUrlCounterDescending,
+  extractUrlCounter,
   queryAllItems,
   formatDateToMonthYear,
   isStudent,
