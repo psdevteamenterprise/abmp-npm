@@ -3,6 +3,7 @@ const { findMemberById, getMemberBySlug } = require('../members-data-methods');
 const { isValidArray, generateGeoHash } = require('../utils');
 
 const { MEMBER_ACTIONS, DEFAULT_MEMBER_DISPLAY_SETTINGS } = require('./consts');
+const { incrementUrlCounter } = require('./utils');
 const { validateCoreMemberData, containsNonEnglish, createFullName } = require('./utils');
 
 /**
@@ -44,9 +45,7 @@ const ensureUniqueUrl = async ({ url, memberId, fullName }) => {
     console.log(
       `Found member with same url ${existingMember.url} for memberId ${memberId} and URL ${uniqueUrl}, increasing counter by 1`
     );
-    const lastSegment = existingMember.url.split('-').pop() || '0';
-    const lastCounter = parseInt(lastSegment, 10) || 0;
-    uniqueUrl = `${uniqueUrl}-${lastCounter + 1}`;
+    uniqueUrl = incrementUrlCounter(existingMember.url, uniqueUrl);
   }
   if (uniqueUrl !== baseUrl) {
     console.log(`URL conflict resolved: ${baseUrl} -> ${uniqueUrl} for member ${memberId}`);

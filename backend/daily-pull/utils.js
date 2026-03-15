@@ -1,4 +1,5 @@
 const { updateWixMemberLoginEmail } = require('../members-area-methods');
+const { extractUrlCounter } = require('../utils');
 
 const { MEMBER_ACTIONS } = require('./consts');
 
@@ -15,21 +16,12 @@ const changeWixMembersEmails = async toChangeWixMembersEmails => {
   );
 };
 
-const extractUrlCounter = url => {
-  if (!url) return -1;
-  const lastSegment = url.split('-').pop() || '0';
-  const isNumeric = /^\d+$/.test(lastSegment);
-  return isNumeric ? parseInt(lastSegment, 10) : -1;
-};
-
 const extractBaseUrl = url => {
   if (!url) return url;
-  const urlParts = url.split('-');
-  const lastSegment = urlParts[urlParts.length - 1];
-  const isNumeric = /^\d+$/.test(lastSegment);
-  if (isNumeric && urlParts.length > 1) {
+  const lastCounter = extractUrlCounter(url);
+  if (lastCounter > 0) {
     // Remove the numeric counter to get the base URL
-    return urlParts.slice(0, -1).join('-');
+    return url.split('-').slice(0, -1).join('-');
   }
   // No counter found, return the URL as-is
   return url;
@@ -49,9 +41,7 @@ const incrementUrlCounter = (existingUrl, baseUrl) => {
     console.log(
       `Found member with same url ${existingUrl} for baseUrl ${baseUrl}, increasing counter by 1`
     );
-    const lastSegment = existingUrl.split('-').pop() || '0';
-    const isNumeric = /^\d+$/.test(lastSegment);
-    const lastCounter = isNumeric ? parseInt(lastSegment, 10) : 0;
+    const lastCounter = Math.max(0, extractUrlCounter(existingUrl));
     return `${baseUrl}-${lastCounter + 1}`;
   }
 
@@ -118,7 +108,6 @@ module.exports = {
   validateCoreMemberData,
   containsNonEnglish,
   createFullName,
-  extractUrlCounter,
   incrementUrlCounter,
   extractBaseUrl,
 };
