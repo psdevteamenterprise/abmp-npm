@@ -1,6 +1,6 @@
 {
   "name": "abmp-npm",
-  "version": "2.0.51",
+  "version": "1.1.136",
   "main": "index.js",
   "scripts": {
     "check-cycles": "madge --circular .",
@@ -10,7 +10,9 @@
     "format": "prettier --write \"**/*.{js,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,json,md}\"",
     "prepare": "husky",
-    "find-duplicates": "node dev-only-scripts/find-duplicate-urls.js"
+    "find-duplicates": "node dev-only-scripts/find-duplicate-urls.js",
+    "extract-duplicate-url-groups": "node dev-only-scripts/extract-duplicate-url-groups.js",
+    "find-duplicate-ids": "node dev-only-scripts/find-duplicate-ids.js"
   },
   "author": "",
   "license": "ISC",
