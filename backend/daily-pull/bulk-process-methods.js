@@ -76,14 +76,9 @@ async function ensureUniqueUrlsInBatch(memberDataList) {
     let batchMaxCounter = -1;
     members.forEach(member => {
       const originalUrl = member.url;
-      const urlParts = originalUrl.split('-');
-      const lastSegment = urlParts[urlParts.length - 1];
-      const isNumeric = /^\d+$/.test(lastSegment);
-      if (isNumeric) {
-        const counter = parseInt(lastSegment, 10);
-        if (counter > batchMaxCounter) {
-          batchMaxCounter = counter;
-        }
+      const urlCounter = extractUrlCounter(originalUrl);
+      if (urlCounter > batchMaxCounter) {
+        batchMaxCounter = urlCounter;
       }
     });
 

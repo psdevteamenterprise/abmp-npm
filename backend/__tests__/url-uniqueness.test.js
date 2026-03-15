@@ -25,9 +25,7 @@ function simulateGetHighestMember(allMembers, slug) {
  */
 function simulateEnsureUniqueUrl(baseSlug, highestMember) {
   if (!highestMember || !highestMember.url) return baseSlug;
-  const lastSegment = highestMember.url.split('-').pop() || '0';
-  const lastCounter = parseInt(lastSegment, 10) || 0;
-  return `${baseSlug}-${lastCounter + 1}`;
+  return incrementUrlCounter(highestMember?.url, baseSlug);
 }
 
 // ─── Test data ───────────────────────────────────────────────────────
