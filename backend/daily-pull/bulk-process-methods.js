@@ -1,12 +1,8 @@
 const { bulkSaveMembers, getMemberBySlug } = require('../members-data-methods');
+const { extractUrlCounter } = require('../utils');
 
 const { generateUpdatedMemberData } = require('./process-member-methods');
-const {
-  changeWixMembersEmails,
-  extractUrlCounter,
-  incrementUrlCounter,
-  extractBaseUrl,
-} = require('./utils');
+const { changeWixMembersEmails, incrementUrlCounter, extractBaseUrl } = require('./utils');
 
 /**
  * Ensures unique URLs within a batch of members by deduplicating URLs

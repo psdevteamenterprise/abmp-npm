@@ -15,13 +15,6 @@ const changeWixMembersEmails = async toChangeWixMembersEmails => {
   );
 };
 
-const extractUrlCounter = url => {
-  if (!url) return -1;
-  const lastSegment = url.split('-').pop() || '0';
-  const isNumeric = /^\d+$/.test(lastSegment);
-  return isNumeric ? parseInt(lastSegment, 10) : -1;
-};
-
 const extractBaseUrl = url => {
   if (!url) return url;
   const urlParts = url.split('-');
@@ -118,7 +111,6 @@ module.exports = {
   validateCoreMemberData,
   containsNonEnglish,
   createFullName,
-  extractUrlCounter,
   incrementUrlCounter,
   extractBaseUrl,
 };

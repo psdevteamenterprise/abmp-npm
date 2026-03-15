@@ -1,5 +1,9 @@
-const { extractUrlCounter, incrementUrlCounter, extractBaseUrl } = require('../daily-pull/utils');
-const { normalizeUrlForComparison, urlSortDescending } = require('../utils');
+const { incrementUrlCounter, extractBaseUrl } = require('../daily-pull/utils');
+const {
+  normalizeUrlForComparison,
+  sortByUrlCounterDescending,
+  extractUrlCounter,
+} = require('../utils');
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -11,7 +15,7 @@ function simulateGetHighestMember(allMembers, slug) {
   const matching = allMembers.filter(
     m => m.url && normalizeUrlForComparison(m.url) === slug.toLowerCase()
   );
-  matching.sort(urlSortDescending);
+  matching.sort(sortByUrlCounterDescending);
   return matching[0] || null;
 }
 
@@ -68,7 +72,7 @@ describe('Production sort: getMemberBySlug must return the HIGHEST counter', () 
     const members = buildMembersInDb();
     const sorted = [...members]
       .filter(m => normalizeUrlForComparison(m.url) === 'firstnamelastname')
-      .sort(urlSortDescending);
+      .sort(sortByUrlCounterDescending);
     const sortedUrls = sorted.map(m => m.url);
 
     const indexOf9 = sortedUrls.indexOf('firstNameLastName-9');
