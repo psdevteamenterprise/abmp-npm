@@ -16,7 +16,8 @@ async function ensureUniqueUrlsInBatch(memberDataList) {
     return memberDataList;
   }
 
-  // Group members by their normalized base URL
+  // Group members by their normalized base URL (case-insensitive to avoid
+  // "John-12" and "john-12" being treated as different when slugs are matched case-insensitively)
   const urlGroups = new Map();
 
   memberDataList.forEach(member => {
@@ -24,16 +25,16 @@ async function ensureUniqueUrlsInBatch(memberDataList) {
       return;
     }
 
-    // Extract the base URL (without any counter) for grouping
     const baseUrl = extractBaseUrl(member.url);
-    if (!urlGroups.has(baseUrl)) {
-      urlGroups.set(baseUrl, []);
+    const groupKey = baseUrl.toLowerCase();
+    if (!urlGroups.has(groupKey)) {
+      urlGroups.set(groupKey, { members: [], baseUrl });
     }
-    urlGroups.get(baseUrl).push(member);
+    urlGroups.get(groupKey).members.push(member);
   });
 
   // For each group, check database and assign unique URLs sequentially
-  for (const [baseUrl, members] of urlGroups.entries()) {
+  for (const [, { members, baseUrl }] of urlGroups.entries()) {
     if (members.length <= 1) {
       // Single member - still check DB to ensure it doesn't conflict with other pages
       const member = members[0];
