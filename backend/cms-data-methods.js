@@ -148,7 +148,9 @@ function buildMembersSearchQuery(data) {
               latitude: filter.latitude,
               longitude: filter.longitude,
             },
-            findMainAddress(item.addressDisplayOption, item.addresses)
+            findMainAddress(item.addressDisplayOption, item.addresses, {
+              requireValidCoordinates: true,
+            })
           ),
         }));
         const resultWithDistances = {
