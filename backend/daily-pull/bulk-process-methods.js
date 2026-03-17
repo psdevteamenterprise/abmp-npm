@@ -28,14 +28,13 @@ async function ensureUniqueUrlsInBatch(memberDataList) {
     const baseUrl = extractBaseUrl(member.url);
     const groupKey = baseUrl.toLowerCase();
     if (!urlGroups.has(groupKey)) {
-      urlGroups.set(groupKey, []);
+      urlGroups.set(groupKey, { members: [], baseUrl });
     }
-    urlGroups.get(groupKey).push(member);
+    urlGroups.get(groupKey).members.push(member);
   });
 
   // For each group, check database and assign unique URLs sequentially
-  for (const [groupKey, members] of urlGroups.entries()) {
-    const baseUrl = groupKey; // lowercase for consistent slug assignment
+  for (const [, { members, baseUrl }] of urlGroups.entries()) {
     if (members.length <= 1) {
       // Single member - still check DB to ensure it doesn't conflict with other pages
       const member = members[0];
