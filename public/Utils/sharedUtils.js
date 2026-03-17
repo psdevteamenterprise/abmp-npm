@@ -66,20 +66,31 @@ function debouncedFunction({ func, debounceTimeout, timeoutType, args }) {
 
 const isValidLocation = location => location.latitude && location.longitude;
 
-function findMainAddress(addressDisplayOption = [], addresses = []) {
-  const options = Array.isArray(addressDisplayOption) ? addressDisplayOption : [];
-  const mainOpt = options.find(opt => opt.isMain);
+/**
+ * @param {Array} addressDisplayOption
+ * @param {Array} addresses
+ * @param {Object|boolean} [options] - Optional. Pass { requireValidCoordinates: true } for home search/distance; omit or false for profile display.
+ */
+function findMainAddress(addressDisplayOption = [], addresses = [], options = {}) {
+  const requireValidCoordinates =
+    typeof options === 'boolean' ? options : Boolean(options?.requireValidCoordinates);
+  const optionsArr = Array.isArray(addressDisplayOption) ? addressDisplayOption : [];
+  const mainOpt = optionsArr.find(opt => opt.isMain);
   if (mainOpt) {
     const mainAddr = addresses.find(
-      addr => addr.key === mainOpt.key && addr.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW
+      addr =>
+        addr.key === mainOpt.key &&
+        addr.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW &&
+        (!requireValidCoordinates || isValidLocation(addr))
     );
     if (mainAddr) {
       return mainAddr;
     }
   }
-  // 2) fallback: if there is any visible address, use it
   const visibleAddresses = addresses.filter(
-    addr => addr.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW
+    addr =>
+      addr.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW &&
+      (!requireValidCoordinates || isValidLocation(addr))
   );
   if (visibleAddresses.length) {
     return visibleAddresses[0];
@@ -107,8 +118,13 @@ function formatAddress(item) {
   return addressParts.filter(Boolean).join(', ');
 }
 
-function getMainAddress(addressDisplayOption = [], addresses = []) {
-  const mainAddr = findMainAddress(addressDisplayOption, addresses);
+/**
+ * @param {Array} addressDisplayOption
+ * @param {Array} addresses
+ * @param {Object|boolean} [options] - Optional. Pass { requireValidCoordinates: true } for home search/distance; omit or false for profile display.
+ */
+function getMainAddress(addressDisplayOption = [], addresses = [], options = {}) {
+  const mainAddr = findMainAddress(addressDisplayOption, addresses, options);
   if (mainAddr) {
     return formatAddress(mainAddr);
   }
