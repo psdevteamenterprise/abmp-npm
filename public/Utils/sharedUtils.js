@@ -73,13 +73,13 @@ function findMainAddress(addressDisplayOption = [], addresses = []) {
     const mainAddr = addresses.find(
       addr => addr.key === mainOpt.key && addr.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW
     );
-    if (mainAddr && isValidLocation(mainAddr)) {
+    if (mainAddr) {
       return mainAddr;
     }
   }
   // 2) fallback: if there is any visible address, use it
   const visibleAddresses = addresses.filter(
-    addr => addr.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW && isValidLocation(addr)
+    addr => addr.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW
   );
   if (visibleAddresses.length) {
     return visibleAddresses[0];
