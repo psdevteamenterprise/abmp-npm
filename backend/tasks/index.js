@@ -5,4 +5,5 @@ module.exports = {
   ...require('./migration-methods'),
   ...require('./url-migration-methods'),
   ...require('./address-primary-methods'),
+  ...require('./url-space-fix-methods'),
 };

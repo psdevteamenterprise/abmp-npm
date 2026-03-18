@@ -82,6 +82,20 @@ async function scheduleFixPrimaryAddressForMembersTask() {
   }
 }
 
+async function scheduleFixUrlsWithSpacesTask() {
+  try {
+    console.log('scheduleFixUrlsWithSpaces started!');
+    return await taskManager().schedule({
+      name: TASKS_NAMES.scheduleFixUrlsWithSpaces,
+      data: {},
+      type: 'scheduled',
+    });
+  } catch (error) {
+    console.error(`Failed to scheduleFixUrlsWithSpaces: ${error.message}`);
+    throw new Error(`Failed to scheduleFixUrlsWithSpaces: ${error.message}`);
+  }
+}
+
 async function updateSiteMapS3() {
   try {
     return await taskManager().schedule({
@@ -100,4 +114,5 @@ module.exports = {
   updateSiteMapS3,
   scheduleCreateContactsFromMembersTask,
   scheduleFixPrimaryAddressForMembersTask,
+  scheduleFixUrlsWithSpacesTask,
 };

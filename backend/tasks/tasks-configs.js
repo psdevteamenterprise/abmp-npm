@@ -29,6 +29,7 @@ const {
   scheduleGenerateMissingUrls,
   generateUrlsChunk,
 } = require('./url-migration-methods');
+const { scheduleFixUrlsWithSpaces, fixUrlsWithSpacesChunk } = require('./url-space-fix-methods');
 
 const getDailyMembersDataSyncChildTasks = () => {
   // we don't want to sync none action as it means this members data hasn't changed and we don't need to sync it
@@ -184,6 +185,20 @@ const TASKS = {
     name: TASKS_NAMES.fixPrimaryAddressChunk,
     getIdentifier: task => task.data,
     process: fixPrimaryAddressChunk,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.scheduleFixUrlsWithSpaces]: {
+    name: TASKS_NAMES.scheduleFixUrlsWithSpaces,
+    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    process: scheduleFixUrlsWithSpaces,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.fixUrlsWithSpacesChunk]: {
+    name: TASKS_NAMES.fixUrlsWithSpacesChunk,
+    getIdentifier: task => task.data,
+    process: fixUrlsWithSpacesChunk,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
   },
