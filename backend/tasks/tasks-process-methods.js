@@ -179,7 +179,7 @@ const updateSiteMapS3 = async () => {
   // const creds = await getNewStsSessionToken(tokens.AWS_ACCESS_KEY_ID, tokens.AWS_SECRET_ACCESS_KEY, 3600);
   // console.log("creds",creds); // verify it’s fresh
   try {
-    const chunkSize = 50000;
+    const chunkSize = 10000;
     console.log('Total items will be split into', relevantMembers.length / chunkSize);
     const chunks = chunkArray(relevantMembers, chunkSize);
     console.log(`Uploading ${chunks.length} sitemap files...`);
