@@ -2033,14 +2033,29 @@ async function personalDetailsOnReady({
     });
 
     _$w('#showPhoneCheckbox').onChange(event => {
-      const data = _$w('#phoneNumbersList').data;
+      const data = _$w('#phoneNumbersList').data || [];
       const clickedItemData = data.find(item => item._id === event.context.itemId);
-      const $item = _$w.at(event.context);
+      if (!clickedItemData) {
+        return;
+      }
 
-      _$w('#showPhoneCheckbox').checked = false;
-      $item('#showPhoneCheckbox').checked = true;
+      const isChecked = event.target.checked;
+      let updated;
+      if (isChecked) {
+        updated = data.map(item =>
+          item._id === clickedItemData._id
+            ? { ...item, showPhone: true }
+            : { ...item, showPhone: false }
+        );
+        updateShowPhoneSelection(clickedItemData._id, true);
+      } else {
+        updated = data.map(item =>
+          item._id === clickedItemData._id ? { ...item, showPhone: false } : item
+        );
+        updateShowPhoneSelection(clickedItemData._id, false);
+      }
 
-      updateShowPhoneSelection(clickedItemData._id, event.target.checked);
+      renderPhonesList(updated);
       checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
     });
 
@@ -2168,12 +2183,19 @@ async function personalDetailsOnReady({
     const currentData = _$w('#phoneNumbersList').data || [];
     const selectedItem = currentData.find(item => item._id === phoneId);
 
-    if (selectedItem && selectedItem.phoneNumber) {
-      if (isVisible) {
-        itemMemberObj.toShowPhone = selectedItem.phoneNumber;
-      } else {
-        itemMemberObj.toShowPhone = null;
-      }
+    if (!selectedItem) {
+      return;
+    }
+
+    if (isVisible) {
+      itemMemberObj.toShowPhone = selectedItem.phoneNumber?.trim()
+        ? selectedItem.phoneNumber
+        : null;
+      return;
+    }
+
+    if (selectedItem.phoneNumber) {
+      itemMemberObj.toShowPhone = null;
     }
   }
 
