@@ -5,37 +5,7 @@ const { DEFAULT_FILTER } = require('../consts.js');
 
 const { debouncedFunction } = require('./sharedUtils.js');
 
-/** Returned when an in-flight search was superseded; do not apply results to UI */
-const STALE_SEARCH_RESPONSE = Symbol('STALE_SEARCH_RESPONSE');
-
-function generateSearchId() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
 const createHomepageUtils = (_$w, filterProfiles) => {
-  let currentSearchId = null;
-
-  async function fetchProfilesWithSearchId(args) {
-    const thisSearchId = generateSearchId();
-    currentSearchId = thisSearchId;
-    try {
-      const response = await filterProfiles(args);
-      if (thisSearchId !== currentSearchId) {
-        return STALE_SEARCH_RESPONSE;
-      }
-      return response;
-    } catch (error) {
-      if (thisSearchId !== currentSearchId) {
-        return STALE_SEARCH_RESPONSE;
-      }
-      throw error;
-    }
-  }
-
   const getFiltersSelectors = filterName => ({
     checkBoxContainerSelector: _$w(`#${filterName}CheckBoxContainer`),
     searchTextInputSelector: _$w(`#${filterName}TextInput`),
@@ -717,10 +687,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       }
       const nonDebouncedFilterProfiles = async () => {
         try {
-          const result = await fetchProfilesWithSearchId({ filter, isSearchingNearby });
-          if (result === STALE_SEARCH_RESPONSE) {
-            return { success: true, response: STALE_SEARCH_RESPONSE };
-          }
+          const result = await filterProfiles({ filter, isSearchingNearby });
           return { success: true, response: result };
         } catch (error) {
           return { success: false, error };
@@ -732,15 +699,12 @@ const createHomepageUtils = (_$w, filterProfiles) => {
           ? () => nonDebouncedFilterProfiles()
           : () =>
               debouncedFunction({
-                func: fetchProfilesWithSearchId,
+                func: filterProfiles,
                 debounceTimeout,
                 timeoutType,
                 args: { filter, isSearchingNearby },
               });
       const { success, response, error } = await funcPromise();
-      if (response === STALE_SEARCH_RESPONSE) {
-        return [];
-      }
       if (!success) {
         _$w('#numberOfResults').text = '';
         console.error('[search] failed with error:', error);
