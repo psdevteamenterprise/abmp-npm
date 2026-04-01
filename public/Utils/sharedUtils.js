@@ -186,6 +186,15 @@ function isWixHostedImage(imageUrl) {
   );
 }
 
+/** Web URLs only: bare hostnames get https:// so they are not treated as site-relative paths. */
+function normalizeExternalUrl(url) {
+  if (!url || typeof url !== 'string') return url;
+  const trimmed = url.trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 module.exports = {
   checkAddressIsVisible,
   formatPracticeAreasForDisplay,
@@ -198,4 +207,5 @@ module.exports = {
   generateId,
   formatAddress,
   isWixHostedImage,
+  normalizeExternalUrl,
 };

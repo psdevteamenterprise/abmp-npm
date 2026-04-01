@@ -9,7 +9,11 @@ const {
   LIGHTBOX_NAMES,
 } = require('../public/consts');
 const { handleOnCustomValidation, isNotValidUrl } = require('../public/Utils/personalDetailsUtils');
-const { generateId, isWixHostedImage } = require('../public/Utils/sharedUtils');
+const {
+  generateId,
+  isWixHostedImage,
+  normalizeExternalUrl,
+} = require('../public/Utils/sharedUtils');
 
 const MAX_PHONES_COUNT = 10;
 const MAX_ADDRESSES_COUNT = 10;
@@ -2216,12 +2220,15 @@ async function personalDetailsOnReady({
     const addresses = Array.isArray(itemMemberObj.addresses) ? itemMemberObj.addresses : [];
     const phones = Array.isArray(itemMemberObj.phones) ? itemMemberObj.phones : [];
 
+    const rawWebsite = (_$w('#UrlInput').value || '').trim();
+    const rawBooking = (_$w('#schedulingLinkInput').value || '').trim();
+
     return {
       showContactForm: _$w('#showCotactFormCheckbox').checked,
       contactFormEmail: _$w('#contactFormEmailInput').value,
       toShowPhone: getToShowPhone(),
-      bookingUrl: _$w('#schedulingLinkInput').value,
-      website: _$w('#UrlInput').value,
+      bookingUrl: rawBooking ? normalizeExternalUrl(rawBooking) : '',
+      website: rawWebsite ? normalizeExternalUrl(rawWebsite) : '',
       showWebsite: showExistingUrl,
       showWixUrl,
       addresses,
