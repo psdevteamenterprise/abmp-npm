@@ -2039,9 +2039,14 @@ async function personalDetailsOnReady({
         return;
       }
 
+      const $item = _$w.at(event.context);
       const isChecked = event.target.checked;
       let updated;
       if (isChecked) {
+        // Same pattern as #mainAddressCheckbox: clear every row, then select one (repeater
+        // often does not refresh sibling items' controls when only `data` changes).
+        _$w('#showPhoneCheckbox').checked = false;
+        $item('#showPhoneCheckbox').checked = true;
         updated = data.map(item =>
           item._id === clickedItemData._id
             ? { ...item, showPhone: true }
@@ -2094,6 +2099,34 @@ async function personalDetailsOnReady({
     $item('#phoneNumberLabel').text = `Phone ${itemData.phoneIndex}`;
   }
 
+  /** Only one "Show your phone" row at a time; aligns UI with itemMemberObj.toShowPhone. */
+  function normalizePhoneShowFlags(phoneData) {
+    if (!phoneData?.length) return phoneData;
+
+    const cms = (itemMemberObj.toShowPhone || '').trim();
+    if (cms) {
+      let matched = false;
+      return phoneData.map(p => {
+        const t = (p.phoneNumber || '').trim();
+        const isMatch = Boolean(t && t === cms);
+        if (isMatch && !matched) {
+          matched = true;
+          return { ...p, showPhone: true };
+        }
+        return { ...p, showPhone: false };
+      });
+    }
+
+    const trueIdxs = phoneData.map((p, i) => (p.showPhone ? i : -1)).filter(i => i >= 0);
+    if (trueIdxs.length <= 1) return phoneData;
+
+    const keep = trueIdxs[0];
+    return phoneData.map((p, i) => ({
+      ...p,
+      showPhone: i === keep,
+    }));
+  }
+
   function renderPhonesList(updatedPhones) {
     let phoneData = updatedPhones || [];
 
@@ -2109,10 +2142,26 @@ async function personalDetailsOnReady({
       }));
     }
 
+    phoneData = normalizePhoneShowFlags(phoneData);
+
     const repeater = _$w('#phoneNumbersList');
 
     repeater.data = phoneData;
+    refreshPhoneShowCheckboxState(phoneData);
     updatePhoneAddButtonState();
+  }
+
+  /**
+   * Repeater may not re-run onItemReady for sibling items when only showPhone flags change;
+   * keep each #showPhoneCheckbox in sync with data (same idea as refreshAddressListIsMainState).
+   */
+  function refreshPhoneShowCheckboxState(phoneData) {
+    const repeater = _$w('#phoneNumbersList');
+    const data = phoneData || repeater.data || [];
+    repeater.forEachItem(($item, _itemData, index) => {
+      const show = index < data.length ? data[index].showPhone : false;
+      $item('#showPhoneCheckbox').checked = Boolean(show);
+    });
   }
 
   function updatePhoneAddButtonState() {
@@ -2131,7 +2180,22 @@ async function personalDetailsOnReady({
     const itemIndex = currentData.findIndex(item => item._id === phoneId);
 
     if (itemIndex !== -1) {
-      currentData[itemIndex].phoneNumber = newPhoneNumber;
+      const item = currentData[itemIndex];
+      const prevTrimmed = (item.phoneNumber || '').trim();
+      const newTrimmed = newPhoneNumber.trim();
+
+      item.phoneNumber = newPhoneNumber;
+
+      if (item.showPhone) {
+        itemMemberObj.toShowPhone = newTrimmed || null;
+      } else if (
+        itemMemberObj.toShowPhone &&
+        prevTrimmed &&
+        itemMemberObj.toShowPhone === prevTrimmed
+      ) {
+        itemMemberObj.toShowPhone = newTrimmed || null;
+      }
+
       renderPhonesList(currentData);
       syncPhonesFromRepeater();
       checkFormChanges(FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING);
@@ -2187,14 +2251,14 @@ async function personalDetailsOnReady({
       return;
     }
 
+    const trimmed = (selectedItem.phoneNumber || '').trim();
+
     if (isVisible) {
-      itemMemberObj.toShowPhone = selectedItem.phoneNumber?.trim()
-        ? selectedItem.phoneNumber
-        : null;
+      itemMemberObj.toShowPhone = trimmed || null;
       return;
     }
 
-    if (selectedItem.phoneNumber) {
+    if (itemMemberObj.toShowPhone === trimmed) {
       itemMemberObj.toShowPhone = null;
     }
   }
