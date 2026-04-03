@@ -10,6 +10,7 @@ const {
   formatPracticeAreasForDisplay,
   checkAddressIsVisible,
   isWixHostedImage,
+  normalizeExternalUrl,
 } = require('../public/Utils/sharedUtils.js');
 
 let filter = JSON.parse(JSON.stringify(DEFAULT_FILTER));
@@ -198,7 +199,7 @@ const homePageOnReady = async ({
         $item('#websiteContainer').collapse();
       } else {
         if (itemData.showWebsite) {
-          $item('#website').link = itemData.website;
+          $item('#website').link = normalizeExternalUrl(itemData.website);
         } else {
           $item('#website').link = `${baseUrl}/profile/${itemData.url}`;
         }
@@ -256,7 +257,7 @@ const homePageOnReady = async ({
       // 9) "Book now" button
       if (itemData.bookingUrl) {
         $item('#bookNowButton').show();
-        $item('#bookNowButton').link = itemData.bookingUrl;
+        $item('#bookNowButton').link = normalizeExternalUrl(itemData.bookingUrl);
         $item('#bookNowButton').target = '_blank';
       } else {
         $item('#bookNowButton').hide();
