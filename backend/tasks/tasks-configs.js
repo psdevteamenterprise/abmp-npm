@@ -9,10 +9,7 @@ const {
   fixPrimaryAddressChunk,
 } = require('./address-primary-methods');
 const { TASKS_NAMES } = require('./consts');
-const {
-  scheduleDailyPullExecutionCheck,
-  dailyPullExecutionCheck,
-} = require('./daily-pull-backup-check-methods');
+const { dailyPullExecutionCheck } = require('./daily-pull-check-methods');
 const {
   scheduleTaskForEmptyAboutYouMembers,
   convertAboutYouHtmlToRichContent,
@@ -205,13 +202,6 @@ const TASKS = {
     process: fixUrlsWithSpacesChunk,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
-  },
-  [TASKS_NAMES.scheduleDailyPullExecutionCheck]: {
-    name: TASKS_NAMES.scheduleDailyPullExecutionCheck,
-    getIdentifier: () => 'SHOULD_NEVER_SKIP',
-    process: scheduleDailyPullExecutionCheck,
-    shouldSkipCheck: () => false,
-    estimatedDurationSec: 30,
   },
   [TASKS_NAMES.dailyPullExecutionCheck]: {
     name: TASKS_NAMES.dailyPullExecutionCheck,

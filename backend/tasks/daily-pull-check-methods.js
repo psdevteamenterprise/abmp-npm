@@ -15,23 +15,6 @@ const getActionsToCheck = includeNone =>
     : Object.values(MEMBER_ACTIONS).filter(action => action !== MEMBER_ACTIONS.NONE);
 
 /**
- * Schedules an execution check for daily pull status.
- */
-async function scheduleDailyPullExecutionCheck() {
-  try {
-    console.log('scheduleDailyPullExecutionCheck started!');
-    return await taskManager().schedule({
-      name: TASKS_NAMES.dailyPullExecutionCheck,
-      data: { hoursBack: DEFAULT_HOURS_BACK, includeNone: false },
-      type: 'scheduled',
-    });
-  } catch (error) {
-    console.error(`Failed to scheduleDailyPullExecutionCheck: ${error.message}`);
-    throw new Error(`Failed to scheduleDailyPullExecutionCheck: ${error.message}`);
-  }
-}
-
-/**
  * Verifies ScheduleMembersDataPerAction tasks exist and succeeded per action.
  */
 async function dailyPullExecutionCheck(taskData) {
@@ -101,6 +84,5 @@ async function dailyPullExecutionCheck(taskData) {
 }
 
 module.exports = {
-  scheduleDailyPullExecutionCheck,
   dailyPullExecutionCheck,
 };

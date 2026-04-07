@@ -2,6 +2,7 @@ const { taskManager } = require('psdev-task-manager');
 
 const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { TASKS_NAMES } = require('./tasks/consts');
+const { dailyPullExecutionCheck } = require('./tasks/daily-pull-check-methods');
 const { TASKS } = require('./tasks/tasks-configs');
 
 async function runScheduledTasks() {
@@ -96,17 +97,13 @@ async function scheduleFixUrlsWithSpacesTask() {
   }
 }
 
-async function scheduleDailyPullExecutionCheckTask() {
+async function runDailyPullExecutionCheck() {
   try {
-    console.log('scheduleDailyPullExecutionCheck started!');
-    return await taskManager().schedule({
-      name: TASKS_NAMES.scheduleDailyPullExecutionCheck,
-      data: {},
-      type: 'scheduled',
-    });
+    console.log('runDailyPullExecutionCheck started!');
+    return await dailyPullExecutionCheck({});
   } catch (error) {
-    console.error(`Failed to scheduleDailyPullExecutionCheck: ${error.message}`);
-    throw new Error(`Failed to scheduleDailyPullExecutionCheck: ${error.message}`);
+    console.error(`Failed to runDailyPullExecutionCheck: ${error.message}`);
+    throw new Error(`Failed to runDailyPullExecutionCheck: ${error.message}`);
   }
 }
 
@@ -129,5 +126,5 @@ module.exports = {
   scheduleCreateContactsFromMembersTask,
   scheduleFixPrimaryAddressForMembersTask,
   scheduleFixUrlsWithSpacesTask,
-  scheduleDailyPullExecutionCheckTask,
+  runDailyPullExecutionCheck,
 };
