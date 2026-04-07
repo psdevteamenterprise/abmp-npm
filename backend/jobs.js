@@ -96,6 +96,20 @@ async function scheduleFixUrlsWithSpacesTask() {
   }
 }
 
+async function scheduleDailyPullExecutionCheckTask() {
+  try {
+    console.log('scheduleDailyPullExecutionCheck started!');
+    return await taskManager().schedule({
+      name: TASKS_NAMES.scheduleDailyPullExecutionCheck,
+      data: {},
+      type: 'scheduled',
+    });
+  } catch (error) {
+    console.error(`Failed to scheduleDailyPullExecutionCheck: ${error.message}`);
+    throw new Error(`Failed to scheduleDailyPullExecutionCheck: ${error.message}`);
+  }
+}
+
 async function updateSiteMapS3() {
   try {
     return await taskManager().schedule({
@@ -115,4 +129,5 @@ module.exports = {
   scheduleCreateContactsFromMembersTask,
   scheduleFixPrimaryAddressForMembersTask,
   scheduleFixUrlsWithSpacesTask,
+  scheduleDailyPullExecutionCheckTask,
 };

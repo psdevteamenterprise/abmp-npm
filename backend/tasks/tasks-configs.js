@@ -10,6 +10,10 @@ const {
 } = require('./address-primary-methods');
 const { TASKS_NAMES } = require('./consts');
 const {
+  scheduleDailyPullExecutionCheck,
+  dailyPullExecutionCheck,
+} = require('./daily-pull-backup-check-methods');
+const {
   scheduleTaskForEmptyAboutYouMembers,
   convertAboutYouHtmlToRichContent,
   compileFiltersOptions,
@@ -201,6 +205,20 @@ const TASKS = {
     process: fixUrlsWithSpacesChunk,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.scheduleDailyPullExecutionCheck]: {
+    name: TASKS_NAMES.scheduleDailyPullExecutionCheck,
+    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    process: scheduleDailyPullExecutionCheck,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 30,
+  },
+  [TASKS_NAMES.dailyPullExecutionCheck]: {
+    name: TASKS_NAMES.dailyPullExecutionCheck,
+    getIdentifier: task => task.data,
+    process: dailyPullExecutionCheck,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 30,
   },
 };
 
