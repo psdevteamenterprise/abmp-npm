@@ -5,6 +5,7 @@ const REGEX = {
 
 const COLLECTIONS = {
   MEMBERS_DATA: 'MembersDataLatest',
+  MEMBERS_DATA_PUBLIC: 'MembersDataPublic',
   CONTACT_US_SUBMISSIONS: 'contactUsSubmissions',
   SITE_CONFIGS: 'SiteConfigs',
   COMPILED_STATE_CITY_MAP: 'CompiledStateCityMap',

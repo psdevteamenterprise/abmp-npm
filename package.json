@@ -1,6 +1,6 @@
 {
   "name": "abmp-npm",
-  "version": "2.0.63",
+  "version": "10.0.70",
   "main": "index.js",
   "scripts": {
     "check-cycles": "madge --circular .",
@@ -42,6 +42,7 @@
     "@wix/secrets": "^1.0.62",
     "@wix/site-location": "^1.31.0",
     "@wix/site-members": "^1.32.0",
+    "@wix/site-seo": "^1.22.0",
     "@wix/site-storage": "^1.22.0",
     "@wix/site-window": "^1.44.0",
     "@wix/urls": "^1.0.57",

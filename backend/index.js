@@ -16,4 +16,5 @@ module.exports = {
   ...require('./dev-only-methods'),
   ...require('./tasks/migration-methods'),
   ...require('./tasks/url-migration-methods'),
+  ...require('./public-profile-methods'),
 };
