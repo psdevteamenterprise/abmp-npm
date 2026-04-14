@@ -24,8 +24,7 @@ async function dailyPullExecutionCheck(taskData) {
   const rootTasksQuery = wixData
     .query(COLLECTIONS.TASKS)
     .eq('name', TASKS_NAMES.ScheduleDailyMembersDataSync)
-    .ge('_createdDate', sinceDate)
-    .limit(1000);
+    .ge('_createdDate', sinceDate);
 
   const rootTasks = await queryAllItems(rootTasksQuery);
   const rootTaskScheduled = rootTasks.length > 0;
