@@ -2302,9 +2302,6 @@ async function personalDetailsOnReady({
   }
 
   async function saveContactBooking() {
-    // if showWixUrl value changes then update optWebsiteCheckbox value
-    _$w('#optWebsiteCheckbox').checked = itemMemberObj.showWixUrl;
-
     const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
     const otherWebsiteValue = (_$w('#UrlInput').value || '').trim();
     const isOtherWebsiteInvalid =
@@ -2345,8 +2342,13 @@ async function personalDetailsOnReady({
     console.groupEnd();
 
     const result = await saveData(formData);
-    if (beforeData.showWebsite !== contactChanges.showWebsite) {
-      handleOptWebsiteCheckboxEnable(showExistingUrl);
+    if (result.success) {
+      if (beforeData.showWebsite !== contactChanges.showWebsite) {
+        handleOptWebsiteCheckboxEnable(showExistingUrl);
+      }
+      // Sync Personal Details opt-in from saved member.
+      _$w('#optWebsiteCheckbox').checked = itemMemberObj.showWixUrl;
+      toggleFreeWebsiteText(itemMemberObj.showWixUrl);
     }
     formHasUnsavedChanges[FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section] = false;
     handleSaveDataFeedback(_$w('#contactMessage'), result.message);
