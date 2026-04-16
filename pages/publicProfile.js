@@ -421,7 +421,6 @@ async function publicProfileOnReady({
     const shouldNoIndex = data.isPrivateMember || data.shouldHaveStudentBadge;
 
     seo.setTitle(seoTitle);
-    seo.setDescription(description);
     seo.setMetaTags(
       [
         {
