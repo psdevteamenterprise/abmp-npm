@@ -18,6 +18,33 @@ const {
 const MAX_PHONES_COUNT = 10;
 const MAX_ADDRESSES_COUNT = 10;
 
+/** US 10-digit NANP: strip non-digits; drop leading 1 from 11-digit input. */
+function digitsFromPhoneInput(value) {
+  if (!value || typeof value !== 'string') return '';
+  let d = value.replace(/\D/g, '');
+  if (d.length === 11 && d[0] === '1') d = d.slice(1);
+  return d.slice(0, 10);
+}
+
+/** Format as (###) ###-#### while typing. */
+function formatUsPhoneInput(digits) {
+  if (!digits) return '';
+  const d = digits.slice(0, 10);
+  if (d.length <= 3) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+function formatPhoneNumberForInput(value) {
+  return formatUsPhoneInput(digitsFromPhoneInput(value || ''));
+}
+
+function phoneDigitsEqual(a, b) {
+  const da = digitsFromPhoneInput(String(a || ''));
+  const db = digitsFromPhoneInput(String(b || ''));
+  return da.length > 0 && db.length > 0 && da === db;
+}
+
 const ADDRESS_STATES = {
   VIEW: 'addressViewState',
   EDIT: 'addressEditState',
@@ -2024,12 +2051,16 @@ async function personalDetailsOnReady({
     _$w('#phoneInput').onInput(event => {
       const data = _$w('#phoneNumbersList').data;
       const clickedItemData = data.find(item => item._id === event.context.itemId);
-      const phoneValue = event.target.value;
+      const digits = digitsFromPhoneInput(event.target.value);
+      const formatted = formatUsPhoneInput(digits);
+      if (event.target.value !== formatted) {
+        event.target.value = formatted;
+      }
 
-      updatePhoneNumber(clickedItemData._id, phoneValue);
+      updatePhoneNumber(clickedItemData._id, formatted);
 
-      if (clickedItemData.isNewPhone && phoneValue.trim()) {
-        addNewPhoneToData(clickedItemData._id, phoneValue.trim());
+      if (clickedItemData.isNewPhone && digits.length > 0) {
+        addNewPhoneToData(clickedItemData._id, formatted);
         clickedItemData.isNewPhone = false;
       }
 
@@ -2098,7 +2129,7 @@ async function personalDetailsOnReady({
   }
 
   function handlePhoneItem($item, itemData) {
-    $item('#phoneInput').value = itemData.phoneNumber || '';
+    $item('#phoneInput').value = formatPhoneNumberForInput(itemData.phoneNumber || '');
     $item('#showPhoneCheckbox').checked = itemData.showPhone || false;
     $item('#phoneNumberLabel').text = `Phone ${itemData.phoneIndex}`;
   }
@@ -2112,7 +2143,7 @@ async function personalDetailsOnReady({
       let matched = false;
       return phoneData.map(p => {
         const t = (p.phoneNumber || '').trim();
-        const isMatch = Boolean(t && t === cms);
+        const isMatch = Boolean(t && phoneDigitsEqual(t, cms));
         if (isMatch && !matched) {
           matched = true;
           return { ...p, showPhone: true };
@@ -2140,7 +2171,7 @@ async function personalDetailsOnReady({
       phoneData = phones.map((phone, index) => ({
         _id: `phone_${index}`,
         phoneNumber: phone,
-        showPhone: phone === itemMemberObj.toShowPhone,
+        showPhone: phoneDigitsEqual(phone, itemMemberObj.toShowPhone),
         isNewPhone: false,
         phoneIndex: index + 1,
       }));
@@ -2195,7 +2226,7 @@ async function personalDetailsOnReady({
       } else if (
         itemMemberObj.toShowPhone &&
         prevTrimmed &&
-        itemMemberObj.toShowPhone === prevTrimmed
+        phoneDigitsEqual(itemMemberObj.toShowPhone, prevTrimmed)
       ) {
         itemMemberObj.toShowPhone = newTrimmed || null;
       }
@@ -2230,14 +2261,17 @@ async function personalDetailsOnReady({
     if (phoneToRemove) {
       if (itemMemberObj.phones) {
         itemMemberObj.phones = itemMemberObj.phones.filter(
-          phone => phone !== phoneToRemove.phoneNumber
+          phone => !phoneDigitsEqual(phone, phoneToRemove.phoneNumber)
         );
       }
 
       // Clear toShowPhone if it was the removed phone or if it's no longer in the list
       // (handles format mismatch e.g. "(406)655-4940" vs "(406) 655-4940")
       const remainingPhones = Array.isArray(itemMemberObj.phones) ? itemMemberObj.phones : [];
-      if (itemMemberObj.toShowPhone && !remainingPhones.includes(itemMemberObj.toShowPhone)) {
+      if (
+        itemMemberObj.toShowPhone &&
+        !remainingPhones.some(p => phoneDigitsEqual(p, itemMemberObj.toShowPhone))
+      ) {
         itemMemberObj.toShowPhone = null;
       }
 
@@ -2262,7 +2296,10 @@ async function personalDetailsOnReady({
       return;
     }
 
-    if (itemMemberObj.toShowPhone === trimmed) {
+    if (
+      itemMemberObj.toShowPhone === trimmed ||
+      phoneDigitsEqual(itemMemberObj.toShowPhone, trimmed)
+    ) {
       itemMemberObj.toShowPhone = null;
     }
   }
@@ -2273,7 +2310,7 @@ async function personalDetailsOnReady({
     // Never expose toShowPhone when phones is empty, so save payload clears it in CMS
     if (phones.length === 0) return null;
     // If toShowPhone is not in the list (e.g. format mismatch), treat as none selected
-    if (toShow && !phones.includes(toShow)) return null;
+    if (toShow && !phones.some(p => phoneDigitsEqual(p, toShow))) return null;
     return toShow;
   }
 
@@ -2302,9 +2339,6 @@ async function personalDetailsOnReady({
   }
 
   async function saveContactBooking() {
-    // if showWixUrl value changes then update optWebsiteCheckbox value
-    _$w('#optWebsiteCheckbox').checked = itemMemberObj.showWixUrl;
-
     const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
     const otherWebsiteValue = (_$w('#UrlInput').value || '').trim();
     const isOtherWebsiteInvalid =
@@ -2345,8 +2379,13 @@ async function personalDetailsOnReady({
     console.groupEnd();
 
     const result = await saveData(formData);
-    if (beforeData.showWebsite !== contactChanges.showWebsite) {
-      handleOptWebsiteCheckboxEnable(showExistingUrl);
+    if (result.success) {
+      if (beforeData.showWebsite !== contactChanges.showWebsite) {
+        handleOptWebsiteCheckboxEnable(showExistingUrl);
+      }
+      // Sync Personal Details opt-in from saved member.
+      _$w('#optWebsiteCheckbox').checked = itemMemberObj.showWixUrl;
+      toggleFreeWebsiteText(itemMemberObj.showWixUrl);
     }
     formHasUnsavedChanges[FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section] = false;
     handleSaveDataFeedback(_$w('#contactMessage'), result.message);
