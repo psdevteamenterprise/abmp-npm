@@ -22,6 +22,7 @@ const TASKS_NAMES = {
   fixPrimaryAddressChunk: 'fixPrimaryAddressChunk',
   scheduleFixUrlsWithSpaces: 'scheduleFixUrlsWithSpaces',
   fixUrlsWithSpacesChunk: 'fixUrlsWithSpacesChunk',
+  dailyPullExecutionCheck: 'dailyPullExecutionCheck',
 };
 
 module.exports = {
