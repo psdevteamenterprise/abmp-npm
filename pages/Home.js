@@ -5,6 +5,7 @@ const { withWarmUpData } = require('psdev-utils/frontend');
 
 const { ADDRESS_STATUS_TYPES, DEFAULT_FILTER, DROPDOWN_OPTIONS } = require('../public/consts.js');
 const { createHomepageUtils } = require('../public/Utils/homePage.js');
+const { logHomePageLoadPhase } = require('../public/Utils/homePageLoadTrace.js');
 const {
   getMainAddress,
   formatPracticeAreasForDisplay,
@@ -12,6 +13,8 @@ const {
   isWixHostedImage,
   normalizeExternalUrl,
 } = require('../public/Utils/sharedUtils.js');
+
+logHomePageLoadPhase('home_js_module_evaluated');
 
 let filter = JSON.parse(JSON.stringify(DEFAULT_FILTER));
 let dropDownOptions = JSON.parse(JSON.stringify(DROPDOWN_OPTIONS));
@@ -36,6 +39,7 @@ const homePageOnReady = async ({
   getNonCompiledFiltersOptions,
   filterProfiles,
 }) => {
+  logHomePageLoadPhase('wix_onready_handler_entered');
   const {
     getParamsMapping,
     handlePagination,
@@ -58,7 +62,9 @@ const homePageOnReady = async ({
   detectMobile();
   initPageUI();
   attachEventListeners();
+  logHomePageLoadPhase('before_handleUrlParams');
   await handleUrlParams();
+  logHomePageLoadPhase('after_handleUrlParams');
 
   async function detectMobile() {
     try {
@@ -288,7 +294,9 @@ const homePageOnReady = async ({
   }
 
   async function applyFilterToUI(isDefaultStateParams) {
+    logHomePageLoadPhase('applyFilterToUI_start', { isDefaultStateParams });
     const renderingEnv = await rendering.env();
+    logHomePageLoadPhase('applyFilterToUI_rendering_env', { env: renderingEnv });
     const setFilterFromParams = async (isInitializeValue = true) => {
       const params = await wixLocation.query();
       console.log('params inside setFilterFromParams ', params);
@@ -322,7 +330,9 @@ const homePageOnReady = async ({
     await setFilterFromParams(true);
     if (isDefaultStateParams) {
       console.log('default state set for nearby');
+      logHomePageLoadPhase('applyFilterToUI_default_path_fetch_and_nearby_start');
       await Promise.all([fetchFilterData(), nearByHandler(true)]);
+      logHomePageLoadPhase('applyFilterToUI_default_path_complete');
       return;
     }
     console.log('not default state');
@@ -341,12 +351,15 @@ const homePageOnReady = async ({
         : () => updateResults('filterTimeout', true);
     console.log('filter ..', filter);
     try {
+      logHomePageLoadPhase('applyFilterToUI_non_default_path_start');
       await Promise.all([
         fetchFilterData().then(() => setFilterFromParams(false)),
         //TODO: remove this workaround to fix issue with SSR showing invalid results
         renderingEnv === 'backend' ? Promise.resolve() : searchPromise(),
       ]);
+      logHomePageLoadPhase('applyFilterToUI_non_default_path_complete');
     } catch (error) {
+      logHomePageLoadPhase('applyFilterToUI_error', { message: String(error && error.message) });
       console.error('[applyFilterToUI] failed with error:', error);
       multiStateBoxSelector.changeState('errorState');
     }
@@ -425,6 +438,7 @@ const homePageOnReady = async ({
   }
   // NEAR BY FILTER
   async function nearByHandler(preservePagination = false) {
+    logHomePageLoadPhase('nearByHandler_start', { preservePagination });
     const isSearchingNearby = _$w('#nearBy').checked;
     const renderingEnv = await rendering.env();
     // 1. Disable nearby input while processing
@@ -438,6 +452,7 @@ const homePageOnReady = async ({
     filter = newFilter;
     console.log('filter inside nearByHandler', filter);
     if (!success) {
+      logHomePageLoadPhase('nearByHandler_geolocation_failed');
       if (renderingEnv !== 'backend') {
         //on Backend environment, geolocation API don't work, so makes no sense to change state for near by
         multiStateBoxSelector.changeState('nearByState');
@@ -452,6 +467,7 @@ const homePageOnReady = async ({
     // If location is not selected, change state to "resultsState"
     if (!isSearchingNearby) {
       if (await noSearchCriteria()) {
+        logHomePageLoadPhase('nearByHandler_no_search_criteria');
         multiStateBoxSelector.changeState('noSearchCriteria');
         // 4. Re-enable nearby input
         _$w('#nearBy').enable();
@@ -463,6 +479,7 @@ const homePageOnReady = async ({
 
     // 4. Re-enable nearby input when done
     _$w('#nearBy').enable();
+    logHomePageLoadPhase('nearByHandler_complete', { success: true });
     return true;
   }
 
@@ -470,6 +487,7 @@ const homePageOnReady = async ({
   // FETCH STATE/CITY/AREAS OF PRACTICE FROM BACKEND ONCE AND STORE IT
 
   async function fetchFilterData() {
+    logHomePageLoadPhase('fetchFilterData_start');
     let completeStateList, areasOfPracticesList, stateCityMapList;
     try {
       const { COMPILED_STATE_LIST, COMPILED_AREAS_OF_PRACTICES, COMPILED_STATE_CITY_MAP } =
@@ -510,6 +528,7 @@ const homePageOnReady = async ({
 
     // Update filter states after data is loaded
     updateFiltersState();
+    logHomePageLoadPhase('fetchFilterData_complete');
   }
 
   // CONSTRUCT DROPDOWN OPTIONS FOR STATE, CITY, AREA OF PRACTICES

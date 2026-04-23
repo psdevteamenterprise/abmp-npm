@@ -3,6 +3,7 @@ const { window: wixWindow, rendering } = require('@wix/site-window');
 
 const { DEFAULT_FILTER } = require('../consts.js');
 
+const { logHomePageLoadPhase } = require('./homePageLoadTrace.js');
 const { debouncedFunction } = require('./sharedUtils.js');
 
 const createHomepageUtils = (_$w, filterProfiles) => {
@@ -362,6 +363,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       });
   }
   async function getAndSetUserLocation(isSearchingNearby, filter) {
+    logHomePageLoadPhase('getAndSetUserLocation_start', { isSearchingNearby });
     try {
       let location = {
         coords: {
@@ -369,6 +371,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
           longitude: 0,
         },
       };
+      logHomePageLoadPhase('getAndSetUserLocation_before_getCurrentGeolocation');
       location = await wixWindow.getCurrentGeolocation();
 
       console.log('location inside getAndSetUserLocation', location);
@@ -384,8 +387,15 @@ const createHomepageUtils = (_$w, filterProfiles) => {
         latitude: userLat,
         longitude: userLong,
       };
+      logHomePageLoadPhase('getAndSetUserLocation_success', {
+        lat: userLat,
+        lng: userLong,
+      });
       return { success: true, filter };
     } catch (error) {
+      logHomePageLoadPhase('getAndSetUserLocation_error', {
+        message: String(error && error.message),
+      });
       console.warn('Failed to get user location in getAndSetUserLocation', error);
       return { success: false, filter };
     }
@@ -504,6 +514,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     );
   }
   async function parseAndValidateQueryParams(filter, pagination) {
+    logHomePageLoadPhase('parseAndValidateQueryParams_start');
     const params = await wixLocation.query();
     const paramsMapping = getParamsMapping(filter, pagination);
     const {
@@ -515,6 +526,11 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     const isSearchingNearby = params.nearby === 'true';
     const isNoParams = !withoutPreviewParams || Object.keys(withoutPreviewParams).length === 0;
     const { success, filter: newFilter } = await getAndSetUserLocation(isSearchingNearby, filter);
+    logHomePageLoadPhase('parseAndValidateQueryParams_after_geolocation', {
+      isNoParams,
+      isSearchingNearby,
+      success,
+    });
 
     // Auto-enable nearby if GPS permission granted on fresh page load
     if (
@@ -525,6 +541,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       !isSearchingNearby
     ) {
       await wixQueryParams.add({ nearby: 'true', page: '1' });
+      logHomePageLoadPhase('parseAndValidateQueryParams_return', { branch: 'auto_nearby_url' });
       return { isDefaultStateParams: true, filter: newFilter };
     }
 
@@ -538,6 +555,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       // });
       // Don't search yet - let the caller decide what to do
       // The search will be handled in applyFilterToUI
+      logHomePageLoadPhase('parseAndValidateQueryParams_return', { branch: 'default_no_params' });
       return { isDefaultStateParams: true, filter: newFilter };
     }
     let autoAdjustFilters = false;
@@ -577,6 +595,10 @@ const createHomepageUtils = (_$w, filterProfiles) => {
         withoutPreviewParams.page) ||
       (Object.keys(withoutPreviewParams).length === 1 && withoutPreviewParams.nearby);
     const isDefaultStateParams = isNoParams || isNearbyFilter;
+    logHomePageLoadPhase('parseAndValidateQueryParams_return', {
+      branch: 'with_query_params',
+      isDefaultStateParams,
+    });
     return { isDefaultStateParams, filter: newFilter };
   }
 
@@ -660,6 +682,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     isSearchingNearby,
     preservePagination = false,
   }) {
+    logHomePageLoadPhase('search_start', { timeoutType, isSearchingNearby });
     const multiStateBoxSelector = _$w('#resultsStateBox');
     const renderingEnv = await rendering.env();
     const initSearchResultsUI = () => {
@@ -681,6 +704,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
             longitude: 0,
           }) === JSON.stringify(DEFAULT_FILTER)
         ) {
+          logHomePageLoadPhase('search_short_circuit_no_criteria');
           multiStateBoxSelector.changeState('noSearchCriteria');
           return [];
         }
@@ -704,14 +728,19 @@ const createHomepageUtils = (_$w, filterProfiles) => {
                 timeoutType,
                 args: { filter, isSearchingNearby },
               });
+      logHomePageLoadPhase('search_before_filterProfiles', { renderingEnv });
       const { success, response, error } = await funcPromise();
       if (!success) {
         _$w('#numberOfResults').text = '';
         console.error('[search] failed with error:', error);
+        logHomePageLoadPhase('search_filterProfiles_failed', {
+          message: String(error && error.message),
+        });
         multiStateBoxSelector.changeState('errorState');
         return [];
       }
       const totalCount = response.items.length;
+      logHomePageLoadPhase('search_filterProfiles_success', { totalCount });
       if (!totalCount) {
         _$w('#numberOfResults').text = 'Showing 0 results';
         _$w('#noResultsMessage').text = `${
