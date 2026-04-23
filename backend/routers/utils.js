@@ -125,4 +125,5 @@ module.exports = {
   generateSEOTitle,
   stripHtmlTags,
   getMemberProfileData,
+  transformMemberToProfileData,
 };

@@ -1,6 +1,7 @@
 module.exports = {
   ...require('./ContactUs.js'),
   ...require('./Profile.js'),
+  ...require('./publicProfile.js'),
   ...require('./Home.js'),
   ...require('./personalDetails.js'),
   ...require('./QAPage.js'),
