@@ -1,7 +1,16 @@
 {
   "name": "abmp-npm",
-  "version": "10.3.0",
+  "version": "10.3.1",
   "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./backend": "./backend/index.js",
+    "./public": "./public/index.js",
+    "./pages": "./pages/index.js",
+    "./backend/*": "./backend/*",
+    "./public/*": "./public/*",
+    "./pages/*": "./pages/*"
+  },
   "scripts": {
     "check-cycles": "madge --circular .",
     "test": "jest backend/__tests__",
