@@ -1,5 +1,5 @@
 const PAC_API_URL = 'https://members.abmp.com/eweb/api/Wix';
-const TEST_PAC_API_URL = 'https://members.abmp.com/nfpactest/eweb/api/Wix';
+const TEST_PAC_API_URL = 'https://members-test.abmp.com/nfpactest/eweb/api/Wix';
 const BACKUP_API_URL = 'https://psdevteamenterpris.wixstudio.com/abmp-backup/_functions';
 const SSO_TOKEN_AUTH_API_URL = 'https://members.professionalassistcorp.com/';
 
