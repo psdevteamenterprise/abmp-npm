@@ -1,5 +1,6 @@
 const { createHmac } = require('crypto');
 
+const axios = require('axios');
 const { decode } = require('jwt-js-decode');
 
 const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL } = require('../consts');
@@ -91,17 +92,16 @@ async function checkAndFetchSSO(token) {
   const SSO_TOKEN_AUTH_API_KEY = await getSecret('SSO_TOKEN_AUTH_API_KEY');
   const signature = createHmac('sha256', SSO_TOKEN_AUTH_API_KEY).update(token).digest('hex');
   const professionalassistcorpUrl = `${SSO_TOKEN_AUTH_API_URL}/eweb/SSOToken.ashx?token=${token}&Partner=Wix&Signature=${signature}`;
-  const options = {
-    method: 'get',
-  };
   try {
-    const httpResponse = await fetch(professionalassistcorpUrl, options);
+    const httpResponse = await axios.get(professionalassistcorpUrl, {
+      transformResponse: [d => d],
+      validateStatus: () => true,
+    });
     console.log('httpResponse status', httpResponse.status);
-    if (!httpResponse.ok) {
+    if (httpResponse.status < 200 || httpResponse.status >= 300) {
       throw new Error('Fetch did not succeed with status: ' + httpResponse.status);
     }
-    const responseToken = await httpResponse.text();
-    return responseToken;
+    return httpResponse.data;
   } catch (error) {
     console.error('Error in checkAndFetchSSO', error);
     return null;

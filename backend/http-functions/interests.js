@@ -1,3 +1,5 @@
+const axios = require('axios');
+
 const { COLLECTIONS } = require('../../public/consts');
 const { clearCollection } = require('../cms-data-methods');
 const { CONFIG_KEYS } = require('../consts');
@@ -10,13 +12,9 @@ const getInterests = async () => {
     getSiteConfigs(CONFIG_KEYS.INTERESTS_API_URL),
     getHeaders(),
   ]);
-  const fetchOptions = {
-    method: 'get',
-    headers: headers,
-  };
   try {
-    const response = await fetch(url, fetchOptions);
-    return await response.json();
+    const response = await axios.get(url, { headers });
+    return response.data;
   } catch (e) {
     console.error('Error getting interests:', e);
     throw e;
