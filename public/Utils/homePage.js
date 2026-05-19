@@ -5,6 +5,43 @@ const { DEFAULT_FILTER } = require('../consts.js');
 
 const { debouncedFunction } = require('./sharedUtils.js');
 
+function isValidGeolocation(lat, lng) {
+  return Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
+}
+
+function applyGeolocationToFilter(filter, lat, lng, isSearchingNearby) {
+  return {
+    ...filter,
+    postalcode: isSearchingNearby ? null : filter.postalcode,
+    state: isSearchingNearby ? [] : filter.state,
+    city: isSearchingNearby ? [] : filter.city,
+    stateSearch: isSearchingNearby ? '' : filter.stateSearch,
+    citySearch: isSearchingNearby ? '' : filter.citySearch,
+    latitude: lat,
+    longitude: lng,
+  };
+}
+
+const GEOLOCATION_TIMEOUT_MS = 10000;
+
+function getCurrentGeolocationWithTimeout(timeoutMs = GEOLOCATION_TIMEOUT_MS) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Geolocation timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    wixWindow
+      .getCurrentGeolocation()
+      .then(location => {
+        clearTimeout(timer);
+        resolve(location);
+      })
+      .catch(error => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
 const createHomepageUtils = (_$w, filterProfiles) => {
   const getFiltersSelectors = filterName => ({
     checkBoxContainerSelector: _$w(`#${filterName}CheckBoxContainer`),
@@ -362,29 +399,24 @@ const createHomepageUtils = (_$w, filterProfiles) => {
       });
   }
   async function getAndSetUserLocation(isSearchingNearby, filter) {
-    try {
-      let location = {
-        coords: {
-          latitude: 0,
-          longitude: 0,
-        },
+    const { latitude: existingLat, longitude: existingLng } = filter;
+    if (isValidGeolocation(existingLat, existingLng)) {
+      return {
+        success: true,
+        filter: applyGeolocationToFilter(filter, existingLat, existingLng, isSearchingNearby),
       };
-      location = await wixWindow.getCurrentGeolocation();
+    }
+
+    try {
+      const location = await getCurrentGeolocationWithTimeout();
 
       console.log('location inside getAndSetUserLocation', location);
       const userLat = location.coords?.latitude ?? 0;
       const userLong = location.coords?.longitude ?? 0;
-      filter = {
-        ...filter,
-        postalcode: isSearchingNearby ? null : filter.postalcode,
-        state: isSearchingNearby ? [] : filter.state,
-        city: isSearchingNearby ? [] : filter.city,
-        stateSearch: isSearchingNearby ? '' : filter.stateSearch,
-        citySearch: isSearchingNearby ? '' : filter.citySearch,
-        latitude: userLat,
-        longitude: userLong,
+      return {
+        success: true,
+        filter: applyGeolocationToFilter(filter, userLat, userLong, isSearchingNearby),
       };
-      return { success: true, filter };
     } catch (error) {
       console.warn('Failed to get user location in getAndSetUserLocation', error);
       return { success: false, filter };
