@@ -22,6 +22,26 @@ function applyGeolocationToFilter(filter, lat, lng, isSearchingNearby) {
   };
 }
 
+const GEOLOCATION_TIMEOUT_MS = 10000;
+
+function getCurrentGeolocationWithTimeout(timeoutMs = GEOLOCATION_TIMEOUT_MS) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Geolocation timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    wixWindow
+      .getCurrentGeolocation()
+      .then(location => {
+        clearTimeout(timer);
+        resolve(location);
+      })
+      .catch(error => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
 const createHomepageUtils = (_$w, filterProfiles) => {
   const getFiltersSelectors = filterName => ({
     checkBoxContainerSelector: _$w(`#${filterName}CheckBoxContainer`),
@@ -388,7 +408,7 @@ const createHomepageUtils = (_$w, filterProfiles) => {
     }
 
     try {
-      const location = await wixWindow.getCurrentGeolocation();
+      const location = await getCurrentGeolocationWithTimeout();
 
       console.log('location inside getAndSetUserLocation', location);
       const userLat = location.coords?.latitude ?? 0;
