@@ -103,23 +103,23 @@ async function updateMemberRichContent(memberId) {
     content: htmlString,
   });
 
-  const requestOptions = {
-    method: 'post',
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: 'XSRF-TOKEN=1753949844|p--a7HsuVjR4',
-      Authorization: 'Bearer ' + (await getServerlessAuth()),
-    },
-    body: raw,
+  const requestHeaders = {
+    'Content-Type': 'application/json',
+    Cookie: 'XSRF-TOKEN=1753949844|p--a7HsuVjR4',
+    Authorization: 'Bearer ' + (await getServerlessAuth()),
   };
 
   try {
-    const response = await fetch(
+    const response = await axios.post(
       'https://www.wixapis.com/data-sync/v1/abmp-content-converter',
-      requestOptions
+      raw,
+      {
+        headers: requestHeaders,
+        validateStatus: () => true,
+      }
     );
-    if (response.ok) {
-      const data = await response.json();
+    if (response.status >= 200 && response.status < 300) {
+      const data = response.data;
       const updatedMember = {
         ...member,
         aboutYourSelf: data.richContent.richContent,
@@ -358,9 +358,13 @@ async function uploadMembersSitemap({ members, tokens, destinationFileName, site
 
   const url = `https://${host}${pathName}`;
   console.log('url', url);
-  const res = await fetch(url, { method, headers: reqOpts.headers, body });
-  if (!res.ok) {
-    const respText = await res.text();
+  const res = await axios.put(url, body, {
+    headers: reqOpts.headers,
+    transformResponse: [d => d],
+    validateStatus: () => true,
+  });
+  if (res.status < 200 || res.status >= 300) {
+    const respText = res.data;
     console.log('Response body', respText);
     throw new Error(`S3 PUT failed ${res.status} ${res.statusText}: ${respText}`);
   }
@@ -391,13 +395,13 @@ async function stsPost(body, baseAccessKeyId, baseSecretAccessKey) {
     accessKeyId: baseAccessKeyId,
     secretAccessKey: baseSecretAccessKey,
   });
-  const res = await fetch(`https://${host}${path}`, {
-    method,
+  const res = await axios.post(`https://${host}${path}`, body, {
     headers: reqOpts.headers,
-    body,
+    transformResponse: [d => d],
+    validateStatus: () => true,
   });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`STS ${res.status}: ${text}`);
+  const text = res.data;
+  if (res.status < 200 || res.status >= 300) throw new Error(`STS ${res.status}: ${text}`);
 
   const accessKeyId = parseXmlVal(text, 'AccessKeyId');
   const secretAccessKey = parseXmlVal(text, 'SecretAccessKey');

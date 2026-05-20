@@ -1,3 +1,5 @@
+const axios = require('axios');
+
 const { PAC_API_URL, TEST_PAC_API_URL, BACKUP_API_URL } = require('./consts');
 const { getSecret } = require('./utils');
 
@@ -31,24 +33,22 @@ const fetchPACMembers = async ({ page, action, backupDate, isTestEnvironment }) 
   const url = `${baseUrl}/Members?${new URLSearchParams(queryParams).toString()}`;
   console.log(`Fetching PAC members from:  ${url}`);
   const headers = await getHeaders();
-  const fetchOptions = {
-    method: 'get',
-    headers: headers,
-  };
-  const response = await fetch(url, fetchOptions);
-  const responseType = response.headers.get('content-type');
+  const response = await axios.get(url, {
+    headers,
+    validateStatus: () => true,
+  });
+  const responseType = response.headers['content-type'] || '';
   if (!responseType.includes('application/json')) {
     const errorMessage = `[fetchPACMembers] got invalid responseType: ${responseType} for page ${page} and actionFilter ${action}`;
     console.error(errorMessage);
     throw new Error(errorMessage);
   }
-  if (response.ok) {
-    return response.json();
-  } else {
-    const errorMessage = `[fetchPACMembers] failed with status ${response.status} for page ${page} and actionFilter ${action}`;
-    console.error(errorMessage);
-    throw new Error(errorMessage);
+  if (response.status >= 200 && response.status < 300) {
+    return response.data;
   }
+  const errorMessage = `[fetchPACMembers] failed with status ${response.status} for page ${page} and actionFilter ${action}`;
+  console.error(errorMessage);
+  throw new Error(errorMessage);
 };
 
 module.exports = { fetchPACMembers, getHeaders }; //TODO: remove getHeaders from exported methods once npm movement finishes
