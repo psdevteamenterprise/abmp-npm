@@ -1,7 +1,8 @@
-const { createLoginMethods } = require('./login-methods-factory');
-const { validateMemberToken } = require('./sso-methods');
+const { loginQAMember } = require('./qa-login-methods');
+const { validateMemberToken, authenticateSSOToken } = require('./sso-methods');
 
 module.exports = {
-  createLoginMethods,
+  loginQAMember,
   validateMemberToken,
+  authenticateSSOToken,
 };
