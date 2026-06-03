@@ -1,5 +1,5 @@
 const { COLLECTIONS } = require('../public/consts');
-const { isWixHostedImage } = require('../public/Utils/sharedUtils');
+const { isWixHostedImage, emailsMatch } = require('../public/Utils/sharedUtils');
 
 const { MEMBERSHIPS_TYPES } = require('./consts');
 const { createSiteContact } = require('./contacts-methods');
@@ -35,7 +35,8 @@ async function findMemberByWixDataId(memberId) {
 }
 
 const hasDifferentEmails = memberData =>
-  memberData.contactFormEmail && memberData.contactFormEmail !== memberData.email;
+  Boolean(memberData.contactFormEmail) &&
+  !emailsMatch(memberData.contactFormEmail, memberData.email);
 
 async function createContactAndMemberIfNew(memberData) {
   if (!memberData) {

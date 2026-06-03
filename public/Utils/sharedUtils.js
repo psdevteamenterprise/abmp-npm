@@ -195,6 +195,28 @@ function normalizeExternalUrl(url) {
   return `https://${trimmed}`;
 }
 
+/**
+ * Normalizes an email for comparison (lowercased + trimmed).
+ * Wix CRM treats emails as case-insensitive, so comparisons must too.
+ * @param {string} email
+ * @returns {string}
+ */
+function normalizeEmail(email) {
+  return typeof email === 'string' ? email.trim().toLowerCase() : '';
+}
+
+/**
+ * Case-insensitive email equality. Two empty/missing emails are not considered a match.
+ * @param {string} a
+ * @param {string} b
+ * @returns {boolean}
+ */
+function emailsMatch(a, b) {
+  const normalizedA = normalizeEmail(a);
+  const normalizedB = normalizeEmail(b);
+  return Boolean(normalizedA) && normalizedA === normalizedB;
+}
+
 module.exports = {
   checkAddressIsVisible,
   formatPracticeAreasForDisplay,
@@ -208,4 +230,6 @@ module.exports = {
   formatAddress,
   isWixHostedImage,
   normalizeExternalUrl,
+  normalizeEmail,
+  emailsMatch,
 };

@@ -2,6 +2,8 @@
  * Orchestrates syncing between Wix Members and CRM Contacts.
  * Returns member data to save; caller does a single updateMember to avoid double-write.
  */
+const { emailsMatch } = require('../public/Utils/sharedUtils');
+
 const { createSiteContact, updateContactInfo, deleteSiteContact } = require('./contacts-methods');
 
 /**
@@ -18,7 +20,10 @@ async function updateContactEmail(newContactEmail, existingMemberData) {
 
   const { wixContactId, wixMemberId, email: loginEmail } = existingMemberData;
   const isSingleEntity = wixContactId === wixMemberId;
-  const contactEmailDiffersFromLogin = loginEmail !== newContactEmail;
+  // Compare case-insensitively: Wix CRM enforces email uniqueness without regard to case,
+  // so a contact email that equals the login email (e.g. different casing) must collapse to
+  // a single entity rather than attempt a duplicate contact write.
+  const contactEmailDiffersFromLogin = !emailsMatch(loginEmail, newContactEmail);
 
   if (!contactEmailDiffersFromLogin) {
     if (isSingleEntity) {
