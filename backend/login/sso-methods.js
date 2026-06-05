@@ -15,6 +15,8 @@ const {
   getSecret,
 } = require('../utils');
 
+const { generateMemberSessionToken } = require('./generate-member-session-token');
+
 /**
  * Validates member token and retrieves member data
  * @param {string} memberIdInput - The member ID to validate
@@ -112,10 +114,9 @@ async function checkAndFetchSSO(token) {
  * Authenticate an SSO token
  * @param {Object} params - The parameters for the authentication
  * @param {string} params.token - The token to authenticate
- * @param {Function} generateSessionToken - a dependency of the method, injected by the createLoginMethods function
  * @returns {Promise<Object>} The result of the authentication
  */
-const authenticateSSOToken = async ({ token }, generateSessionToken) => {
+const authenticateSSOToken = async ({ token }) => {
   const responseToken = await checkAndFetchSSO(token);
   const isValidToken = Boolean(
     responseToken && typeof responseToken === 'string' && responseToken?.trim()
@@ -135,7 +136,7 @@ const authenticateSSOToken = async ({ token }, generateSessionToken) => {
     const payload = jwt.payload;
     const memberData = await prepareMemberForSSOLogin(payload);
     console.log('memberDataCollectionId', memberData._id);
-    const sessionToken = await generateSessionToken(memberData.email);
+    const sessionToken = await generateMemberSessionToken(memberData.email);
     const authObj = {
       type: 'success',
       memberId: memberData._id,

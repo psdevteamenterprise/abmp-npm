@@ -2,6 +2,8 @@ const { CONFIG_KEYS } = require('../consts');
 const { prepareMemberForQALogin, getQAUsers } = require('../members-data-methods');
 const { getSecret, getSiteConfigs } = require('../utils');
 
+const { generateMemberSessionToken } = require('./generate-member-session-token');
+
 const validateQAUser = async userEmail => {
   const qaUsers = await getQAUsers();
   const matchingUserEmail = qaUsers.find(user => user.email === userEmail)?.email;
@@ -16,10 +18,9 @@ const validateQAUser = async userEmail => {
  * @param {Object} params - The parameters for the login
  * @param {string} params.userEmail - The email of the user to login
  * @param {string} params.secret - The secret of the user to login
- * @param {Function} generateSessionToken - a dependency of the method, injected by the createLoginMethods function
  * @returns {Promise<Object>} The result of the login
  */
-const loginQAMember = async ({ userEmail, secret }, generateSessionToken) => {
+const loginQAMember = async ({ userEmail, secret }) => {
   try {
     const [qaSecret, allowAnyMember] = await Promise.all([
       getSecret('ABMP_QA_SECRET'),
@@ -36,7 +37,7 @@ const loginQAMember = async ({ userEmail, secret }, generateSessionToken) => {
     }
 
     const memberData = await prepareMemberForQALogin(userEmail);
-    const token = await generateSessionToken(memberData.email, qaSecret);
+    const token = await generateMemberSessionToken(memberData.email);
     return {
       success: true,
       token,
