@@ -28,10 +28,10 @@ async function createSiteContact(contactData) {
     },
   };
   console.log('[createSiteContact]contactInfo', JSON.stringify(contactInfo, null, 2));
-  // Safety net: a contact's form email can legitimately match an email already held by the
-  // same person's member-backing contact. Wix CRM rejects duplicate emails by default, so allow
-  // them here to avoid hard-failing a save; callers collapse true same-person cases to one entity.
-  const createContactResponse = await elevatedCreateContact(contactInfo, { allowDuplicates: true });
+  // Intentionally NOT passing allowDuplicates: Wix CRM enforces email uniqueness
+  // case-insensitively, which is the guard we want against two different members sharing an
+  // email. Same-member cases never reach here — they collapse to a single entity upstream.
+  const createContactResponse = await elevatedCreateContact(contactInfo);
   console.log(
     '[createSiteContact]createContactResponse',
     JSON.stringify(createContactResponse, null, 2)

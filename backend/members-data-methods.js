@@ -1,5 +1,5 @@
 const { COLLECTIONS } = require('../public/consts');
-const { isWixHostedImage, emailsMatch } = require('../public/Utils/sharedUtils');
+const { isWixHostedImage, emailsMatch, normalizeEmail } = require('../public/Utils/sharedUtils');
 
 const { MEMBERSHIPS_TYPES } = require('./consts');
 const { createSiteContact } = require('./contacts-methods');
@@ -251,24 +251,49 @@ async function updateMember(memberToUpdate) {
     throw new Error(`Failed to update member data: ${error.message}`);
   }
 }
+/**
+ * Whether the given email is already used by a DIFFERENT member (case-insensitive).
+ * Returns false when the email is free or belongs to the same member, so a member can
+ * always keep/normalize their own email.
+ * @param {string} email
+ * @param {string|number} memberId - The member requesting the change
+ * @returns {Promise<boolean>}
+ */
 async function isEmailAlreadyUsed(email, memberId) {
   const member = await getMemberByContactEmail(email);
-  return member !== null && member.memberId !== memberId;
+  return member !== null && String(member.memberId) !== String(memberId);
 }
+/**
+ * Finds the member that owns an email (in either the login or contact-form field),
+ * matching case-insensitively. Wix Data `.eq` is case-sensitive, so we widen the query to
+ * the raw + normalized casings and then confirm with a case-insensitive comparison.
+ * Throws if two DIFFERENT members share the email (a data-integrity violation).
+ * @param {string} email
+ * @returns {Promise<Object|null>}
+ */
 async function getMemberByContactEmail(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+  const candidates = [...new Set([email, normalized])];
+
   const members = await wixData
     .query(COLLECTIONS.MEMBERS_DATA)
-    .eq('contactFormEmail', email)
-    .or(wixData.query(COLLECTIONS.MEMBERS_DATA).eq('email', email))
-    .limit(2)
+    .hasSome('contactFormEmail', candidates)
+    .or(wixData.query(COLLECTIONS.MEMBERS_DATA).hasSome('email', candidates))
+    .limit(50)
     .find()
     .then(res => res.items);
-  if (members.length > 1) {
+
+  const matches = members.filter(
+    member => emailsMatch(member.contactFormEmail, email) || emailsMatch(member.email, email)
+  );
+  const distinctMemberIds = [...new Set(matches.map(member => String(member.memberId)))];
+  if (distinctMemberIds.length > 1) {
     throw new Error(
-      `[getMemberByContactEmail] Multiple members found with same loginemail or contactFormEmail ${email} membersIds are : [${members.map(member => member.memberId).join(', ')}]`
+      `[getMemberByContactEmail] Multiple members found with same loginemail or contactFormEmail ${email} membersIds are : [${distinctMemberIds.join(', ')}]`
     );
   }
-  return members[0] || null;
+  return matches[0] || null;
 }
 /**
  * Saves member registration data (supports partial updates)
