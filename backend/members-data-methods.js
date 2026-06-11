@@ -41,8 +41,8 @@ const hasDifferentEmails = memberData =>
 /**
  * Returns a shallow copy of a member record with its email fields normalized
  * (lowercased + trimmed). Wix CRM and our uniqueness checks treat emails
- * case-insensitively, so we persist them in canonical form to keep `.eq`/`.hasSome`
- * lookups reliable. Only rewrites string values that are actually present.
+ * case-insensitively, so we persist them in canonical form to keep `.eq` lookups
+ * reliable. Only rewrites string values that are actually present.
  * @param {Object} memberData
  * @returns {Object}
  */
@@ -309,10 +309,8 @@ async function isEmailAlreadyUsed(email, memberId) {
 /**
  * Finds the member that owns an email (in either the login or contact-form field),
  * matching case-insensitively. Emails are normalized (lowercased + trimmed) on write and
- * backfilled by the email-normalization migration, so stored values are canonical. Wix Data
- * `.eq`/`.hasSome` are still case-sensitive, so we widen the query to the raw + normalized
- * casings and confirm with a case-insensitive comparison — this keeps the check correct for
- * any not-yet-migrated rows.
+ * backfilled by the email-normalization migration, so stored values are canonical: a single
+ * `.eq` against the normalized email is an exact, case-insensitive lookup.
  * Throws if two DIFFERENT members share the email (a data-integrity violation).
  * @param {string} email
  * @returns {Promise<Object|null>}
@@ -320,26 +318,21 @@ async function isEmailAlreadyUsed(email, memberId) {
 async function getMemberByContactEmail(email) {
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
-  const candidates = [...new Set([email, normalized])];
 
   const members = await wixData
     .query(COLLECTIONS.MEMBERS_DATA)
-    .hasSome('contactFormEmail', candidates)
-    .or(wixData.query(COLLECTIONS.MEMBERS_DATA).hasSome('email', candidates))
-    .limit(50)
+    .eq('contactFormEmail', normalized)
+    .or(wixData.query(COLLECTIONS.MEMBERS_DATA).eq('email', normalized))
+    .limit(2)
     .find()
     .then(res => res.items);
 
-  const matches = members.filter(
-    member => emailsMatch(member.contactFormEmail, email) || emailsMatch(member.email, email)
-  );
-  const distinctMemberIds = [...new Set(matches.map(member => String(member.memberId)))];
-  if (distinctMemberIds.length > 1) {
+  if (members.length > 1) {
     throw new Error(
-      `[getMemberByContactEmail] Multiple members found with same loginemail or contactFormEmail ${email} membersIds are : [${distinctMemberIds.join(', ')}]`
+      `[getMemberByContactEmail] Multiple members found with same loginemail or contactFormEmail ${email} membersIds are : [${members.map(member => member.memberId).join(', ')}]`
     );
   }
-  return matches[0] || null;
+  return members[0] || null;
 }
 /**
  * Saves member registration data (supports partial updates)
@@ -583,25 +576,22 @@ const getMembersByIds = async memberIds => {
 
 const getMemberByEmail = async email => {
   try {
-    // Match the login email case-insensitively (see getMemberByContactEmail): widen the
-    // case-sensitive query to raw + normalized casings, then confirm with emailsMatch.
+    // Login emails are normalized on write, so match against the normalized value (see
+    // getMemberByContactEmail) — an exact `.eq` is a case-insensitive lookup.
     const normalized = normalizeEmail(email);
     if (!normalized) return null;
-    const candidates = [...new Set([email, normalized])];
     const members = await wixData
       .query(COLLECTIONS.MEMBERS_DATA)
-      .hasSome('email', candidates)
-      .limit(50)
+      .eq('email', normalized)
+      .limit(2)
       .find()
       .then(res => res.items);
-    const matches = members.filter(member => emailsMatch(member.email, email));
-    const distinctMemberIds = [...new Set(matches.map(member => String(member.memberId)))];
-    if (distinctMemberIds.length > 1) {
+    if (members.length > 1) {
       throw new Error(
-        `[getMemberByEmail] Multiple members found with email ${email} membersIds are : [${distinctMemberIds.join(', ')}]`
+        `[getMemberByEmail] Multiple members found with email ${email} membersIds are : [${members.map(member => member.memberId).join(', ')}]`
       );
     }
-    return matches[0] || null;
+    return members[0] || null;
   } catch (error) {
     console.error('Error getting member by email:', error);
     throw new Error(`Failed to get member by email: ${error.message}`);
