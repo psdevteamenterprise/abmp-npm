@@ -1,9 +1,9 @@
 const { taskManager } = require('psdev-task-manager');
 
 const { COLLECTIONS } = require('../../public/consts');
-const { COMPILED_FILTERS_FIELDS, CONFIG_KEYS } = require('../consts');
+const { COMPILED_FILTERS_FIELDS, CONFIG_KEYS, LOGIN_EMAIL_SYNC_STATUS } = require('../consts');
+const { changeWixMembersEmails, summarizeLoginEmailOutcomes } = require('../daily-pull/utils');
 const { wixData } = require('../elevated-modules');
-const { updateWixMemberLoginEmail } = require('../members-area-methods');
 const {
   getAllEmptyAboutYouMembers,
   getAllMembersWithExternalImages,
@@ -481,6 +481,7 @@ const syncMemberLoginEmails = async data => {
       membersToUpdate.push({
         ...member,
         email: newEmail,
+        previousLoginEmail: member.email,
       });
     }
 
@@ -497,14 +498,35 @@ const syncMemberLoginEmails = async data => {
 
     for (const chunk of updateChunks) {
       try {
-        await bulkSaveMembers(chunk);
+        // Change Wix login emails first; only advance the CMS login email for the ones that
+        // succeeded. Failures keep their previous email (CMS stays consistent with Wix) and are
+        // reported in result.errors for manual handling.
+        const outcomes = await changeWixMembersEmails(chunk);
+        const { failedMemberIds } = summarizeLoginEmailOutcomes(outcomes);
+        const toSave = chunk.map(member => {
+          const { previousLoginEmail, ...restMember } = member;
+          if (failedMemberIds.has(member.memberId) && previousLoginEmail !== undefined) {
+            return { ...restMember, email: previousLoginEmail };
+          }
+          return restMember;
+        });
+        await bulkSaveMembers(toSave);
 
-        for (const member of chunk) {
-          await updateWixMemberLoginEmail(member, result);
-        }
-
-        result.successful += chunk.length;
-        console.log(`✅ Successfully updated ${chunkIndex} ${chunk.length} members`);
+        outcomes.forEach(outcome => {
+          if (outcome.status === LOGIN_EMAIL_SYNC_STATUS.UPDATED) {
+            result.successful++;
+          } else if (outcome.status === LOGIN_EMAIL_SYNC_STATUS.FAILED) {
+            result.failed++;
+            result.errors.push({
+              memberId: outcome.memberId,
+              wixMemberId: outcome.wixMemberId,
+              desiredEmail: outcome.desiredEmail,
+              error: outcome.error,
+            });
+          } else {
+            result.skipped++;
+          }
+        });
       } catch (error) {
         console.error(`❌ Error updating chunk ${chunkIndex}:`, error);
         result.failed += chunk.length;
@@ -515,14 +537,8 @@ const syncMemberLoginEmails = async data => {
         });
       }
     }
-    // Log comprehensive results including Wix member updates
-    const wixStats = result.wixMemberUpdates || { successful: 0, failed: 0 };
-    console.log(`Login Emails sync task completed:`);
     console.log(
-      `  - Member data updates: ${result.successful} successful, ${result.failed} failed, ${result.skipped} skipped`
-    );
-    console.log(
-      `  - Wix member login emails: ${wixStats.successful} successful, ${wixStats.failed} failed`
+      `Login Emails sync task completed: ${result.successful} synced, ${result.failed} failed, ${result.skipped} skipped`
     );
 
     return result;
