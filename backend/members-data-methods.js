@@ -38,6 +38,40 @@ const hasDifferentEmails = memberData =>
   Boolean(memberData.contactFormEmail) &&
   !emailsMatch(memberData.contactFormEmail, memberData.email);
 
+/**
+ * Returns a shallow copy of a member record with its email fields normalized
+ * (lowercased + trimmed). Wix CRM and our uniqueness checks treat emails
+ * case-insensitively, so we persist them in canonical form to keep `.eq`/`.hasSome`
+ * lookups reliable. Only rewrites string values that are actually present.
+ * @param {Object} memberData
+ * @returns {Object}
+ */
+const normalizeMemberEmailFields = memberData => {
+  if (!memberData || typeof memberData !== 'object') return memberData;
+  const normalized = { ...memberData };
+  if (typeof normalized.email === 'string') {
+    normalized.email = normalizeEmail(normalized.email);
+  }
+  if (typeof normalized.contactFormEmail === 'string') {
+    normalized.contactFormEmail = normalizeEmail(normalized.contactFormEmail);
+  }
+  return normalized;
+};
+
+/**
+ * Whether a member's stored email fields are not already in canonical form
+ * (lowercased + trimmed) and therefore need the normalization backfill.
+ * @param {Object} member
+ * @returns {boolean}
+ */
+const memberNeedsEmailNormalization = member =>
+  (typeof member.email === 'string' &&
+    member.email.length > 0 &&
+    member.email !== normalizeEmail(member.email)) ||
+  (typeof member.contactFormEmail === 'string' &&
+    member.contactFormEmail.length > 0 &&
+    member.contactFormEmail !== normalizeEmail(member.contactFormEmail));
+
 async function createContactAndMemberIfNew(memberData) {
   if (!memberData) {
     throw new Error('Member data is required');
@@ -98,8 +132,14 @@ async function bulkSaveMembers(memberDataList, collectionName = COLLECTIONS.MEMB
   }
 
   try {
+    // Normalize email fields only for the members collection; other collections passed here
+    // (e.g. staging copies) don't have these fields and must be saved untouched.
+    const listToSave =
+      collectionName === COLLECTIONS.MEMBERS_DATA
+        ? memberDataList.map(normalizeMemberEmailFields)
+        : memberDataList;
     // bulkSave all with batches of 1000 items as this is the Velo limit for bulkSave
-    const batches = chunkArray(memberDataList, 1000);
+    const batches = chunkArray(listToSave, 1000);
     return await Promise.all(batches.map(batch => wixData.bulkSave(collectionName, batch)));
   } catch (error) {
     console.error('Error bulk saving members:', error);
@@ -245,7 +285,10 @@ const getAllEmptyAboutYouMembers = async () => {
  */
 async function updateMember(memberToUpdate) {
   try {
-    const updatedMember = await wixData.update(COLLECTIONS.MEMBERS_DATA, memberToUpdate);
+    const updatedMember = await wixData.update(
+      COLLECTIONS.MEMBERS_DATA,
+      normalizeMemberEmailFields(memberToUpdate)
+    );
     return updatedMember;
   } catch (error) {
     throw new Error(`Failed to update member data: ${error.message}`);
@@ -265,8 +308,11 @@ async function isEmailAlreadyUsed(email, memberId) {
 }
 /**
  * Finds the member that owns an email (in either the login or contact-form field),
- * matching case-insensitively. Wix Data `.eq` is case-sensitive, so we widen the query to
- * the raw + normalized casings and then confirm with a case-insensitive comparison.
+ * matching case-insensitively. Emails are normalized (lowercased + trimmed) on write and
+ * backfilled by the email-normalization migration, so stored values are canonical. Wix Data
+ * `.eq`/`.hasSome` are still case-sensitive, so we widen the query to the raw + normalized
+ * casings and confirm with a case-insensitive comparison — this keeps the check correct for
+ * any not-yet-migrated rows.
  * Throws if two DIFFERENT members share the email (a data-integrity violation).
  * @param {string} email
  * @returns {Promise<Object|null>}
@@ -477,6 +523,29 @@ const getAllMembersWithoutContactFormEmail = async () => {
   }
 };
 
+/**
+ * Gets all members whose email or contactFormEmail is stored with non-canonical casing
+ * (or surrounding whitespace) and therefore needs the normalization backfill.
+ * Wix Data cannot compare a field to its own lowercase form, so we fetch members that have
+ * an email set and filter in memory.
+ * @returns {Promise<Array>} - Array of member data
+ */
+const getAllMembersNeedingEmailNormalization = async () => {
+  try {
+    const membersQuery = wixData
+      .query(COLLECTIONS.MEMBERS_DATA)
+      .isNotEmpty('email')
+      .or(wixData.query(COLLECTIONS.MEMBERS_DATA).isNotEmpty('contactFormEmail'))
+      .limit(1000);
+
+    const allItems = await queryAllItems(membersQuery);
+    return allItems.filter(memberNeedsEmailNormalization);
+  } catch (error) {
+    console.error('Error getting members needing email normalization:', error);
+    throw new Error(`Failed to get members needing email normalization: ${error.message}`);
+  }
+};
+
 /* Gets all updated login emails from the updated emails database
  * @returns {Promise<Array>} - Array of updated email data
  */
@@ -514,18 +583,25 @@ const getMembersByIds = async memberIds => {
 
 const getMemberByEmail = async email => {
   try {
+    // Match the login email case-insensitively (see getMemberByContactEmail): widen the
+    // case-sensitive query to raw + normalized casings, then confirm with emailsMatch.
+    const normalized = normalizeEmail(email);
+    if (!normalized) return null;
+    const candidates = [...new Set([email, normalized])];
     const members = await wixData
       .query(COLLECTIONS.MEMBERS_DATA)
-      .eq('email', email)
-      .limit(2)
+      .hasSome('email', candidates)
+      .limit(50)
       .find()
       .then(res => res.items);
-    if (members.length > 1) {
+    const matches = members.filter(member => emailsMatch(member.email, email));
+    const distinctMemberIds = [...new Set(matches.map(member => String(member.memberId)))];
+    if (distinctMemberIds.length > 1) {
       throw new Error(
-        `[getMemberByEmail] Multiple members found with email ${email} membersIds are : [${members.map(member => member.memberId).join(', ')}]`
+        `[getMemberByEmail] Multiple members found with email ${email} membersIds are : [${distinctMemberIds.join(', ')}]`
       );
     }
-    return members[0] || null;
+    return matches[0] || null;
   } catch (error) {
     console.error('Error getting member by email:', error);
     throw new Error(`Failed to get member by email: ${error.message}`);
@@ -664,6 +740,8 @@ module.exports = {
   getAllMembersWithExternalImages,
   getMembersWithWixUrl,
   getAllMembersWithoutContactFormEmail,
+  getAllMembersNeedingEmailNormalization,
+  memberNeedsEmailNormalization,
   getAllUpdatedLoginEmails,
   getMembersByIds,
   getMemberByEmail,
