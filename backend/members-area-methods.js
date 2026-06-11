@@ -1,7 +1,12 @@
 const { auth } = require('@wix/essentials');
 const { members, authentication } = require('@wix/members');
+
+const { LOGIN_EMAIL_SYNC_STATUS } = require('./consts');
+
 const elevatedCreateMember = auth.elevate(members.createMember);
 const elevatedChangeLoginEmail = auth.elevate(authentication.changeLoginEmail);
+
+const LOG = '[loginEmailSync]';
 
 function prepareMemberData(partner) {
   const options = {
@@ -37,48 +42,42 @@ const getCurrentMember = async () => {
 };
 
 /**
- * Updates Wix member login email if the member has a wixMemberId (registered Wix member)
- * @param {Object} member - Member object with wixMemberId and email
- * @param {Object} result - Result object to track Wix member updates
+ * Attempts to change a Wix member's login email to `member.email` and reports a structured
+ * outcome instead of swallowing failures. Never throws.
+ *
+ * Outcomes:
+ *  - SKIPPED: member has no wixMemberId, nothing to change.
+ *  - UPDATED: Wix login email changed successfully.
+ *  - FAILED:  change failed. The caller keeps the CMS login email unchanged (so it stays
+ *             consistent with Wix) and reports the member in the task result for manual handling.
+ *
+ * @param {Object} member - Member with { memberId, wixMemberId, email }
+ * @returns {Promise<Object>} outcome
  */
-async function updateWixMemberLoginEmail(member, result = {}) {
+async function updateWixMemberLoginEmail(member) {
+  const desiredEmail = member.email;
+  const base = { memberId: member.memberId, wixMemberId: member.wixMemberId, desiredEmail };
+
   if (!member.wixMemberId) {
-    console.log(`Member ${member.memberId} has no wixMemberId - skipping Wix login email update`);
-    return;
+    console.log(`${LOG} member ${member.memberId} has no wixMemberId - skipping`);
+    return { ...base, status: LOGIN_EMAIL_SYNC_STATUS.SKIPPED };
   }
 
+  console.log(
+    `${LOG} attempting login-email change for member ${member.memberId} (wixMemberId: ${member.wixMemberId}) -> ${desiredEmail}`
+  );
+
   try {
+    const updatedWixMember = await elevatedChangeLoginEmail(member.wixMemberId, desiredEmail);
     console.log(
-      `Updating Wix login email for member ${member.memberId} (wixMemberId: ${member.wixMemberId})`
+      `${LOG} ✅ updated member ${member.memberId} (wixMemberId: ${member.wixMemberId}) -> ${updatedWixMember.loginEmail}`
     );
-
-    const updatedWixMember = await elevatedChangeLoginEmail(member.wixMemberId, member.email);
-
-    console.log(
-      `✅ Successfully updated Wix login email for member ${member.memberId}: ${updatedWixMember.loginEmail}`
-    );
-
-    if (!result.wixMemberUpdates) {
-      result.wixMemberUpdates = { successful: 0, failed: 0 };
-    }
-    result.wixMemberUpdates.successful++;
+    return { ...base, status: LOGIN_EMAIL_SYNC_STATUS.UPDATED };
   } catch (error) {
-    console.error(`❌ Failed to update Wix login email for member ${member.memberId}:`, error);
-
-    if (!result.wixMemberUpdates) {
-      result.wixMemberUpdates = { successful: 0, failed: 0 };
-    }
-    result.wixMemberUpdates.failed++;
-
-    if (!result.wixMemberErrors) {
-      result.wixMemberErrors = [];
-    }
-    result.wixMemberErrors.push({
-      memberId: member.memberId,
-      wixMemberId: member.wixMemberId,
-      email: member.email,
-      error: error.message,
-    });
+    console.error(
+      `${LOG} ❌ login-email change failed for member ${member.memberId} (wixMemberId: ${member.wixMemberId}) -> ${desiredEmail}: ${error.message}`
+    );
+    return { ...base, status: LOGIN_EMAIL_SYNC_STATUS.FAILED, error: error.message };
   }
 }
 

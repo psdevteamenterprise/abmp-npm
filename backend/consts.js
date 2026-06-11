@@ -34,6 +34,15 @@ const MEMBERSHIPS_TYPES = {
   PAC_STAFF: 'PAC STAFF',
 };
 
+/**
+ * Possible outcomes of attempting to change a Wix member's login email during the sync.
+ */
+const LOGIN_EMAIL_SYNC_STATUS = {
+  UPDATED: 'updated', // Wix login email successfully changed to the desired email
+  FAILED: 'failed', // change failed -> keep the CMS login email unchanged and report for manual handling
+  SKIPPED: 'skipped', // member has no wixMemberId, nothing to change
+};
+
 module.exports = {
   CONFIG_KEYS,
   MAX__MEMBERS_SEARCH_RESULTS,
@@ -45,4 +54,5 @@ module.exports = {
   MEMBERSHIPS_TYPES,
   SSO_TOKEN_AUTH_API_URL,
   BACKUP_API_URL,
+  LOGIN_EMAIL_SYNC_STATUS,
 };

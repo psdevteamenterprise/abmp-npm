@@ -1,3 +1,4 @@
+const { LOGIN_EMAIL_SYNC_STATUS } = require('../consts');
 const { updateWixMemberLoginEmail } = require('../members-area-methods');
 const { extractUrlCounter } = require('../utils');
 
@@ -7,13 +8,49 @@ const isUpdatedMember = member => member.action !== MEMBER_ACTIONS.NONE;
 const isSiteAssociatedMember = (member, siteAssociation) =>
   member.memberships.some(membership => membership.association === siteAssociation);
 
+/**
+ * Attempts to change Wix login emails for the given members and returns one structured
+ * outcome per member (see updateWixMemberLoginEmail). Never throws for an individual member.
+ * @param {Array} toChangeWixMembersEmails
+ * @returns {Promise<Array>} outcomes
+ */
 const changeWixMembersEmails = async toChangeWixMembersEmails => {
   console.log(
-    `Changing login emails for ${toChangeWixMembersEmails.length} members with ids: [${toChangeWixMembersEmails.map(member => member.memberId).join(', ')}]`
+    `[loginEmailSync] changing login emails for ${toChangeWixMembersEmails.length} members with ids: [${toChangeWixMembersEmails.map(member => member.memberId).join(', ')}]`
   );
-  return await Promise.all(
-    toChangeWixMembersEmails.map(member => updateWixMemberLoginEmail(member, {}))
+  const outcomes = await Promise.all(
+    toChangeWixMembersEmails.map(member => updateWixMemberLoginEmail(member))
   );
+  const summary = outcomes.reduce((acc, outcome) => {
+    acc[outcome.status] = (acc[outcome.status] || 0) + 1;
+    return acc;
+  }, {});
+  console.log(`[loginEmailSync] results summary: ${JSON.stringify(summary)}`);
+  return outcomes;
+};
+
+/**
+ * Summarizes login-email sync outcomes for manual handling via the task result.
+ * Pure function so it can be unit-tested without Wix.
+ * @param {Array} outcomes - from updateWixMemberLoginEmail / changeWixMembersEmails
+ * @returns {{ failedMemberIds: Set, failures: Array }} set of failed memberIds (whose CMS login
+ *   email must be left unchanged) and the failure records to surface in the task result
+ */
+const summarizeLoginEmailOutcomes = (outcomes = []) => {
+  const failedMemberIds = new Set();
+  const failures = [];
+  outcomes.forEach(outcome => {
+    if (outcome.status === LOGIN_EMAIL_SYNC_STATUS.FAILED) {
+      failedMemberIds.add(outcome.memberId);
+      failures.push({
+        memberId: outcome.memberId,
+        wixMemberId: outcome.wixMemberId,
+        desiredEmail: outcome.desiredEmail,
+        error: outcome.error || 'unknown error',
+      });
+    }
+  });
+  return { failedMemberIds, failures };
 };
 
 const extractBaseUrl = url => {
@@ -105,6 +142,7 @@ module.exports = {
   isUpdatedMember,
   isSiteAssociatedMember,
   changeWixMembersEmails,
+  summarizeLoginEmailOutcomes,
   validateCoreMemberData,
   containsNonEnglish,
   createFullName,

@@ -165,10 +165,12 @@ async function createCoreMemberData(inputMemberData, existingDbMember, currentPa
       newEmail &&
       existingDbMember.email !== newEmail;
     if (isMemberReinstatedWithNewEmail) {
-      // If exists in DB, and email was changed means this user was dropped before that's why it exists in DB, then only update loginEmail not contactFormEmail
+      // If exists in DB, and email was changed means this user was dropped before that's why it exists in DB, then only update loginEmail not contactFormEmail.
+      // previousLoginEmail lets the caller keep the old email if the Wix login-email change fails.
       return {
         email: newEmail,
         isLoginEmailChanged: true,
+        previousLoginEmail: existingDbMember.email,
       };
     }
     //If exists in DB but not reinstated with new email, then don't update emails

@@ -2,7 +2,12 @@ const { bulkSaveMembers, getMemberBySlug } = require('../members-data-methods');
 const { extractUrlCounter } = require('../utils');
 
 const { generateUpdatedMemberData } = require('./process-member-methods');
-const { changeWixMembersEmails, incrementUrlCounter, extractBaseUrl } = require('./utils');
+const {
+  changeWixMembersEmails,
+  summarizeLoginEmailOutcomes,
+  incrementUrlCounter,
+  extractBaseUrl,
+} = require('./utils');
 
 /**
  * Ensures unique URLs within a batch of members by deduplicating URLs
@@ -151,21 +156,46 @@ const bulkProcessAndSaveMemberData = async ({ memberDataList, currentPageNumber 
     // Ensure unique URLs within the batch to prevent duplicates (also checks DB for cross-page conflicts)
     const uniqueUrlsNewToDBMembersList = await ensureUniqueUrlsInBatch(newMembers);
     const uniqueUrlsMembersData = [...uniqueUrlsNewToDBMembersList, ...existingMembers];
-    const toChangeWixMembersEmails = [];
+
+    // Change Wix login emails FIRST so we know which succeeded before saving the CMS records.
+    const toChangeWixMembersEmails = uniqueUrlsMembersData.filter(
+      member => member.wixMemberId && member.isLoginEmailChanged
+    );
+    let failedLoginEmailIds = new Set();
+    let loginEmailFailures = [];
+    if (toChangeWixMembersEmails.length > 0) {
+      const outcomes = await changeWixMembersEmails(toChangeWixMembersEmails);
+      ({ failedMemberIds: failedLoginEmailIds, failures: loginEmailFailures } =
+        summarizeLoginEmailOutcomes(outcomes));
+    }
+
     const toSaveMembersData = uniqueUrlsMembersData.map(member => {
-      const { isLoginEmailChanged, isNewToDb: _isNewToDb, ...restMemberData } = member;
-      if (member.wixMemberId && isLoginEmailChanged) {
-        toChangeWixMembersEmails.push(member);
+      // Transient flags only drive the sync above; never persist them.
+      const {
+        isLoginEmailChanged: _isLoginEmailChanged,
+        isNewToDb: _isNewToDb,
+        previousLoginEmail,
+        ...restMemberData
+      } = member;
+      // If the Wix login-email change failed, keep the CMS login email unchanged (revert to the
+      // previous value) so the CMS stays consistent with Wix; the failure is reported below for
+      // manual handling.
+      if (failedLoginEmailIds.has(member.memberId) && previousLoginEmail !== undefined) {
+        return { ...restMemberData, email: previousLoginEmail };
       }
-      return restMemberData; //we don't want to store the isLoginEmailChanged in the database, it's just a flag to know if we need to change the login email in Members area
+      return restMemberData;
     });
     const saveResult = await bulkSaveMembers(toSaveMembersData);
-    // Change login emails for users who was dropped but now are back to system as new members and have different loginEmail for users with action DROP
-    if (toChangeWixMembersEmails.length > 0) {
-      await changeWixMembersEmails(toChangeWixMembersEmails);
-    }
     const totalFailed = memberDataList.length - validMemberData.length;
     const processingTime = Date.now() - startTime;
+
+    if (loginEmailFailures.length > 0) {
+      console.error(
+        `[loginEmailSync] ${loginEmailFailures.length} login-email change(s) failed on page ${currentPageNumber}; CMS login email left unchanged for memberIds: [${loginEmailFailures
+          .map(failure => failure.memberId)
+          .join(', ')}]`
+      );
+    }
 
     return {
       ...saveResult,
@@ -173,6 +203,8 @@ const bulkProcessAndSaveMemberData = async ({ memberDataList, currentPageNumber 
       totalSaved: validMemberData.length,
       totalFailed: totalFailed,
       processingTime: processingTime,
+      loginEmailFailedCount: loginEmailFailures.length,
+      loginEmailFailures,
     };
   } catch (error) {
     throw new Error(`Bulk operation failed: ${error.message}`);
