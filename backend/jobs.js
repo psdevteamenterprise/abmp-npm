@@ -97,6 +97,20 @@ async function scheduleFixUrlsWithSpacesTask() {
   }
 }
 
+async function scheduleNormalizeMemberEmailsTask() {
+  try {
+    console.log('scheduleNormalizeMemberEmails started!');
+    return await taskManager().schedule({
+      name: TASKS_NAMES.scheduleNormalizeMemberEmails,
+      data: {},
+      type: 'scheduled',
+    });
+  } catch (error) {
+    console.error(`Failed to scheduleNormalizeMemberEmails: ${error.message}`);
+    throw new Error(`Failed to scheduleNormalizeMemberEmails: ${error.message}`);
+  }
+}
+
 async function runDailyPullExecutionCheck() {
   try {
     console.log('runDailyPullExecutionCheck started!');
@@ -126,5 +140,6 @@ module.exports = {
   scheduleCreateContactsFromMembersTask,
   scheduleFixPrimaryAddressForMembersTask,
   scheduleFixUrlsWithSpacesTask,
+  scheduleNormalizeMemberEmailsTask,
   runDailyPullExecutionCheck,
 };

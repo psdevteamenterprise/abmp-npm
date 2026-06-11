@@ -11,6 +11,10 @@ const {
 const { TASKS_NAMES } = require('./consts');
 const { dailyPullExecutionCheck } = require('./daily-pull-check-methods');
 const {
+  scheduleNormalizeMemberEmails,
+  normalizeMemberEmailsChunk,
+} = require('./email-normalize-methods');
+const {
   scheduleTaskForEmptyAboutYouMembers,
   convertAboutYouHtmlToRichContent,
   compileFiltersOptions,
@@ -200,6 +204,20 @@ const TASKS = {
     name: TASKS_NAMES.fixUrlsWithSpacesChunk,
     getIdentifier: task => task.data,
     process: fixUrlsWithSpacesChunk,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.scheduleNormalizeMemberEmails]: {
+    name: TASKS_NAMES.scheduleNormalizeMemberEmails,
+    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    process: scheduleNormalizeMemberEmails,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.normalizeMemberEmailsChunk]: {
+    name: TASKS_NAMES.normalizeMemberEmailsChunk,
+    getIdentifier: task => task.data,
+    process: normalizeMemberEmailsChunk,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
   },
