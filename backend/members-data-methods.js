@@ -15,6 +15,7 @@ const {
   generateGeoHash,
   searchAllItems,
   runIf,
+  withTransientErrorRetry,
 } = require('./utils');
 
 /**
@@ -158,11 +159,9 @@ async function findMemberById(memberId) {
   }
 
   try {
-    const queryResult = await wixData
-      .query(COLLECTIONS.MEMBERS_DATA)
-      .eq('memberId', memberId)
-      .limit(2)
-      .find();
+    const queryResult = await withTransientErrorRetry(() =>
+      wixData.query(COLLECTIONS.MEMBERS_DATA).eq('memberId', memberId).limit(2).find()
+    );
     if (queryResult.items.length > 1) {
       throw new Error(
         `Multiple members found with memberId ${memberId} members _ids are : [${queryResult.items.map(member => member._id).join(', ')}]`
@@ -171,6 +170,51 @@ async function findMemberById(memberId) {
     return queryResult.items.length === 1 ? queryResult.items[0] : null;
   } catch (error) {
     console.error('Error finding member by ID:', error);
+    throw new Error(`Failed to retrieve member data: ${error.message}`);
+  }
+}
+
+/**
+ * Retrieves existing members for a list of member IDs in bulk.
+ * Uses chunked `hasSome` queries so a full page of members costs a handful of
+ * requests instead of one query per member (the per-member fan-out made a whole
+ * page fail whenever a single query hit a transient "fetch failed").
+ * @param {Array<string|number>} memberIds - Member IDs to look up
+ * @returns {Promise<Map<string, Object>>} - Map of String(memberId) to member record (missing IDs are absent)
+ */
+async function findMembersByIds(memberIds) {
+  const uniqueIds = [...new Set((memberIds || []).filter(id => id !== undefined && id !== null))];
+  const membersById = new Map();
+  if (uniqueIds.length === 0) {
+    return membersById;
+  }
+
+  try {
+    const idChunks = chunkArray(uniqueIds, 100);
+    const chunkResults = await Promise.all(
+      idChunks.map(idsChunk =>
+        withTransientErrorRetry(() =>
+          queryAllItems(
+            wixData.query(COLLECTIONS.MEMBERS_DATA).hasSome('memberId', idsChunk).limit(1000)
+          )
+        )
+      )
+    );
+
+    const duplicateIds = new Set();
+    chunkResults.flat().forEach(member => {
+      const key = String(member.memberId);
+      if (membersById.has(key)) {
+        duplicateIds.add(key);
+      }
+      membersById.set(key, member);
+    });
+    if (duplicateIds.size > 0) {
+      throw new Error(`Multiple members found with memberId(s): [${[...duplicateIds].join(', ')}]`);
+    }
+    return membersById;
+  } catch (error) {
+    console.error('Error finding members by IDs:', error);
     throw new Error(`Failed to retrieve member data: ${error.message}`);
   }
 }
@@ -723,6 +767,7 @@ module.exports = {
   saveRegistrationData,
   bulkSaveMembers,
   findMemberById,
+  findMembersByIds,
   getMemberBySlug,
   getCMSMemberByWixMemberId,
   getAllEmptyAboutYouMembers,

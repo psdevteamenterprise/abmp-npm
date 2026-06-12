@@ -210,6 +210,46 @@ function formatDateOnly(dateStr) {
 
 const runIf = (condition, asyncFn) => (condition ? asyncFn() : Promise.resolve(null));
 
+/**
+ * Whether an error looks like a transient network failure that is safe to retry,
+ * e.g. undici's generic "fetch failed" thrown by the Wix SDKs, connection resets
+ * or DNS hiccups under heavy load.
+ * @param {Error} error
+ * @returns {boolean}
+ */
+const isTransientNetworkError = error => {
+  const message = `${error?.message || ''} ${error?.cause?.message || ''} ${error?.code || ''} ${error?.cause?.code || ''}`;
+  return /fetch failed|ECONNRESET|ETIMEDOUT|ECONNREFUSED|EAI_AGAIN|EPIPE|UND_ERR|socket hang up|network error/i.test(
+    message
+  );
+};
+
+/**
+ * Runs an async operation, retrying with exponential backoff when it fails with a
+ * transient network error. Non-transient errors are rethrown immediately.
+ * @param {Function} operation - Async function to run
+ * @param {Object} [options]
+ * @param {number} [options.retries=2] - Maximum number of retries after the first attempt
+ * @param {number} [options.baseDelayMs=500] - Delay before the first retry, doubled each retry
+ * @returns {Promise<any>} - The operation's resolved value
+ */
+const withTransientErrorRetry = async (operation, { retries = 2, baseDelayMs = 500 } = {}) => {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt >= retries || !isTransientNetworkError(error)) {
+        throw error;
+      }
+      const delayMs = baseDelayMs * 2 ** attempt;
+      console.warn(
+        `Transient network error (attempt ${attempt + 1}/${retries + 1}): ${error.message}. Retrying in ${delayMs}ms`
+      );
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+};
+
 module.exports = {
   getSiteConfigs,
   retrieveAllItems,
@@ -232,4 +272,6 @@ module.exports = {
   isPAC_STAFF,
   searchAllItems,
   runIf,
+  isTransientNetworkError,
+  withTransientErrorRetry,
 };

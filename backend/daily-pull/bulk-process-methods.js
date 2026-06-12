@@ -1,4 +1,4 @@
-const { bulkSaveMembers, getMemberBySlug } = require('../members-data-methods');
+const { bulkSaveMembers, getMemberBySlug, findMembersByIds } = require('../members-data-methods');
 const { extractUrlCounter } = require('../utils');
 
 const { generateUpdatedMemberData } = require('./process-member-methods');
@@ -132,10 +132,18 @@ const bulkProcessAndSaveMemberData = async ({ memberDataList, currentPageNumber 
   const startTime = Date.now();
 
   try {
+    // Prefetch all existing members for this page in a few chunked queries instead of
+    // one query per member — thousands of parallel lookups made the whole page fail
+    // whenever a single one hit a transient network error.
+    const existingMembersById = await findMembersByIds(
+      memberDataList.map(memberData => memberData?.memberid)
+    );
+
     const processedMemberDataPromises = memberDataList.map(memberData =>
       generateUpdatedMemberData({
         inputMemberData: memberData,
         currentPageNumber,
+        existingDbMember: existingMembersById.get(String(memberData?.memberid)) ?? null,
       })
     );
 
