@@ -58,16 +58,26 @@ const ensureUniqueUrl = async ({ url, memberId, fullName }) => {
  * @param {Object} options - The options object
  * @param {Object} options.inputMemberData - Raw member data from API
  * @param {number} options.currentPageNumber - Current page number being processed
+ * @param {Object|null} [options.existingDbMember] - Prefetched DB member (null if none exists).
+ *   Pass it when processing members in bulk to avoid one DB query per member; when omitted,
+ *   the member is looked up individually.
  * @returns {Promise<Object|null>} - Complete updated member data or null if validation fails
  */
-async function generateUpdatedMemberData({ inputMemberData, currentPageNumber }) {
+async function generateUpdatedMemberData({
+  inputMemberData,
+  currentPageNumber,
+  existingDbMember: prefetchedDbMember,
+}) {
   if (!validateCoreMemberData(inputMemberData)) {
     throw new Error(
       'Invalid member data: memberid, email (valid string), and memberships (array) are required'
     );
   }
 
-  const existingDbMember = await findMemberById(inputMemberData.memberid);
+  const existingDbMember =
+    prefetchedDbMember === undefined
+      ? await findMemberById(inputMemberData.memberid)
+      : prefetchedDbMember;
 
   const updatedMemberData = await createCoreMemberData(
     inputMemberData,

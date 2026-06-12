@@ -49,6 +49,7 @@
     "axios": "^1.13.1",
     "crypto": "^1.0.1",
     "csv-parser": "^3.0.0",
+    "debug": "^4.4.3",
     "jwt-js-decode": "^1.9.0",
     "lodash": "^4.17.21",
     "ngeohash": "^0.6.3",
