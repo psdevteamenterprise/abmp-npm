@@ -1,6 +1,6 @@
 const { taskManager } = require('psdev-task-manager');
 
-const { MEMBER_ACTIONS } = require('./daily-pull/consts');
+const { scheduleDailyPullTasks } = require('./daily-pull/schedule-methods');
 const { TASKS_NAMES } = require('./tasks/consts');
 const { dailyPullExecutionCheck } = require('./tasks/daily-pull-check-methods');
 const { TASKS } = require('./tasks/tasks-configs');
@@ -34,21 +34,7 @@ async function scheduleDailyPullTask(options = null) {
     console.log(`isTestEnvironment: ${isTestEnvironment}`);
     console.log(`includeNone: ${includeNone}`);
 
-    const actionsToSync = includeNone
-      ? Object.values(MEMBER_ACTIONS)
-      : Object.values(MEMBER_ACTIONS).filter(action => action !== MEMBER_ACTIONS.NONE);
-    const toScheduleTasks = actionsToSync.map(action => ({
-      name: TASKS_NAMES.ScheduleMembersDataPerAction,
-      data: {
-        action,
-        ...(backupDate ? { backupDate } : {}),
-        ...(isTestEnvironment ? { isTestEnvironment } : {}),
-        ...(includeNone ? { includeNone } : {}),
-      },
-      type: 'scheduled',
-    }));
-
-    return await taskManager().scheduleInBulk(toScheduleTasks);
+    return await scheduleDailyPullTasks({ backupDate, isTestEnvironment, includeNone });
   } catch (error) {
     console.error(`Failed to scheduleDailyPullTask: ${error.message}`);
     throw new Error(`Failed to scheduleDailyPullTask: ${error.message}`);
@@ -111,10 +97,18 @@ async function scheduleNormalizeMemberEmailsTask() {
   }
 }
 
-async function runDailyPullExecutionCheck() {
+/**
+ * Runs the daily pull execution check (watchdog).
+ * @param {Object} [options]
+ * @param {number} [options.hoursBack=4] - Lookback window in hours
+ * @param {boolean} [options.isTestEnvironment=false] - Pull from the test PAC API if the fallback fires
+ * @param {boolean} [options.includeNone=false] - Include the NONE action if the fallback fires
+ * @returns {Promise<Object>} - Check result
+ */
+async function runDailyPullExecutionCheck(options = {}) {
   try {
     console.log('runDailyPullExecutionCheck started!');
-    return await dailyPullExecutionCheck({});
+    return await dailyPullExecutionCheck(options || {});
   } catch (error) {
     console.error(`Failed to runDailyPullExecutionCheck: ${error.message}`);
     throw new Error(`Failed to runDailyPullExecutionCheck: ${error.message}`);
