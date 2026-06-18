@@ -15,6 +15,10 @@ const {
   normalizeMemberEmailsChunk,
 } = require('./email-normalize-methods');
 const {
+  scheduleHideAllMemberAddresses,
+  hideMemberAddressesChunk,
+} = require('./hide-addresses-methods');
+const {
   scheduleTaskForEmptyAboutYouMembers,
   convertAboutYouHtmlToRichContent,
   compileFiltersOptions,
@@ -204,6 +208,20 @@ const TASKS = {
     name: TASKS_NAMES.fixUrlsWithSpacesChunk,
     getIdentifier: task => task.data,
     process: fixUrlsWithSpacesChunk,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.scheduleHideAllMemberAddresses]: {
+    name: TASKS_NAMES.scheduleHideAllMemberAddresses,
+    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    process: scheduleHideAllMemberAddresses,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.hideMemberAddressesChunk]: {
+    name: TASKS_NAMES.hideMemberAddressesChunk,
+    getIdentifier: task => task.data,
+    process: hideMemberAddressesChunk,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
   },

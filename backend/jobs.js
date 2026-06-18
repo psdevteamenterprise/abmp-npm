@@ -98,6 +98,24 @@ async function scheduleNormalizeMemberEmailsTask() {
 }
 
 /**
+ * Schedules hiding ALL addresses for ALL members that have any address (sets each address's
+ * addressStatus to DONT_SHOW). Manually triggered one-off maintenance task.
+ */
+async function scheduleHideAllMemberAddressesTask() {
+  try {
+    console.log('scheduleHideAllMemberAddresses started!');
+    return await taskManager().schedule({
+      name: TASKS_NAMES.scheduleHideAllMemberAddresses,
+      data: {},
+      type: 'scheduled',
+    });
+  } catch (error) {
+    console.error(`Failed to scheduleHideAllMemberAddresses: ${error.message}`);
+    throw new Error(`Failed to scheduleHideAllMemberAddresses: ${error.message}`);
+  }
+}
+
+/**
  * Runs the daily pull execution check (watchdog).
  * @param {Object} [options]
  * @param {number} [options.hoursBack=4] - Lookback window in hours
@@ -135,5 +153,6 @@ module.exports = {
   scheduleFixPrimaryAddressForMembersTask,
   scheduleFixUrlsWithSpacesTask,
   scheduleNormalizeMemberEmailsTask,
+  scheduleHideAllMemberAddressesTask,
   runDailyPullExecutionCheck,
 };

@@ -22,6 +22,8 @@ const TASKS_NAMES = {
   fixPrimaryAddressChunk: 'fixPrimaryAddressChunk',
   scheduleFixUrlsWithSpaces: 'scheduleFixUrlsWithSpaces',
   fixUrlsWithSpacesChunk: 'fixUrlsWithSpacesChunk',
+  scheduleHideAllMemberAddresses: 'scheduleHideAllMemberAddresses',
+  hideMemberAddressesChunk: 'hideMemberAddressesChunk',
   scheduleNormalizeMemberEmails: 'scheduleNormalizeMemberEmails',
   normalizeMemberEmailsChunk: 'normalizeMemberEmailsChunk',
   dailyPullExecutionCheck: 'dailyPullExecutionCheck',
