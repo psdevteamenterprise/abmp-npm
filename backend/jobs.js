@@ -98,20 +98,20 @@ async function scheduleNormalizeMemberEmailsTask() {
 }
 
 /**
- * Schedules hiding ALL addresses for ALL members that have any address (sets each address's
- * addressStatus to DONT_SHOW). Manually triggered one-off maintenance task.
+ * Schedules setting ALL addresses for ALL members that have any address to STATE_CITY_ZIP
+ * (show city/state/zip, hide the street). Manually triggered one-off maintenance task.
  */
-async function scheduleHideAllMemberAddressesTask() {
+async function scheduleSetAddressesToCityStateTask() {
   try {
-    console.log('scheduleHideAllMemberAddresses started!');
+    console.log('scheduleSetAddressesToCityState started!');
     return await taskManager().schedule({
-      name: TASKS_NAMES.scheduleHideAllMemberAddresses,
+      name: TASKS_NAMES.scheduleSetAddressesToCityState,
       data: {},
       type: 'scheduled',
     });
   } catch (error) {
-    console.error(`Failed to scheduleHideAllMemberAddresses: ${error.message}`);
-    throw new Error(`Failed to scheduleHideAllMemberAddresses: ${error.message}`);
+    console.error(`Failed to scheduleSetAddressesToCityState: ${error.message}`);
+    throw new Error(`Failed to scheduleSetAddressesToCityState: ${error.message}`);
   }
 }
 
@@ -153,6 +153,6 @@ module.exports = {
   scheduleFixPrimaryAddressForMembersTask,
   scheduleFixUrlsWithSpacesTask,
   scheduleNormalizeMemberEmailsTask,
-  scheduleHideAllMemberAddressesTask,
+  scheduleSetAddressesToCityStateTask,
   runDailyPullExecutionCheck,
 };
