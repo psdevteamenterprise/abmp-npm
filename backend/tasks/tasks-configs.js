@@ -8,16 +8,16 @@ const {
   scheduleFixPrimaryAddressForMembers,
   fixPrimaryAddressChunk,
 } = require('./address-primary-methods');
+const {
+  scheduleSetAddressesToCityState,
+  setAddressesToCityStateChunk,
+} = require('./address-visibility-methods');
 const { TASKS_NAMES } = require('./consts');
 const { dailyPullExecutionCheck } = require('./daily-pull-check-methods');
 const {
   scheduleNormalizeMemberEmails,
   normalizeMemberEmailsChunk,
 } = require('./email-normalize-methods');
-const {
-  scheduleHideAllMemberAddresses,
-  hideMemberAddressesChunk,
-} = require('./hide-addresses-methods');
 const {
   scheduleTaskForEmptyAboutYouMembers,
   convertAboutYouHtmlToRichContent,
@@ -211,17 +211,17 @@ const TASKS = {
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
   },
-  [TASKS_NAMES.scheduleHideAllMemberAddresses]: {
-    name: TASKS_NAMES.scheduleHideAllMemberAddresses,
+  [TASKS_NAMES.scheduleSetAddressesToCityState]: {
+    name: TASKS_NAMES.scheduleSetAddressesToCityState,
     getIdentifier: () => 'SHOULD_NEVER_SKIP',
-    process: scheduleHideAllMemberAddresses,
+    process: scheduleSetAddressesToCityState,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
   },
-  [TASKS_NAMES.hideMemberAddressesChunk]: {
-    name: TASKS_NAMES.hideMemberAddressesChunk,
+  [TASKS_NAMES.setAddressesToCityStateChunk]: {
+    name: TASKS_NAMES.setAddressesToCityStateChunk,
     getIdentifier: task => task.data,
-    process: hideMemberAddressesChunk,
+    process: setAddressesToCityStateChunk,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
   },

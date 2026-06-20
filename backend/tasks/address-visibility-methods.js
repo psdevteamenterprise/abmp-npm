@@ -9,35 +9,36 @@ const { TASKS_NAMES } = require('./consts');
 
 const CHUNK_SIZE = 1000;
 
+// Target visibility for every address: show city / state / zip, hide the street address.
+const TARGET_STATUS = ADDRESS_STATUS_TYPES.STATE_CITY_ZIP;
+
 const getMemberAddresses = member => (Array.isArray(member.addresses) ? member.addresses : []);
 
 /**
- * Whether a member has at least one address that is not already hidden.
+ * Whether a member has at least one address not already at the target status.
  * @param {Object} member
  * @returns {boolean}
  */
-const hasVisibleAddress = member =>
-  getMemberAddresses(member).some(
-    address => address && address.addressStatus !== ADDRESS_STATUS_TYPES.DONT_SHOW
-  );
+const needsCityStateUpdate = member =>
+  getMemberAddresses(member).some(address => address && address.addressStatus !== TARGET_STATUS);
 
 /**
- * Sets every address on a member to DONT_SHOW (other address fields are preserved).
+ * Sets every address on a member to STATE_CITY_ZIP (other address fields are preserved).
  * @param {Object} member
- * @returns {Array} the member's addresses with addressStatus set to DONT_SHOW
+ * @returns {Array} the member's addresses with addressStatus set to STATE_CITY_ZIP
  */
-const hideMemberAddresses = member =>
+const setAddressesToCityState = member =>
   getMemberAddresses(member).map(address => ({
     ...address,
-    addressStatus: ADDRESS_STATUS_TYPES.DONT_SHOW,
+    addressStatus: TARGET_STATUS,
   }));
 
 /**
- * Schedules tasks to hide ALL addresses for ALL members that have any address.
- * Manually triggered (not cron-wired). Sets each address's addressStatus to DONT_SHOW.
+ * Schedules tasks to set ALL addresses for ALL members to STATE_CITY_ZIP (show city/state/zip,
+ * hide the street). Manually triggered (not cron-wired).
  */
-async function scheduleHideAllMemberAddresses() {
-  console.log('=== Scheduling Hide All Member Addresses Tasks ===');
+async function scheduleSetAddressesToCityState() {
+  console.log('=== Scheduling Set Addresses To City/State Tasks ===');
 
   try {
     const membersQuery = await wixData
@@ -47,22 +48,22 @@ async function scheduleHideAllMemberAddresses() {
     const members = await queryAllItems(membersQuery);
     console.log(`Fetched ${members.length} members with addresses`);
 
-    // Only members that still have at least one visible address need updating.
+    // Only members that still have an address not at the target status need updating.
     const memberIds = [
       ...new Set(
         members
-          .filter(hasVisibleAddress)
+          .filter(needsCityStateUpdate)
           .map(member => Number(member.memberId))
           .filter(memberId => Number.isFinite(memberId) && memberId > 0)
       ),
     ];
-    console.log(`Members with at least one visible address: ${memberIds.length}`);
+    console.log(`Members needing a city/state update: ${memberIds.length}`);
 
     if (memberIds.length === 0) {
-      console.log('No members need their addresses hidden');
+      console.log('No members need their addresses set to city/state');
       return {
         success: true,
-        message: 'No members need their addresses hidden',
+        message: 'No members need their addresses set to city/state',
         totalMembers: 0,
         tasksScheduled: 0,
       };
@@ -72,7 +73,7 @@ async function scheduleHideAllMemberAddresses() {
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       await taskManager().schedule({
-        name: TASKS_NAMES.hideMemberAddressesChunk,
+        name: TASKS_NAMES.setAddressesToCityStateChunk,
         data: {
           memberIds: chunk,
           chunkIndex: i,
@@ -93,22 +94,22 @@ async function scheduleHideAllMemberAddresses() {
     console.log(JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
-    console.error('Error scheduling hide-all-addresses:', error);
+    console.error('Error scheduling set-addresses-to-city-state:', error);
     throw error;
   }
 }
 
 /**
- * Processes a chunk of members and sets every address to DONT_SHOW.
+ * Processes a chunk of members and sets every address to STATE_CITY_ZIP.
  * @param {Object} data
  * @param {Array<number|string>} data.memberIds
  * @param {number} data.chunkIndex
  * @param {number} data.totalChunks
  */
-async function hideMemberAddressesChunk(data) {
+async function setAddressesToCityStateChunk(data) {
   const { memberIds, chunkIndex, totalChunks } = data;
   console.log(
-    `Processing hide-addresses chunk ${chunkIndex + 1}/${totalChunks} (${memberIds.length} members)`
+    `Processing set-city-state chunk ${chunkIndex + 1}/${totalChunks} (${memberIds.length} members)`
   );
 
   const result = { successful: 0, failed: 0, skipped: 0, errors: [], failedIds: [] };
@@ -119,14 +120,14 @@ async function hideMemberAddressesChunk(data) {
 
     const membersToUpdate = [];
     members.forEach(member => {
-      // Skip members that have no address or are already fully hidden.
-      if (!hasVisibleAddress(member)) {
+      // Skip members that have no address or are already all at the target status.
+      if (!needsCityStateUpdate(member)) {
         result.skipped++;
         return;
       }
       membersToUpdate.push({
         ...member,
-        addresses: hideMemberAddresses(member),
+        addresses: setAddressesToCityState(member),
       });
     });
 
@@ -138,7 +139,7 @@ async function hideMemberAddressesChunk(data) {
     try {
       await bulkSaveMembers(membersToUpdate);
       result.successful += membersToUpdate.length;
-      console.log(`✅ Successfully hid addresses for ${membersToUpdate.length} members`);
+      console.log(`✅ Set addresses to city/state for ${membersToUpdate.length} members`);
     } catch (error) {
       console.error('❌ Error bulk saving members:', error);
       result.failed += membersToUpdate.length;
@@ -148,12 +149,12 @@ async function hideMemberAddressesChunk(data) {
 
     return result;
   } catch (error) {
-    console.error(`Error processing hide-addresses chunk ${chunkIndex}:`, error);
+    console.error(`Error processing set-city-state chunk ${chunkIndex}:`, error);
     throw error;
   }
 }
 
 module.exports = {
-  scheduleHideAllMemberAddresses,
-  hideMemberAddressesChunk,
+  scheduleSetAddressesToCityState,
+  setAddressesToCityStateChunk,
 };
