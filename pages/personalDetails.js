@@ -1077,7 +1077,10 @@ async function personalDetailsOnReady({
   }
 
   function renderServices() {
-    setupRepeater('#servicesRepeater', selectedServices);
+    // Pass a fresh array copy so the Wix repeater detects the change and
+    // re-renders. Assigning the same array reference (mutated in place by
+    // add/delete) is treated as a no-op, leaving stale chips on screen.
+    setupRepeater('#servicesRepeater', [...selectedServices]);
   }
 
   function setupRepeater(repeaterId, data) {
