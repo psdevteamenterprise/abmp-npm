@@ -998,8 +998,21 @@ async function personalDetailsOnReady({
   async function setInterestData() {
     const interestsData = await getInterestAll();
 
-    _$w('#removeServiceButton').onClick(event => {
-      handleItemDelete(event, '#serviceNameText', selectedServices, 'label', renderServices);
+    _$w('#removeServiceButton').onClick(async event => {
+      // Capture the stable item id BEFORE awaiting the confirm lightbox.
+      // Reading the chip's text after the await is unsafe: the repeater
+      // recycles its DOM items on re-render, so after a rapid sequence of
+      // deletes event.context can resolve to a recycled node showing a
+      // different service, removing the wrong item (or none). Matching on
+      // the stable _id (as the gallery delete does) avoids that race.
+      const itemId = event.context.itemId;
+      const result = await wixWindow.openLightbox(LIGHTBOX_NAMES.DELETE_CONFIRM);
+
+      if (result && result.toDelete) {
+        selectedServices = selectedServices.filter(service => service._id !== itemId);
+        renderServices();
+        checkFormChanges(FORM_SECTION_HANDLER_MAP.BUSINESS_SERVICES);
+      }
     });
 
     if (Array.isArray(interestsData) && interestsData.length > 0) {
