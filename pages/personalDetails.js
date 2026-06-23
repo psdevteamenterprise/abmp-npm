@@ -979,8 +979,6 @@ async function personalDetailsOnReady({
     const interestsData = await getInterestAll();
 
     _$w('#removeServiceButton').onClick(async event => {
-      // Capture the id before the await: the repeater recycles DOM items on
-      // re-render, so reading the chip text afterwards can target the wrong one.
       const itemId = event.context.itemId;
       const result = await wixWindow.openLightbox(LIGHTBOX_NAMES.DELETE_CONFIRM);
 
@@ -1066,7 +1064,6 @@ async function personalDetailsOnReady({
   }
 
   function renderServices() {
-    // Fresh copy so the repeater detects the change (same reference is a no-op).
     setupRepeater('#servicesRepeater', [...selectedServices]);
   }
 
@@ -1330,9 +1327,6 @@ async function personalDetailsOnReady({
 
     addTestimonialButton.onClick(handleAddTestimonial);
     _$w('#deleteTestimonialButton').onClick(async event => {
-      // Resolve the clicked item's index before the await: the repeater
-      // recycles DOM items on re-render, so reading the chip text afterwards
-      // can target the wrong one. Index 0 is the non-deletable add item.
       const data = _$w('#testimonialRepeater').data || [];
       const clickedIndex = data.findIndex(item => item._id === event.context.itemId);
       const result = await wixWindow.openLightbox(LIGHTBOX_NAMES.DELETE_CONFIRM);
