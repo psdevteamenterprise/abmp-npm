@@ -999,12 +999,8 @@ async function personalDetailsOnReady({
     const interestsData = await getInterestAll();
 
     _$w('#removeServiceButton').onClick(async event => {
-      // Capture the stable item id BEFORE awaiting the confirm lightbox.
-      // Reading the chip's text after the await is unsafe: the repeater
-      // recycles its DOM items on re-render, so after a rapid sequence of
-      // deletes event.context can resolve to a recycled node showing a
-      // different service, removing the wrong item (or none). Matching on
-      // the stable _id (as the gallery delete does) avoids that race.
+      // Capture the id before the await: the repeater recycles DOM items on
+      // re-render, so reading the chip text afterwards can target the wrong one.
       const itemId = event.context.itemId;
       const result = await wixWindow.openLightbox(LIGHTBOX_NAMES.DELETE_CONFIRM);
 
@@ -1090,9 +1086,7 @@ async function personalDetailsOnReady({
   }
 
   function renderServices() {
-    // Pass a fresh array copy so the Wix repeater detects the change and
-    // re-renders. Assigning the same array reference (mutated in place by
-    // add/delete) is treated as a no-op, leaving stale chips on screen.
+    // Fresh copy so the repeater detects the change (same reference is a no-op).
     setupRepeater('#servicesRepeater', [...selectedServices]);
   }
 
