@@ -975,26 +975,6 @@ async function personalDetailsOnReady({
     });
   }
 
-  async function handleItemDelete(event, getTextSelector, arrayRef, matchField, renderFn) {
-    const result = await wixWindow.openLightbox(LIGHTBOX_NAMES.DELETE_CONFIRM);
-
-    if (result && result.toDelete) {
-      const $clickedItem = _$w.at(event.context);
-      const textToRemove = $clickedItem(getTextSelector).text;
-
-      arrayRef.splice(
-        0,
-        arrayRef.length,
-        ...arrayRef.filter(item =>
-          typeof item === 'string' ? item !== textToRemove : item[matchField] !== textToRemove
-        )
-      );
-
-      renderFn();
-      checkFormChanges(FORM_SECTION_HANDLER_MAP.BUSINESS_SERVICES);
-    }
-  }
-
   async function setInterestData() {
     const interestsData = await getInterestAll();
 
@@ -1349,14 +1329,24 @@ async function personalDetailsOnReady({
     const addTestimonialButton = _$w('#addTestimonialButton');
 
     addTestimonialButton.onClick(handleAddTestimonial);
-    _$w('#deleteTestimonialButton').onClick(event => {
-      handleItemDelete(
-        event,
-        '#testimonialText',
-        itemMemberObj.testimonial,
-        null,
-        renderTestimonials
-      );
+    _$w('#deleteTestimonialButton').onClick(async event => {
+      // Resolve the clicked item's index before the await: the repeater
+      // recycles DOM items on re-render, so reading the chip text afterwards
+      // can target the wrong one. Index 0 is the non-deletable add item.
+      const data = _$w('#testimonialRepeater').data || [];
+      const clickedIndex = data.findIndex(item => item._id === event.context.itemId);
+      const result = await wixWindow.openLightbox(LIGHTBOX_NAMES.DELETE_CONFIRM);
+
+      if (
+        result &&
+        result.toDelete &&
+        clickedIndex > 0 &&
+        Array.isArray(itemMemberObj.testimonial)
+      ) {
+        itemMemberObj.testimonial.splice(clickedIndex - 1, 1);
+        renderTestimonials();
+        checkFormChanges(FORM_SECTION_HANDLER_MAP.BUSINESS_SERVICES);
+      }
     });
 
     renderTestimonials();
