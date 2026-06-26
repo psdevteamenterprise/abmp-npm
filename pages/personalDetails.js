@@ -975,31 +975,18 @@ async function personalDetailsOnReady({
     });
   }
 
-  async function handleItemDelete(event, getTextSelector, arrayRef, matchField, renderFn) {
-    const result = await wixWindow.openLightbox(LIGHTBOX_NAMES.DELETE_CONFIRM);
-
-    if (result && result.toDelete) {
-      const $clickedItem = _$w.at(event.context);
-      const textToRemove = $clickedItem(getTextSelector).text;
-
-      arrayRef.splice(
-        0,
-        arrayRef.length,
-        ...arrayRef.filter(item =>
-          typeof item === 'string' ? item !== textToRemove : item[matchField] !== textToRemove
-        )
-      );
-
-      renderFn();
-      checkFormChanges(FORM_SECTION_HANDLER_MAP.BUSINESS_SERVICES);
-    }
-  }
-
   async function setInterestData() {
     const interestsData = await getInterestAll();
 
-    _$w('#removeServiceButton').onClick(event => {
-      handleItemDelete(event, '#serviceNameText', selectedServices, 'label', renderServices);
+    _$w('#removeServiceButton').onClick(async event => {
+      const itemId = event.context.itemId;
+      const result = await wixWindow.openLightbox(LIGHTBOX_NAMES.DELETE_CONFIRM);
+
+      if (result && result.toDelete) {
+        selectedServices = selectedServices.filter(service => service._id !== itemId);
+        renderServices();
+        checkFormChanges(FORM_SECTION_HANDLER_MAP.BUSINESS_SERVICES);
+      }
     });
 
     if (Array.isArray(interestsData) && interestsData.length > 0) {
@@ -1077,7 +1064,7 @@ async function personalDetailsOnReady({
   }
 
   function renderServices() {
-    setupRepeater('#servicesRepeater', selectedServices);
+    setupRepeater('#servicesRepeater', [...selectedServices]);
   }
 
   function setupRepeater(repeaterId, data) {
@@ -1339,14 +1326,21 @@ async function personalDetailsOnReady({
     const addTestimonialButton = _$w('#addTestimonialButton');
 
     addTestimonialButton.onClick(handleAddTestimonial);
-    _$w('#deleteTestimonialButton').onClick(event => {
-      handleItemDelete(
-        event,
-        '#testimonialText',
-        itemMemberObj.testimonial,
-        null,
-        renderTestimonials
-      );
+    _$w('#deleteTestimonialButton').onClick(async event => {
+      const data = _$w('#testimonialRepeater').data || [];
+      const clickedIndex = data.findIndex(item => item._id === event.context.itemId);
+      const result = await wixWindow.openLightbox(LIGHTBOX_NAMES.DELETE_CONFIRM);
+
+      if (
+        result &&
+        result.toDelete &&
+        clickedIndex > 0 &&
+        Array.isArray(itemMemberObj.testimonial)
+      ) {
+        itemMemberObj.testimonial.splice(clickedIndex - 1, 1);
+        renderTestimonials();
+        checkFormChanges(FORM_SECTION_HANDLER_MAP.BUSINESS_SERVICES);
+      }
     });
 
     renderTestimonials();
