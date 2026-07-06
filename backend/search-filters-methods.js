@@ -1,8 +1,9 @@
 const { COLLECTIONS } = require('../public/consts');
 
 const { buildMembersSearchQuery } = require('./cms-data-methods');
+const { CONFIG_KEYS } = require('./consts');
 const { wixData } = require('./elevated-modules');
-const { retrieveAllItems } = require('./utils');
+const { retrieveAllItems, getSiteConfigs, hasActiveSiteMembership } = require('./utils');
 
 const getCompiledFiltersOptions = () =>
   wixData.get(COLLECTIONS.COMPILED_STATE_CITY_MAP, 'SINGLE_ITEM_ID');
@@ -18,7 +19,19 @@ const getNonCompiledFiltersOptions = async () => {
 const filterProfiles = async data => {
   const membersSearchQuery = buildMembersSearchQuery({ ...data, includeStudents: false });
   const query = await membersSearchQuery.get();
-  return membersSearchQuery.run(query);
+  const result = await membersSearchQuery.run(query);
+
+  // POC: drop members whose membership for THIS site's association has expired.
+  // Done in JS because the Wix query can't correlate association + expiration on
+  // the same membership element. NOTE: this filters an already-paginated page,
+  // so it can return fewer than MAX results and can't be counted/paginated
+  // correctly at scale — that limitation is exactly why a precomputed flag is
+  // the production answer. Good enough to observe the behavior for the POC.
+  const siteAssociation = await getSiteConfigs(CONFIG_KEYS.SITE_ASSOCIATION);
+  const items = (result.items || []).filter(member =>
+    hasActiveSiteMembership(member, siteAssociation)
+  );
+  return { ...result, items };
 };
 
 async function getAreasOfPracticeList() {

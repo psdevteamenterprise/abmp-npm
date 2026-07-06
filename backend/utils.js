@@ -73,6 +73,43 @@ function isStudent(member) {
   return hasStudentMembership({ member, checkAssociation: false });
 }
 
+/**
+ * POC: whether a member holds a NON-EXPIRED membership for the current site's
+ * association (e.g. ABMP vs ASCP). Uses the per-membership `expiration` date
+ * already present in the PAC feed — no new CMS field.
+ *
+ * This runs in JS (not the Wix query) on purpose: a member can hold several
+ * memberships, so "the ABMP membership specifically is unexpired" requires
+ * correlating association + expiration on the SAME array element, which a Wix
+ * array query cannot express.
+ *
+ * POC decision: a membership with a missing/invalid `expiration` is treated as
+ * NOT active (excluded). Flip `treatMissingExpirationAsActive` to be lenient.
+ *
+ * @param {Object} member
+ * @param {string} siteAssociation - e.g. 'ABMP' | 'ASCP'
+ * @param {Object} [options]
+ * @param {Date} [options.now] - reference "today" (defaults to new Date())
+ * @param {boolean} [options.treatMissingExpirationAsActive=false]
+ * @returns {boolean}
+ */
+function hasActiveSiteMembership(
+  member,
+  siteAssociation,
+  { now = new Date(), treatMissingExpirationAsActive = false } = {}
+) {
+  const memberships = member?.memberships;
+  if (!Array.isArray(memberships)) return false;
+
+  return memberships.some(membership => {
+    if (membership.association !== siteAssociation) return false;
+    if (!membership.expiration) return treatMissingExpirationAsActive;
+    const expiration = new Date(membership.expiration);
+    if (isNaN(expiration.getTime())) return treatMissingExpirationAsActive;
+    return expiration.getTime() >= now.getTime();
+  });
+}
+
 function isPAC_STAFF(member) {
   return Boolean(
     member?.memberships?.some(membership => membership.membertype === MEMBERSHIPS_TYPES.PAC_STAFF)
@@ -263,6 +300,7 @@ module.exports = {
   formatDateToMonthYear,
   isStudent,
   hasStudentMembership,
+  hasActiveSiteMembership,
   getAddressDisplayOptions,
   getSecret,
   getSiteBaseUrl,

@@ -4,6 +4,7 @@ const {
   getMoreAddressesToDisplay,
   formatDateToMonthYear,
   hasStudentMembership,
+  hasActiveSiteMembership,
   isPAC_STAFF,
 } = require('../utils');
 
@@ -110,6 +111,16 @@ const getMemberProfileData = async (slug, siteAssociation) => {
 
     if (!member) {
       console.log(`[getMemberProfileData] Member not found for slug: ${slug}`);
+      return null;
+    }
+
+    // POC: hide the profile (404) when this member's membership for the current
+    // site's association has expired — even if they hold an active membership
+    // for another association (e.g. ABMP expired but ASCP still active).
+    if (!hasActiveSiteMembership(member, siteAssociation)) {
+      console.log(
+        `[getMemberProfileData] Member ${slug} has no active ${siteAssociation} membership - hiding profile`
+      );
       return null;
     }
 
