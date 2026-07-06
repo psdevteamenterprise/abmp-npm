@@ -17,21 +17,21 @@ const getNonCompiledFiltersOptions = async () => {
   return { completeStateList, areasOfPracticesList, stateCityMapList };
 };
 const filterProfiles = async data => {
-  const membersSearchQuery = buildMembersSearchQuery({ ...data, includeStudents: false });
-  const query = await membersSearchQuery.get();
-  const result = await membersSearchQuery.run(query);
-
-  // POC: drop members whose membership for THIS site's association has expired.
-  // Done in JS because the Wix query can't correlate association + expiration on
-  // the same membership element. NOTE: this filters an already-paginated page,
-  // so it can return fewer than MAX results and can't be counted/paginated
-  // correctly at scale — that limitation is exactly why a precomputed flag is
-  // the production answer. Good enough to observe the behavior for the POC.
   const siteAssociation = await getSiteConfigs(CONFIG_KEYS.SITE_ASSOCIATION);
-  const items = (result.items || []).filter(member =>
-    hasActiveSiteMembership(member, siteAssociation)
-  );
-  return { ...result, items };
+
+  // POC: hide members whose membership for THIS site's association has expired.
+  // Passed as a JS predicate because the Wix query can't correlate association +
+  // expiration on the same membership element. The query runner applies it over
+  // the FULL candidate set before selecting a page (see buildMembersSearchQuery),
+  // so pages stay full and correctly randomized rather than being trimmed after
+  // pagination.
+  const membersSearchQuery = buildMembersSearchQuery({
+    ...data,
+    includeStudents: false,
+    postQueryFilter: member => hasActiveSiteMembership(member, siteAssociation),
+  });
+  const query = await membersSearchQuery.get();
+  return membersSearchQuery.run(query);
 };
 
 async function getAreasOfPracticeList() {

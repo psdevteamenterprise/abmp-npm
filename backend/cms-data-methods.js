@@ -14,7 +14,7 @@ const { wixData } = require('./elevated-modules');
 
 function buildMembersSearchQuery(data) {
   console.log('data: ', JSON.stringify(data));
-  const { filter, isSearchingNearby, includeStudents = false } = data;
+  const { filter, isSearchingNearby, includeStudents = false, postQueryFilter } = data;
   const isUserLocationEnabled = filter.latitude !== 0 || filter.longitude !== 0;
   filter.searchText = filter.searchText || '';
   filter.stateSearch = filter.stateSearch || '';
@@ -121,9 +121,26 @@ function buildMembersSearchQuery(data) {
         }
         return randomSkip;
       };
+      const applyPostQueryFilter = items =>
+        typeof postQueryFilter === 'function' ? items.filter(postQueryFilter) : items;
+
       const getResult = async query => {
         if (isSearchingNearby) {
-          return fetchAllItemsInParallel(baseQuery);
+          const allItems = await fetchAllItemsInParallel(baseQuery);
+          return { ...allItems, items: applyPostQueryFilter(allItems.items) };
+        }
+        // When a JS post-query filter is required — e.g. per-membership
+        // expiration, which a Wix array query can't correlate on a single
+        // element — fetch the FULL candidate set, filter, then randomly select a
+        // page. Filtering a single random-skipped window would return short or
+        // empty pages, so the page selection must happen after the filter.
+        if (typeof postQueryFilter === 'function') {
+          const allItems = await fetchAllItemsInParallel(baseQuery);
+          const filtered = applyPostQueryFilter(allItems.items);
+          return {
+            ...allItems,
+            items: shuffleArray(filtered).slice(0, MAX__MEMBERS_SEARCH_RESULTS),
+          };
         }
         const totalCount = await query.count();
         const randomSkip = getRandomSkip(totalCount);
