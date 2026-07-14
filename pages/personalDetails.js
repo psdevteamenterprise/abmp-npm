@@ -1262,9 +1262,10 @@ async function personalDetailsOnReady({
     console.groupEnd();
 
     const result = await saveData(formData);
-    formHasUnsavedChanges[FORM_SECTION_HANDLER_MAP.PERSONAL.section] = false;
 
     if (result.success) {
+      formHasUnsavedChanges[FORM_SECTION_HANDLER_MAP.PERSONAL.section] = false;
+
       if (personalChanges.url && personalChanges.url !== originalUrl) {
         const newProfileLink = `${baseUrl}/profile/${personalChanges.url}`;
         console.log('🔗 Updating profile link:', {
@@ -1317,7 +1318,10 @@ async function personalDetailsOnReady({
     console.groupEnd();
 
     const result = await saveData(formData);
-    formHasUnsavedChanges[FORM_SECTION_HANDLER_MAP.BUSINESS_SERVICES.section] = false;
+    if (result.success) {
+      formHasUnsavedChanges[FORM_SECTION_HANDLER_MAP.BUSINESS_SERVICES.section] = false;
+      _$w('#saveBusinessButton').disable();
+    }
     handleSaveDataFeedback(_$w('#businessMessage'), result.message);
     _$w('#businessNameText').text = formData.businessName || DEFAULT_BUSINESS_NAME_TEXT;
   }
@@ -2380,8 +2384,9 @@ async function personalDetailsOnReady({
       // Sync Personal Details opt-in from saved member.
       _$w('#optWebsiteCheckbox').checked = itemMemberObj.showWixUrl;
       toggleFreeWebsiteText(itemMemberObj.showWixUrl);
+      formHasUnsavedChanges[FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section] = false;
+      _$w('#saveContactBookingButton').disable();
     }
-    formHasUnsavedChanges[FORM_SECTION_HANDLER_MAP.CONTACT_BOOKING.section] = false;
     handleSaveDataFeedback(_$w('#contactMessage'), result.message);
   }
 
