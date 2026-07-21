@@ -3,12 +3,17 @@ const { location: wixLocation } = require('@wix/site-location');
 const { window: wixWindow, rendering } = require('@wix/site-window');
 const { withWarmUpData } = require('psdev-utils/frontend');
 
-const { ADDRESS_STATUS_TYPES, DEFAULT_FILTER, DROPDOWN_OPTIONS } = require('../public/consts.js');
+const {
+  ADDRESS_STATUS_TYPES,
+  DEFAULT_FILTER,
+  DROPDOWN_OPTIONS,
+  LIGHTBOX_NAMES,
+} = require('../public/consts.js');
 const { createHomepageUtils } = require('../public/Utils/homePage.js');
 const {
   getMainAddress,
+  findMainAddress,
   formatPracticeAreasForDisplay,
-  checkAddressIsVisible,
   isWixHostedImage,
   normalizeExternalUrl,
 } = require('../public/Utils/sharedUtils.js');
@@ -29,6 +34,24 @@ const pagination = {
 };
 let searchResults = [];
 let isMobile = false;
+
+const getDirectionsTarget = itemData => {
+  const addresses = Array.isArray(itemData?.addresses) ? itemData.addresses : [];
+  const mainAddr = findMainAddress(itemData?.addressDisplayOption, addresses);
+  if (!mainAddr) {
+    return { mainAddr: null, mapsLink: null };
+  }
+  const canShowDirections =
+    mainAddr.addressStatus === ADDRESS_STATUS_TYPES.FULL_ADDRESS &&
+    mainAddr.latitude &&
+    mainAddr.longitude;
+  return {
+    mainAddr,
+    mapsLink: canShowDirections
+      ? `https://maps.google.com/?q=${mainAddr.latitude},${mainAddr.longitude}`
+      : null,
+  };
+};
 
 const homePageOnReady = async ({
   _$w,
@@ -181,6 +204,16 @@ const homePageOnReady = async ({
       await updateResults('zeroTimeout');
     });
     const baseUrl = await wixLocation.baseUrl();
+    _$w('#showMaps').onClick(event => {
+      const member = searchResults.find(result => result._id === event.context.itemId);
+      if (!member) {
+        return;
+      }
+      const { mapsLink } = getDirectionsTarget(member);
+      if (!mapsLink) {
+        wixWindow.openLightbox(LIGHTBOX_NAMES.CONTACT_FOR_LOCATION, member);
+      }
+    });
     _$w('#profileRepeater').onItemReady(($item, itemData) => {
       // 1) safely default to arrays
       const addresses = Array.isArray(itemData.addresses) ? itemData.addresses : [];
@@ -225,23 +258,24 @@ const homePageOnReady = async ({
         $item('#milesAwayText').text = '';
       }
 
-      // 7) "Show maps" button enabled only if there's a full address with valid coordinates
-      const visible = checkAddressIsVisible(addresses);
-      const fullAddressWithValidCoords = visible.find(
-        addr =>
-          addr.addressStatus === ADDRESS_STATUS_TYPES.FULL_ADDRESS &&
-          addr.latitude &&
-          addr.longitude
-      );
+      // 7) "Show maps" button. Links to the primary address when it is a full address;
+      // otherwise it stays visible and the page-level onClick opens a lightbox.
+      const { mainAddr, mapsLink } = getDirectionsTarget(itemData);
 
-      if (fullAddressWithValidCoords) {
+      if (!mainAddr) {
+        $item('#showMaps').hide();
+      } else {
         $item('#showMaps').enable();
         $item('#showMaps').show();
-        const { latitude, longitude } = fullAddressWithValidCoords;
-        $item('#showMaps').link = `https://maps.google.com/?q=${latitude},${longitude}`;
-        $item('#showMaps').target = '_blank';
-      } else {
-        $item('#showMaps').hide();
+
+        if (mapsLink) {
+          $item('#showMaps').link = mapsLink;
+          $item('#showMaps').target = '_blank';
+        } else {
+          // Clear any link left over from a recycled repeater item, otherwise the
+          // button would still navigate to the previous member's address.
+          $item('#showMaps').link = undefined;
+        }
       }
 
       // 8) Phone / contact form

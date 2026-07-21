@@ -85,6 +85,7 @@ const LIGHTBOX_NAMES = {
   SELECT_BANNER_IMAGES: 'Select Banner Images',
   CONTACT_US: 'Contact Us',
   MAIN_ADDRESS_ERROR: 'mainAddressError',
+  CONTACT_FOR_LOCATION: 'contactForLocation',
 };
 
 const FREE_WEBSITE_TEXT_STATES = {

@@ -9,4 +9,5 @@ module.exports = {
   ...require('./deleteConfirm.js'),
   ...require('./SaveAlerts.js'),
   ...require('./LearnMore.js'),
+  ...require('./contactForLocation.js'),
 };
