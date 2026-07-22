@@ -13,6 +13,7 @@ const { createHomepageUtils } = require('../public/Utils/homePage.js');
 const {
   getMainAddress,
   findMainAddress,
+  checkAddressIsVisible,
   formatPracticeAreasForDisplay,
   isWixHostedImage,
   normalizeExternalUrl,
@@ -35,19 +36,23 @@ const pagination = {
 let searchResults = [];
 let isMobile = false;
 
+const isMappable = addr =>
+  addr?.addressStatus === ADDRESS_STATUS_TYPES.FULL_ADDRESS && addr.latitude && addr.longitude;
+
+// The button is only offered when the member has at least one mappable address, which is
+// the same condition as before the lightbox was introduced. When that address is not the
+// primary one we still show the button but withhold the link, so the click opens the
+// lightbox instead of sending the visitor to a secondary address in another city.
 const getDirectionsTarget = itemData => {
   const addresses = Array.isArray(itemData?.addresses) ? itemData.addresses : [];
-  const mainAddr = findMainAddress(itemData?.addressDisplayOption, addresses);
-  if (!mainAddr) {
-    return { mainAddr: null, mapsLink: null };
+  const showButton = checkAddressIsVisible(addresses).some(isMappable);
+  if (!showButton) {
+    return { showButton: false, mapsLink: null };
   }
-  const canShowDirections =
-    mainAddr.addressStatus === ADDRESS_STATUS_TYPES.FULL_ADDRESS &&
-    mainAddr.latitude &&
-    mainAddr.longitude;
+  const mainAddr = findMainAddress(itemData?.addressDisplayOption, addresses);
   return {
-    mainAddr,
-    mapsLink: canShowDirections
+    showButton: true,
+    mapsLink: isMappable(mainAddr)
       ? `https://maps.google.com/?q=${mainAddr.latitude},${mainAddr.longitude}`
       : null,
   };
@@ -209,8 +214,8 @@ const homePageOnReady = async ({
       if (!member) {
         return;
       }
-      const { mapsLink } = getDirectionsTarget(member);
-      if (!mapsLink) {
+      const { showButton, mapsLink } = getDirectionsTarget(member);
+      if (showButton && !mapsLink) {
         wixWindow.openLightbox(LIGHTBOX_NAMES.CONTACT_FOR_LOCATION, member);
       }
     });
@@ -260,9 +265,9 @@ const homePageOnReady = async ({
 
       // 7) "Show maps" button. Links to the primary address when it is a full address;
       // otherwise it stays visible and the page-level onClick opens a lightbox.
-      const { mainAddr, mapsLink } = getDirectionsTarget(itemData);
+      const { showButton, mapsLink } = getDirectionsTarget(itemData);
 
-      if (!mainAddr) {
+      if (!showButton) {
         $item('#showMaps').hide();
       } else {
         $item('#showMaps').enable();
