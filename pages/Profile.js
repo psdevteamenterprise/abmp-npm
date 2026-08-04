@@ -6,6 +6,7 @@ const {
   generateId,
   formatPracticeAreasForDisplay,
   isWixHostedImage,
+  normalizeExternalUrl,
 } = require('../public/Utils/sharedUtils');
 
 const TESTIMONIALS_PER_PAGE_CONFIG = {
@@ -159,7 +160,11 @@ async function profileOnReady({ $w: _$w }) {
 
   function bindBookingUrl() {
     if (profileData.bookingUrl) {
-      _$w('#bookNowButton').link = profileData.bookingUrl;
+      // Normalised for the same reason the directory does it (see Home.js): some
+      // stored booking URLs have no protocol, and a bare hostname would be treated
+      // as a path on this site rather than an external link, so the button would
+      // point at abmpmembers.com/<their-domain> and go nowhere.
+      _$w('#bookNowButton').link = normalizeExternalUrl(profileData.bookingUrl);
     } else {
       _$w('#bookNowButton').delete();
     }
