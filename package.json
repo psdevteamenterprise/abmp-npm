@@ -1,6 +1,6 @@
 {
   "name": "abmp-npm",
-  "version": "2.0.78",
+  "version": "2.0.79",
   "main": "index.js",
   "files": [
     "index.js",
