@@ -226,7 +226,7 @@ const homePageOnReady = async ({
         $item('#milesAwayText').text = '';
       }
 
-      // 7) "Show maps" button enabled only if there's a full address with valid coordinates
+      // 7) "Show maps" button shown only when we can actually build a link for it
       const visible = checkAddressIsVisible(addresses);
       const fullAddressWithValidCoords = visible.find(
         addr =>
@@ -235,14 +235,21 @@ const homePageOnReady = async ({
           addr.longitude
       );
 
-      if (fullAddressWithValidCoords) {
+      // Links to the street address rather than the stored coordinates, which are
+      // unreliable for some members. The full-address filter above is what keeps
+      // this safe: members set to state_city_zip or dont_show never reach here, so
+      // a hidden street address is never put in a maps URL.
+      //
+      // Gate on the link rather than on the address. buildMapLink returns '' when
+      // it can build neither an address nor a coordinate link, and it also handles
+      // being passed undefined - so this cannot leave a visible button linking
+      // nowhere, even if the filter above is later relaxed.
+      const mapLink = buildMapLink(fullAddressWithValidCoords);
+
+      if (mapLink) {
         $item('#showMaps').enable();
         $item('#showMaps').show();
-        // Links to the street address rather than the stored coordinates, which
-        // are unreliable for some members. The full-address gate above is what
-        // keeps this safe: members set to state_city_zip or dont_show never
-        // reach here, so a hidden street address is never put in a maps URL.
-        $item('#showMaps').link = buildMapLink(fullAddressWithValidCoords);
+        $item('#showMaps').link = mapLink;
         $item('#showMaps').target = '_blank';
       } else {
         $item('#showMaps').hide();
