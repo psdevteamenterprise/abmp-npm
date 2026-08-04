@@ -64,11 +64,13 @@ describe('buildMapLink - does not leak a hidden street address', () => {
     expect(queryOf(url)).toBe('Coraopolis, PA, 15108');
   });
 
-  it('falls back to coordinates rather than the street line for dont_show', () => {
+  it('builds no link at all for dont_show, not even from coordinates', () => {
+    // Previously this fell through to the coordinate fallback, which would have
+    // put the member's exact position in an outbound maps URL - worse than the
+    // street line they chose to hide.
     const url = buildMapLink(fullAddress({ addressStatus: ADDRESS_STATUS_TYPES.DONT_SHOW }));
 
-    expect(url).not.toContain('4th');
-    expect(url).toBe('https://maps.google.com/?q=40.4129180908203,-80.0293197631836');
+    expect(url).toBe('');
   });
 
   it('truncates the postal code to five digits', () => {
@@ -111,5 +113,44 @@ describe('buildMapLink - fallbacks', () => {
   it('returns an empty string for a missing address', () => {
     expect(buildMapLink(null)).toBe('');
     expect(buildMapLink(undefined)).toBe('');
+  });
+});
+
+// ─── Monday 12596102059, second pass ─────────────────────────────────
+// Members displaying city/state/ZIP previously got no directions button at all,
+// because the caller required a full_address with valid coordinates. Their
+// NetForum coordinates can be miles off (10.77 for member 1806273), so the
+// published text is the reliable value to navigate from.
+
+describe('buildMapLink - members who hide their street address', () => {
+  it('still builds a link for a state_city_zip member', () => {
+    const url = buildMapLink(fullAddress({ addressStatus: ADDRESS_STATUS_TYPES.STATE_CITY_ZIP }));
+
+    expect(url).toContain('maps.google.com');
+    expect(queryOf(url)).toBe('Coraopolis, PA, 15108');
+  });
+
+  it('navigates from the published text, not the wrong coordinates', () => {
+    const url = buildMapLink(
+      fullAddress({
+        addressStatus: ADDRESS_STATUS_TYPES.STATE_CITY_ZIP,
+        latitude: 0,
+        longitude: 0,
+      })
+    );
+
+    expect(queryOf(url)).toBe('Coraopolis, PA, 15108');
+    expect(url).not.toContain('0,0');
+  });
+
+  it('works without any coordinates at all', () => {
+    const url = buildMapLink({
+      city: 'Coraopolis',
+      state: 'PA',
+      postalcode: '15108-1675',
+      addressStatus: ADDRESS_STATUS_TYPES.STATE_CITY_ZIP,
+    });
+
+    expect(queryOf(url)).toBe('Coraopolis, PA, 15108');
   });
 });
