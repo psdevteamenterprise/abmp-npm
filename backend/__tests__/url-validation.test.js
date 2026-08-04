@@ -67,3 +67,32 @@ describe('isNotValidUrl - invalid input is still rejected', () => {
     expect(isValid(null)).toBe(true);
   });
 });
+
+// ─── Monday 12663709539, second pass ─────────────────────────────────
+// Members type the hostname they see in the browser, without a protocol.
+// Requiring http:// or www. rejected that and blocked the whole Business &
+// Services save. getContactAndBookingData normalises on save, so accepting a
+// bare hostname here is what allows https:// to be prepended.
+
+describe('isNotValidUrl - protocol is optional', () => {
+  it('accepts the bare hostname from the bug report', () => {
+    expect(isValid('patty-10439.square.site')).toBe(true);
+  });
+
+  it.each([
+    'square.site',
+    'massage4u.net',
+    'example.co.uk',
+    'booksy.com/en-us/698924_therapist_health-fitness',
+    'Patty-10439.Square.Site',
+    'www.example.com',
+  ])('accepts %s without a protocol', url => {
+    expect(isValid(url)).toBe(true);
+  });
+
+  it('still rejects things that merely look like hostnames', () => {
+    expect(isValid('not a url')).toBe(false);
+    expect(isValid('example')).toBe(false);
+    expect(isValid('justtext.c')).toBe(false);
+  });
+});
