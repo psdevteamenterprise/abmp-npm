@@ -119,6 +119,37 @@ function formatAddress(item) {
 }
 
 /**
+ * Builds the outbound map link for an address.
+ *
+ * Prefers the street address over the stored coordinates. NetForum's address
+ * verifier (Cdyne) sometimes returns coordinates that are miles away from the
+ * real address, and some coordinates were edited by hand in the past to change
+ * directory ranking, so the address text is the more reliable of the two.
+ * Distance ranking and the "XX miles away" figure keep using the coordinates -
+ * that is a separate calculation (see calculateDistance) and is unaffected.
+ *
+ * Falls back to coordinates only when the address cannot be formatted, so the
+ * button never links nowhere.
+ *
+ * @param {Object} address - a single address entry
+ * @returns {string} map URL, or '' when neither an address nor coordinates exist
+ */
+function buildMapLink(address) {
+  if (!address) return '';
+
+  const query = formatAddress(address);
+  if (query) {
+    return `https://maps.google.com/?q=${encodeURIComponent(query)}`;
+  }
+
+  if (isValidLocation(address)) {
+    return `https://maps.google.com/?q=${address.latitude},${address.longitude}`;
+  }
+
+  return '';
+}
+
+/**
  * @param {Array} addressDisplayOption
  * @param {Array} addresses
  * @param {Object|boolean} [options] - Optional. Pass { requireValidCoordinates: true } for home search/distance; omit or false for profile display.
@@ -228,6 +259,7 @@ module.exports = {
   toRadians,
   generateId,
   formatAddress,
+  buildMapLink,
   isWixHostedImage,
   normalizeExternalUrl,
   normalizeEmail,
