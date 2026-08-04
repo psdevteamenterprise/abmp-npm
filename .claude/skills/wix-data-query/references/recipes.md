@@ -183,6 +183,60 @@ back `pagingMetadata.cursors.next` alone:
 
 ---
 
+## Simulate a site query to test whether a filter really excludes something
+
+The highest-value technique in this skill. When a ticket claims "X shouldn't be showing but is",
+rebuild the site's own filters against `/items/count` and check whether the record survives. This
+tests the filter's real semantics instead of reasoning about the code.
+
+The directory query (`buildMembersSearchQuery` in `backend/cms-data-methods.js`) is:
+
+```json
+{
+  "dataCollectionId": "MembersDataLatest",
+  "filter": {
+    "optOut": { "$ne": true },
+    "action": { "$ne": "drop" },
+    "memberships.membertype": { "$ne": "PAC STAFF" },
+    "isVisible": true
+  }
+}
+```
+
+Add the member you are investigating and read the count. **Always run the control too** — the
+same filter _without_ the clause under test — or a `0` tells you nothing:
+
+```
+with the PAC STAFF clause     -> 0   (excluded)
+without the PAC STAFF clause  -> 1   (would otherwise appear)
+```
+
+To ask "does _anything_ slip through?", combine both conditions on the same field with `$and`
+(a filter object cannot hold two operators under one key):
+
+```json
+{
+  "dataCollectionId": "MembersDataLatest",
+  "filter": {
+    "$and": [
+      { "memberships.membertype": { "$contains": "PAC" } },
+      { "memberships.membertype": { "$ne": "PAC STAFF" } },
+      { "optOut": { "$ne": true } },
+      { "isVisible": true }
+    ]
+  }
+}
+```
+
+Nested paths into array fields (`memberships.membertype`, `addresses.postalcode`) work
+throughout.
+
+> Caveat proven on 2026-08-04: this validates **filter semantics**, not that the deployed site
+> applies them. A filter can be provably correct while the live page still misbehaves. To settle
+> that, get the site's actual API response — the browser devtools network tab is faster than any
+> amount of reasoning, and `?nearby=true` style search UIs often need geolocation before they
+> return anything at all.
+
 ## Other endpoints
 
 **Collection schema** — field names, types, and which operators each field allows:

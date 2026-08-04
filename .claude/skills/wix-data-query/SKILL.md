@@ -106,7 +106,53 @@ type, and — importantly — the **traps**. The ones that cause wrong conclusio
   `POST https://www.wixapis.com/wix-data/v2/items/count` (body: `dataCollectionId` +
   top-level `filter`, no `query` wrapper) → `{"totalCount": N}`.
 
-## 5. Rules
+- **`$eq` is case-sensitive; `$contains` is case-insensitive.** Verified on live ABMP: filtering
+  `url` with `"alisadanaeknowles"` matches the stored `"AlisaDanaeKnowles"` under `$contains`
+  and returns **nothing** under `$eq`. Stored slugs really are mixed case, so an exact-match
+  lookup on a user-supplied slug will silently miss. This is why `getMemberBySlug` originally
+  reached for full-text search.
+
+## 5. The historical PAC feed archive
+
+The live CMS answers _"what is true now"_. It cannot answer _"what did PAC actually send"_ or
+_"what did this member originally ask for"_ — and those are usually the questions that settle a
+dispute. For that, use the backup archive: [references/backup-archive.md](references/backup-archive.md).
+
+## 6. Writing data
+
+Read [§7 Rules](#7-rules) first. Writes need explicit approval, every time.
+
+**Prefer `PATCH` over `PUT`.** `PUT` (Update Data Item) replaces the entire payload — miss a
+field and you wipe it. `PATCH` changes only what you name:
+
+```
+PATCH https://www.wixapis.com/wix-data/v2/items/<itemId>
+{
+  "dataCollectionId": "MembersDataLatest",
+  "patch": {
+    "dataItemId": "<itemId>",
+    "fieldModifications": [
+      { "fieldPath": "optOut", "action": "SET_FIELD", "setFieldOptions": { "value": true } }
+    ]
+  }
+}
+```
+
+**Hiding a member is better than deleting one.** `optOut: true` is reversible, keeps the record,
+and **survives the nightly sync** — `optOut` is written only in `getNewMemberOnlyFields`, which
+returns `{}` for members that already exist, and it is absent from the always-update list in
+`backend/daily-pull/process-member-methods.js`. Deleting is irreversible, and if the member is
+still in PAC's feed the next sync simply recreates them as new.
+
+Deleting, when that is genuinely what was asked for:
+
+```
+DELETE https://www.wixapis.com/wix-data/v2/items/<itemId>?dataCollectionId=MembersDataLatest
+```
+
+Always verify afterwards with `/items/count` on the member id and report the result.
+
+## 7. Rules
 
 - **Read-only by default.** Query, count, distinct, aggregate, get-schema are all fine to run
   unprompted during an investigation.
