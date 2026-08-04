@@ -2,6 +2,13 @@
   "name": "abmp-npm",
   "version": "2.0.77",
   "main": "index.js",
+  "files": [
+    "index.js",
+    "backend",
+    "pages",
+    "public",
+    "!backend/__tests__"
+  ],
   "scripts": {
     "check-cycles": "madge --circular .",
     "test": "jest backend/__tests__",
