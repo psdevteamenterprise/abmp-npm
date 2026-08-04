@@ -11,6 +11,7 @@ const {
   checkAddressIsVisible,
   isWixHostedImage,
   normalizeExternalUrl,
+  buildMapLink,
 } = require('../public/Utils/sharedUtils.js');
 
 let filter = JSON.parse(JSON.stringify(DEFAULT_FILTER));
@@ -237,8 +238,11 @@ const homePageOnReady = async ({
       if (fullAddressWithValidCoords) {
         $item('#showMaps').enable();
         $item('#showMaps').show();
-        const { latitude, longitude } = fullAddressWithValidCoords;
-        $item('#showMaps').link = `https://maps.google.com/?q=${latitude},${longitude}`;
+        // Links to the street address rather than the stored coordinates, which
+        // are unreliable for some members. The full-address gate above is what
+        // keeps this safe: members set to state_city_zip or dont_show never
+        // reach here, so a hidden street address is never put in a maps URL.
+        $item('#showMaps').link = buildMapLink(fullAddressWithValidCoords);
         $item('#showMaps').target = '_blank';
       } else {
         $item('#showMaps').hide();
