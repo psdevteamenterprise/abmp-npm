@@ -3,12 +3,12 @@ const { location: wixLocation } = require('@wix/site-location');
 const { window: wixWindow, rendering } = require('@wix/site-window');
 const { withWarmUpData } = require('psdev-utils/frontend');
 
-const { ADDRESS_STATUS_TYPES, DEFAULT_FILTER, DROPDOWN_OPTIONS } = require('../public/consts.js');
+const { DEFAULT_FILTER, DROPDOWN_OPTIONS } = require('../public/consts.js');
 const { createHomepageUtils } = require('../public/Utils/homePage.js');
 const {
   getMainAddress,
+  findMainAddress,
   formatPracticeAreasForDisplay,
-  checkAddressIsVisible,
   isWixHostedImage,
   normalizeExternalUrl,
   buildMapLink,
@@ -226,25 +226,24 @@ const homePageOnReady = async ({
         $item('#milesAwayText').text = '';
       }
 
-      // 7) "Show maps" button shown only when we can actually build a link for it
-      const visible = checkAddressIsVisible(addresses);
-      const fullAddressWithValidCoords = visible.find(
-        addr =>
-          addr.addressStatus === ADDRESS_STATUS_TYPES.FULL_ADDRESS &&
-          addr.latitude &&
-          addr.longitude
-      );
-
-      // Links to the street address rather than the stored coordinates, which are
-      // unreliable for some members. The full-address filter above is what keeps
-      // this safe: members set to state_city_zip or dont_show never reach here, so
-      // a hidden street address is never put in a maps URL.
+      // 7) "Show maps" button - directions to whatever address the member displays.
       //
-      // Gate on the link rather than on the address. buildMapLink returns '' when
-      // it can build neither an address nor a coordinate link, and it also handles
-      // being passed undefined - so this cannot leave a visible button linking
-      // nowhere, even if the filter above is later relaxed.
-      const mapLink = buildMapLink(fullAddressWithValidCoords);
+      // Uses the same address as the location text above, so the button always
+      // matches what the member is showing. Members displaying city/state/ZIP get
+      // directions to that, rather than no button at all: their NetForum
+      // coordinates can be miles off (see Monday 12596102059), and the text they
+      // publish is the reliable value.
+      //
+      // Privacy is enforced in buildMapLink, not here - it delegates to
+      // formatAddress, which prints the street line only for full_address, and
+      // returns '' outright for dont_show. findMainAddress also excludes
+      // dont_show. A hidden street address can never reach a maps URL.
+      //
+      // Gate on the link rather than the address: buildMapLink returns '' when it
+      // can build neither an address nor a coordinate link, and handles being
+      // passed '' or undefined, so the button is never shown linking nowhere.
+      const mapAddress = findMainAddress(itemData.addressDisplayOption, addresses);
+      const mapLink = buildMapLink(mapAddress);
 
       if (mapLink) {
         $item('#showMaps').enable();

@@ -137,6 +137,12 @@ function formatAddress(item) {
 function buildMapLink(address) {
   if (!address) return '';
 
+  // A member set to dont_show has opted out of publishing their location at all.
+  // formatAddress returns '' for them, so without this guard they would fall
+  // through to the coordinate fallback below and have their exact position put
+  // into an outbound maps URL - worse than the street line they chose to hide.
+  if (address.addressStatus === ADDRESS_STATUS_TYPES.DONT_SHOW) return '';
+
   const query = formatAddress(address);
   if (query) {
     return `https://maps.google.com/?q=${encodeURIComponent(query)}`;
