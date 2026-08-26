@@ -156,6 +156,40 @@ function buildMapLink(address) {
 }
 
 /**
+ * Builds the directions-button link for a member, or '' when no button should show.
+ *
+ * PAC's rule (Monday 12596102059, confirmed by Richard Visser): directions appear
+ * only for members who selected "Show Full Address". Members displaying
+ * city/state/ZIP, and members who hid their address, get no button at all. An
+ * earlier pass relaxed this to city-level members and had to be reverted, so the
+ * rule lives here with tests around it rather than inline in the page code.
+ *
+ * The address is resolved with findMainAddress, so the button is always tied to
+ * the same address as the location text rendered beside it. A member whose
+ * displayed address is city-level gets no button even when a fuller address exists
+ * elsewhere on their record - the button must not point somewhere other than what
+ * is on screen.
+ *
+ * Coordinates are deliberately not required: buildMapLink navigates from the
+ * address text, so a member with missing or wrong NetForum coordinates still gets
+ * a working button where previously they got none. Distance ranking and the
+ * "XX miles away" figure keep using the coordinates and are unaffected.
+ *
+ * @param {Array} addressDisplayOption
+ * @param {Array} addresses
+ * @returns {string} map URL, or '' when the button should be hidden
+ */
+function buildDirectionsLink(addressDisplayOption = [], addresses = []) {
+  const address = findMainAddress(addressDisplayOption, addresses);
+
+  if (address?.addressStatus !== ADDRESS_STATUS_TYPES.FULL_ADDRESS) {
+    return '';
+  }
+
+  return buildMapLink(address);
+}
+
+/**
  * @param {Array} addressDisplayOption
  * @param {Array} addresses
  * @param {Object|boolean} [options] - Optional. Pass { requireValidCoordinates: true } for home search/distance; omit or false for profile display.
@@ -266,6 +300,7 @@ module.exports = {
   generateId,
   formatAddress,
   buildMapLink,
+  buildDirectionsLink,
   isWixHostedImage,
   normalizeExternalUrl,
   normalizeEmail,
