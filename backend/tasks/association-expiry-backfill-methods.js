@@ -32,7 +32,18 @@ const CHUNK_SIZE = 1000;
  * @returns {Promise<Object>} summary, including the per-outcome breakdown
  */
 async function scheduleAssociationExpiryBackfill(data = {}) {
-  const { dryRun = false } = data || {};
+  // The task manager calls process() with whatever getIdentifier returns. If that is ever changed
+  // to a sentinel string, destructuring it yields dryRun: undefined, which reads as false - a dry
+  // run would then write to every member on the site instead of counting them. Refuse rather than
+  // guess, because the wrong guess here is unrecoverable.
+  if (data === null || typeof data !== 'object') {
+    throw new Error(
+      `scheduleAssociationExpiryBackfill expected its task data object but received ${typeof data}. ` +
+        'Check getIdentifier for this task in tasks-configs.js: it must be `task => task.data`.'
+    );
+  }
+
+  const dryRun = data.dryRun === true;
   console.log(`=== Scheduling Association Expiry Backfill${dryRun ? ' (DRY RUN)' : ''} ===`);
 
   try {

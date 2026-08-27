@@ -245,7 +245,11 @@ const TASKS = {
   },
   [TASKS_NAMES.scheduleAssociationExpiryBackfill]: {
     name: TASKS_NAMES.scheduleAssociationExpiryBackfill,
-    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    // Must pass the task data through: the manager calls process() with whatever this returns, so
+    // a sentinel here would hand the backfill a string and its dryRun flag would read as false -
+    // silently turning a dry run into a live write across every member. shouldSkipCheck below is
+    // what prevents skipping; this does not need a sentinel to do that job.
+    getIdentifier: task => task.data,
     process: scheduleAssociationExpiryBackfill,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 120,
