@@ -16,26 +16,13 @@ const { TASKS_NAMES } = require('./consts');
 const CHUNK_SIZE = 1000;
 
 /**
- * One-off backfill of associationExpiration for members that predate the field.
- *
- * Runs per site, and only ever reads this site's own association out of the memberships array -
- * the ABMP site stores the ABMP date and nothing else. See PLAN-per-association-expiry.md.
- *
- * Pass `{ dryRun: true }` to count without writing anything. That mode exists for a specific
- * commitment: PAC chose to hide members whose expiration is missing or unreadable (Drew Zarn,
- * 2026-08-26), against our recommendation, and we said we would report how many existing records
- * that actually affects before any of it goes live. A dry run answers that in one task, with no
- * writes and nothing to undo.
- *
+ * One-off backfill of associationExpiration for members the daily sync will not touch.
  * @param {Object} [data]
- * @param {boolean} [data.dryRun=false]
- * @returns {Promise<Object>} summary, including the per-outcome breakdown
+ * @param {boolean} [data.dryRun] count without writing
  */
 async function scheduleAssociationExpiryBackfill(data = {}) {
-  // The task manager calls process() with whatever getIdentifier returns. If that is ever changed
-  // to a sentinel string, destructuring it yields dryRun: undefined, which reads as false - a dry
-  // run would then write to every member on the site instead of counting them. Refuse rather than
-  // guess, because the wrong guess here is unrecoverable.
+  // process() receives whatever getIdentifier returns. A sentinel string there would read as
+  // dryRun: false and write to every member instead of counting them.
   if (data === null || typeof data !== 'object') {
     throw new Error(
       `scheduleAssociationExpiryBackfill expected its task data object but received ${typeof data}. ` +
@@ -49,15 +36,14 @@ async function scheduleAssociationExpiryBackfill(data = {}) {
   try {
     const siteAssociation = await getSiteConfigs(CONFIG_KEYS.SITE_ASSOCIATION);
     if (!siteAssociation) {
-      // Without it every member would resolve to null, i.e. hidden. Refuse rather than wipe a site.
+      // Every member would resolve to null, i.e. hidden.
       throw new Error('SITE_ASSOCIATION is not configured; refusing to run the backfill');
     }
 
     const members = await getAllMembers();
     console.log(`Fetched ${members.length} members for association '${siteAssociation}'`);
 
-    // Counted over every member, not just the ones needing a write, so re-running after a partial
-    // failure still reports the true population rather than only the remainder.
+    // Over every member, not just those needing a write, so a re-run still reports the true total.
     const outcomes = summarizeExpirationOutcomes(members, siteAssociation);
     const hiddenByThisChange =
       outcomes[EXPIRATION_OUTCOMES.NO_MEMBERSHIP_FOR_ASSOCIATION] +
@@ -66,7 +52,7 @@ async function scheduleAssociationExpiryBackfill(data = {}) {
 
     console.log(`Outcome breakdown: ${JSON.stringify(outcomes)}`);
     console.log(
-      `Members that will resolve to no date, and so be hidden once the query gates on it: ${hiddenByThisChange} of ${members.length}`
+      `Will resolve to no date, so hidden once the query gates on it: ${hiddenByThisChange} of ${members.length}`
     );
 
     const memberIds = [
@@ -127,16 +113,8 @@ async function scheduleAssociationExpiryBackfill(data = {}) {
 }
 
 /**
- * Writes associationExpiration for one chunk of members.
- *
- * Members are reloaded and re-resolved here rather than trusting anything carried through the task
- * queue: a chunk can run well after it was scheduled, and the daily sync may have rewritten the
- * record in between.
- *
- * @param {Object} data
- * @param {Array<number>} data.memberIds
- * @param {number} data.chunkIndex
- * @param {number} data.totalChunks
+ * Members are reloaded and re-resolved rather than trusting the queued data: a chunk can run long
+ * after it was scheduled, and the daily sync may have rewritten the record in between.
  */
 async function associationExpiryBackfillChunk(data) {
   const { memberIds, chunkIndex, totalChunks } = data;

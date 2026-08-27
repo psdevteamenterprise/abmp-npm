@@ -134,15 +134,10 @@ async function runDailyPullExecutionCheck(options = {}) {
 }
 
 /**
- * One-off backfill of associationExpiration for members that predate the field.
- *
- * Run it with `{ dryRun: true }` FIRST. That counts how many members resolve to no date - and so
- * would be hidden once the directory query gates on it - without writing anything. PAC chose to
- * hide those members (Drew Zarn, 2026-08-26) and we undertook to report the number before it went
- * live. See PLAN-per-association-expiry.md.
- *
+ * One-off backfill of associationExpiration. Run with `{ dryRun: true }` first to get the count of
+ * members that resolve to no date, and would therefore be hidden, without writing anything.
  * @param {Object} [options]
- * @param {boolean} [options.dryRun=false] - Count and report only, write nothing
+ * @param {boolean} [options.dryRun]
  */
 async function scheduleAssociationExpiryBackfillTask(options = {}) {
   try {

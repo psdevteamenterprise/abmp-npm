@@ -561,10 +561,8 @@ const getAllMembersWithoutContactFormEmail = async () => {
 };
 
 /**
- * Gets every member in the collection, with no filter.
- * Used by the association expiry backfill, which has to consider the whole population: a member
- * with no readable expiration for this site's association is precisely the case it must count, so
- * filtering the query would hide the very records the report exists to surface.
+ * Every member, unfiltered. The expiry backfill has to count members with no readable expiration,
+ * so filtering the query would hide the records its report exists to surface.
  * @returns {Promise<Array>} - Array of member data
  */
 const getAllMembers = async () => {
