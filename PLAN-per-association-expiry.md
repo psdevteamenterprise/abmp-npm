@@ -5,6 +5,26 @@ Monday ticket [12423706293](https://pac-crew.monday.com/boards/18414915876/pulse
 
 Raised by Lara Bracciante (PAC). Solution shape proposed by Drew Zarn (PAC) and endorsed by Lara.
 
+## Status — 2026-08-27
+
+| Item                             | State                                                             |
+| -------------------------------- | ----------------------------------------------------------------- |
+| 1. `associationExpiration` field | **Done** — all 3 production and 3 test sites. Index not confirmed |
+| 2. Derive on sync                | Built, in release 2                                               |
+| 3. Backfill + dry-run report     | Built, in release 1 — PR #133                                     |
+| 4. Search gate                   | Built, in release 2                                               |
+| 5. Profile / router gate         | **Not written**                                                   |
+| 6. Login / edit access gate      | **Not written** — separable, costed on its own                    |
+| 7. The 90 interim removals       | Blocked on Lara: remove outright, or mark dropped?                |
+
+Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133), branch
+`feat/association-expiry-transition`. Release 2 is `feat/association-expiry-flow`, stacked on it and
+deliberately not pushed until release 1 has run and been verified.
+
+**Confirm the field is indexed before release 2.** The gate is a range scan over 103,831 records on
+ABMP alone; the field was added by hand and the index was not part of that step. Headroom exists
+(see below).
+
 ---
 
 ## The problem
@@ -104,9 +124,10 @@ boolean fields as poor index candidates.
 A real Date gives a proper indexed range scan, and a record with no date is excluded by `.ge()`
 naturally, which is exactly the behaviour Drew asked for.
 
-> **Verify that exclusion on a test site before relying on it.** This collection has form here:
-> `{"$ne": ""}` also matches rows where the field is absent, so absent-field semantics are not
-> intuitive and should be observed rather than assumed.
+This exclusion is **assumed, not measured**. The collection has form here — `{"$ne": ""}` also
+matches rows where the field is absent — so it is worth knowing which way the risk runs. If `.ge()`
+turned out to include absent-field rows, members with no date would stay visible, which is today's
+behaviour rather than a regression. The dry-run report gives the size of that group either way.
 
 ### Index headroom
 
@@ -164,9 +185,9 @@ The design in this document avoids the problem rather than working around it: th
 real indexed field, so the filter goes **into** the query and Wix does the paging over the already
 filtered population. No post-query predicate is needed.
 
-The part that still needs care: `buildMembersSearchQuery` computes a random skip for the
-non-nearby path. That skip must be derived from the **filtered** count, not the unfiltered one, or
-the same short-page symptom comes back through a different door.
+The random skip on the non-nearby path needed no change in the end: `count()` and `skip()` in
+`run()` both operate on the same filtered query, so the population they page over is already the
+correct one.
 
 ### Item 6 is the expensive one, and it is separable
 
@@ -225,19 +246,29 @@ The search gate excludes any member with no expiration date. **Until the backfil
 every member on the site.** Publishing it to a site whose data is not already migrated would empty
 the directory, not degrade it.
 
-There is no feature flag. The ordering is enforced by shipping it in two releases, and that only
+There is no feature flag. The ordering is enforced by shipping two npm versions, and that only
 works if the order is respected:
 
-| Release | Contains                                  | Visitor-visible change   |
-| ------- | ----------------------------------------- | ------------------------ |
-| **1**   | Items 2 and 3 — sync derivation, backfill | none, write-only         |
-| **2**   | Items 4 and 5 — search and profile gates  | **yes, this is the one** |
+| Release | Contains                                         | Visitor-visible change   |
+| ------- | ------------------------------------------------ | ------------------------ |
+| **1**   | Item 3 — the rule module and the backfill task   | none, write-only         |
+| **2**   | Items 2, 4 and 5 — sync derivation and the gates | **yes, this is the one** |
 
 Between them, per site: run the backfill dry run, send PAC the no-readable-date count, run the
-backfill for real, confirm the field is populated. Only then publish release 2.
+backfill for real, confirm the data looks right. Only then publish release 2.
 
-**Item 4 must not be published in the same version as items 2 and 3.** Nothing in the code prevents
-it; the separation is the safeguard.
+**Release 2 must not be published to a site whose backfill has not run.** Nothing in the code
+prevents it; the separation is the safeguard.
+
+### The gap this split opens
+
+The sync derivation (item 2) is in release 2, not release 1, so **between the backfill running and
+release 2 publishing, nothing keeps the field current**. A member who renews in that window keeps
+their old expired date, and the moment release 2 lands they are hidden despite having paid.
+
+**Re-run the backfill immediately before publishing release 2.** It is idempotent — it only
+rewrites records whose stored value disagrees — so the second run touches only the members who
+changed, and it closes the window completely.
 
 ## Collection sizes
 
