@@ -1,5 +1,9 @@
 const { taskManager } = require('psdev-task-manager');
 
+const {
+  resolveAssociationExpiration,
+  ASSOCIATION_EXPIRATION_FIELD,
+} = require('../association-expiry');
 const { CONFIG_KEYS } = require('../consts');
 const { fetchPACMembers } = require('../pac-api-methods');
 const { TASKS_NAMES } = require('../tasks/consts');
@@ -126,9 +130,12 @@ async function synchronizeSinglePage(taskObject) {
       }
       return isUpdatedMember(member);
     });
-    const toSyncMembersWithFilteredLicenses = toSyncMembers.map(member =>
-      filterLicensesByAssociation(member, siteAssociation)
-    );
+    // Narrow each member to this site's association: licenses filtered to it, and its expiration
+    // lifted out of the memberships array into a scalar the directory query can filter on.
+    const toSyncMembersWithFilteredLicenses = toSyncMembers.map(member => ({
+      ...filterLicensesByAssociation(member, siteAssociation),
+      [ASSOCIATION_EXPIRATION_FIELD]: resolveAssociationExpiration(member, siteAssociation),
+    }));
     if (toSyncMembers.length === 0) {
       return {
         success: true,

@@ -1,4 +1,5 @@
 const { ADDRESS_STATUS_TYPES } = require('../../public/consts');
+const { ASSOCIATION_EXPIRATION_FIELD } = require('../association-expiry');
 const { findMemberById, getMemberBySlug } = require('../members-data-methods');
 const { isValidArray, generateGeoHash } = require('../utils');
 
@@ -198,6 +199,9 @@ async function createCoreMemberData(inputMemberData, existingDbMember, currentPa
     memberships: inputMemberData.memberships,
     pageNumber: currentPageNumber,
     isVisible: inputMemberData.action !== MEMBER_ACTIONS.DROP,
+    // Belongs here, not in getNewMemberOnlyFields: that returns {} for existing members, so the
+    // date would never refresh on renewal and a member who paid would stay hidden. null = hidden.
+    [ASSOCIATION_EXPIRATION_FIELD]: inputMemberData[ASSOCIATION_EXPIRATION_FIELD] ?? null,
 
     // Handle Member emails
     ...getMemberEmails(),
