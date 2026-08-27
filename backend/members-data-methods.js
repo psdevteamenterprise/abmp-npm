@@ -561,6 +561,24 @@ const getAllMembersWithoutContactFormEmail = async () => {
 };
 
 /**
+ * Gets every member in the collection, with no filter.
+ * Used by the association expiry backfill, which has to consider the whole population: a member
+ * with no readable expiration for this site's association is precisely the case it must count, so
+ * filtering the query would hide the very records the report exists to surface.
+ * @returns {Promise<Array>} - Array of member data
+ */
+const getAllMembers = async () => {
+  try {
+    const membersQuery = wixData.query(COLLECTIONS.MEMBERS_DATA).limit(1000);
+
+    return await queryAllItems(membersQuery);
+  } catch (error) {
+    console.error('Error getting all members:', error);
+    throw new Error(`Failed to get all members: ${error.message}`);
+  }
+};
+
+/**
  * Gets all members whose email or contactFormEmail is stored with non-canonical casing
  * (or surrounding whitespace) and therefore needs the normalization backfill.
  * Wix Data cannot compare a field to its own lowercase form, so we fetch members that have
@@ -775,6 +793,7 @@ module.exports = {
   getAllMembersWithExternalImages,
   getMembersWithWixUrl,
   getAllMembersWithoutContactFormEmail,
+  getAllMembers,
   getAllMembersNeedingEmailNormalization,
   memberNeedsEmailNormalization,
   getAllUpdatedLoginEmails,

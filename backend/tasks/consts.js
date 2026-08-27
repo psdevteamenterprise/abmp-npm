@@ -27,6 +27,8 @@ const TASKS_NAMES = {
   scheduleNormalizeMemberEmails: 'scheduleNormalizeMemberEmails',
   normalizeMemberEmailsChunk: 'normalizeMemberEmailsChunk',
   dailyPullExecutionCheck: 'dailyPullExecutionCheck',
+  scheduleAssociationExpiryBackfill: 'scheduleAssociationExpiryBackfill',
+  associationExpiryBackfillChunk: 'associationExpiryBackfillChunk',
 };
 
 module.exports = {

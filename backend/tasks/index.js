@@ -7,4 +7,5 @@ module.exports = {
   ...require('./address-primary-methods'),
   ...require('./url-space-fix-methods'),
   ...require('./daily-pull-check-methods'),
+  ...require('./association-expiry-backfill-methods'),
 };

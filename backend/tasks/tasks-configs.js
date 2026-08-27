@@ -12,6 +12,10 @@ const {
   scheduleSetAddressesToCityState,
   setAddressesToCityStateChunk,
 } = require('./address-visibility-methods');
+const {
+  scheduleAssociationExpiryBackfill,
+  associationExpiryBackfillChunk,
+} = require('./association-expiry-backfill-methods');
 const { TASKS_NAMES } = require('./consts');
 const { dailyPullExecutionCheck } = require('./daily-pull-check-methods');
 const {
@@ -236,6 +240,20 @@ const TASKS = {
     name: TASKS_NAMES.normalizeMemberEmailsChunk,
     getIdentifier: task => task.data,
     process: normalizeMemberEmailsChunk,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.scheduleAssociationExpiryBackfill]: {
+    name: TASKS_NAMES.scheduleAssociationExpiryBackfill,
+    getIdentifier: () => 'SHOULD_NEVER_SKIP',
+    process: scheduleAssociationExpiryBackfill,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 120,
+  },
+  [TASKS_NAMES.associationExpiryBackfillChunk]: {
+    name: TASKS_NAMES.associationExpiryBackfillChunk,
+    getIdentifier: task => task.data,
+    process: associationExpiryBackfillChunk,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
   },

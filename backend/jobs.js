@@ -133,6 +133,32 @@ async function runDailyPullExecutionCheck(options = {}) {
   }
 }
 
+/**
+ * One-off backfill of associationExpiration for members that predate the field.
+ *
+ * Run it with `{ dryRun: true }` FIRST. That counts how many members resolve to no date - and so
+ * would be hidden once the directory query gates on it - without writing anything. PAC chose to
+ * hide those members (Drew Zarn, 2026-08-26) and we undertook to report the number before it went
+ * live. See PLAN-per-association-expiry.md.
+ *
+ * @param {Object} [options]
+ * @param {boolean} [options.dryRun=false] - Count and report only, write nothing
+ */
+async function scheduleAssociationExpiryBackfillTask(options = {}) {
+  try {
+    const { dryRun = false } = options || {};
+    console.log(`scheduleAssociationExpiryBackfill started! dryRun=${dryRun}`);
+    return await taskManager().schedule({
+      name: TASKS_NAMES.scheduleAssociationExpiryBackfill,
+      data: { dryRun },
+      type: 'scheduled',
+    });
+  } catch (error) {
+    console.error(`Failed to scheduleAssociationExpiryBackfill: ${error.message}`);
+    throw new Error(`Failed to scheduleAssociationExpiryBackfill: ${error.message}`);
+  }
+}
+
 async function updateSiteMapS3() {
   try {
     return await taskManager().schedule({
@@ -154,5 +180,6 @@ module.exports = {
   scheduleFixUrlsWithSpacesTask,
   scheduleNormalizeMemberEmailsTask,
   scheduleSetAddressesToCityStateTask,
+  scheduleAssociationExpiryBackfillTask,
   runDailyPullExecutionCheck,
 };
