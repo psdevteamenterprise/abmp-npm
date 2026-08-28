@@ -5,7 +5,7 @@ Monday ticket [12423706293](https://pac-crew.monday.com/boards/18414915876/pulse
 
 Raised by Lara Bracciante (PAC). Solution shape proposed by Drew Zarn (PAC) and endorsed by Lara.
 
-## Status — 2026-08-28: **live on all three production sites**
+## Status — 2026-08-28: **complete, live on all three production sites**
 
 | Item                             | State                                                        |
 | -------------------------------- | ------------------------------------------------------------ |
@@ -14,7 +14,7 @@ Raised by Lara Bracciante (PAC). Solution shape proposed by Drew Zarn (PAC) and 
 | 3. Backfill + dry-run report     | **Done** — all 3 test sites and all 3 production sites       |
 | 4. Search gate                   | **Done** — verified in production                            |
 | 5. Profile / router gate         | **Done** — verified in production                            |
-| 6. Login / edit access gate      | Verified on test; not exercised in production                |
+| 6. Login / edit access gate      | **Done** — verified in production                            |
 | 7. The interim drops             | **Done** — set, then reversed once release 2 took over       |
 
 Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133), published as
@@ -56,7 +56,8 @@ rows are the only place picking the wrong array element shows up, and none did.
 **Read paths checked live.** Sixteen profile URLs: seven expired members 404 on the site they lapsed
 on, the same six people return 200 on the association they kept, three current members return 200 as
 controls. Directory search on ABMP zip 48183 lists eight current members from that zip and omits the
-expired one, alongside the dropped and opted-out members it already omitted.
+expired one, alongside the dropped and opted-out members it already omitted. The login gate was
+exercised against a real member: access is refused for the lapsed association.
 
 Three worked examples, all `action: 'update'` with `isVisible: true` and `optOut: false` — so the
 new rule is the only thing hiding them:
@@ -66,9 +67,6 @@ new rule is the only thing hiding them:
 | Allyson Haines | ABMP, 2026-02-12 | ASCP → 2026-11-28 |
 | Beverly Boyd   | ASCP, 2026-07-10 | ABMP → 2026-10-23 |
 | Lachlyn Fuller | AHP, 2026-05-26  | ASCP → 2026-11-12 |
-
-**Not exercised in production: the login gate.** Verified on the test sites; doing it live needs a
-real member's credentials.
 
 **One false alarm, run down.** Allyson Haines is also absent from ASCP search, where she is current.
 It is not this change: she is the only member in that zip with **no licenses**, and the ASCP
