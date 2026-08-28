@@ -5,25 +5,55 @@ Monday ticket [12423706293](https://pac-crew.monday.com/boards/18414915876/pulse
 
 Raised by Lara Bracciante (PAC). Solution shape proposed by Drew Zarn (PAC) and endorsed by Lara.
 
-## Status — 2026-08-27
+## Status — 2026-08-28
 
 | Item                             | State                                                        |
 | -------------------------------- | ------------------------------------------------------------ |
 | 1. `associationExpiration` field | **Done** — all 6 sites, type `DATETIME`. Index not confirmed |
-| 2. Derive on sync                | Built, in release 2                                          |
-| 3. Backfill + dry-run report     | Built, in release 1 — PR #133                                |
-| 4. Search gate                   | Built, in release 2                                          |
-| 5. Profile / router gate         | **Not written**                                              |
-| 6. Login / edit access gate      | **Not written** — separable, costed on its own               |
+| 2. Derive on sync                | Built. **Not yet exercised anywhere**                        |
+| 3. Backfill + dry-run report     | Built, run on all 3 test sites                               |
+| 4. Search gate                   | Built, verified on test                                      |
+| 5. Profile / router gate         | Built, verified on test                                      |
+| 6. Login / edit access gate      | Built, verified on test                                      |
 | 7. The 90 interim removals       | Blocked on Lara: remove outright, or mark dropped?           |
 
-Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133), branch
-`feat/association-expiry-transition`. Release 2 is `feat/association-expiry-flow`, stacked on it and
-deliberately not pushed until release 1 has run and been verified.
+Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133); release 2 is
+[PR #134](https://github.com/psdevteamenterprise/abmp-npm/pull/134), stacked on it.
 
-**Confirm the field is indexed before release 2.** The gate is a range scan over 103,831 records on
-ABMP alone; the field was added by hand and the index was not part of that step. Headroom exists
-(see below).
+### Verified on the test sites
+
+Published under the `matheus` dist-tag and checked against real data:
+
+- an expired member is **absent from directory search**
+- their **profile page 404s** rather than rendering
+- an **open session ends** on reload, and login is refused
+- a current member is unaffected in all three
+
+### Measured, not assumed
+
+On Test ABMP, of **93,702 members currently visible** in the directory, **10,262 have an expiration
+already in the past** — roughly **11%, about one listing in nine**, would disappear the moment the
+gate goes live. Every record on that site has a value, so nothing is hidden for want of a date.
+
+That figure matters more than the no-readable-date count we promised Drew, which came out at zero.
+The production equivalent should be measured and sent to PAC **before** release 2 is published.
+
+### Still to do
+
+1. Exercise item 2 — the sync has never written this field anywhere. Run the daily pull on a test
+   site with `includeNone: true` and confirm a member's date is refreshed rather than nulled. Until
+   this is proven, a renewal silently fails to restore anyone.
+2. Production dry run per site, and send PAC the impact number.
+3. Production transition (release 1), verify.
+4. Re-run the backfill, then publish release 2.
+
+### Known consequence, not yet addressed
+
+A refused member currently lands on the page's error state — _"There appears to be an issue with
+this page, please email expectmore@abmp.com"_ — rather than a message explaining that their
+membership has lapsed. That is pre-existing behaviour for dropped members, but release 2 turns it
+from a handful of people into potentially thousands, each of whom may raise a support ticket for
+something working as designed. Worth PAC deciding what those members should see.
 
 ---
 
