@@ -3,7 +3,8 @@ const { createHmac } = require('crypto');
 const axios = require('axios');
 const { decode } = require('jwt-js-decode');
 
-const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL } = require('../consts');
+const { isAssociationExpirationCurrent } = require('../association-expiry');
+const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL, LOGIN_REFUSAL_REASONS } = require('../consts');
 const { MEMBER_ACTIONS } = require('../daily-pull/consts');
 const { getCurrentMember } = require('../members-area-methods');
 const { getCMSMemberByWixMemberId, prepareMemberForSSOLogin } = require('../members-data-methods');
@@ -79,6 +80,15 @@ async function validateMemberToken(memberIdInput) {
       return invalidTokenResponse;
     }
 
+    // Ends an already-open session once the association lapses. Without this, a member logged in
+    // before their expiry date keeps editing a listing the directory no longer shows.
+    if (!isAssociationExpirationCurrent(memberData)) {
+      console.log(
+        `[validateMemberToken] association membership expired for memberId ${memberData.memberId}`
+      );
+      return invalidTokenResponse;
+    }
+
     // Add computed properties
     memberData.addressDisplayOption = getAddressDisplayOptions(memberData);
     console.log('memberData', memberData);
@@ -134,7 +144,14 @@ const authenticateSSOToken = async ({ token }) => {
   if (isValidToken) {
     const jwt = decode(responseToken);
     const payload = jwt.payload;
-    const memberData = await prepareMemberForSSOLogin(payload);
+    let memberData;
+    try {
+      memberData = await prepareMemberForSSOLogin(payload);
+    } catch (error) {
+      if (error.message !== LOGIN_REFUSAL_REASONS.ASSOCIATION_MEMBERSHIP_EXPIRED) throw error;
+      console.log('[authenticateSSOToken] refusing login, association membership expired');
+      return { type: 'error', memberId: '', sessionToken: '' };
+    }
     console.log('memberDataCollectionId', memberData._id);
     const sessionToken = await generateMemberSessionToken(memberData.email);
     const authObj = {

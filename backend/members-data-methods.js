@@ -1,7 +1,8 @@
 const { COLLECTIONS } = require('../public/consts');
 const { isWixHostedImage, emailsMatch, normalizeEmail } = require('../public/Utils/sharedUtils');
 
-const { MEMBERSHIPS_TYPES } = require('./consts');
+const { isAssociationExpirationCurrent } = require('./association-expiry');
+const { MEMBERSHIPS_TYPES, LOGIN_REFUSAL_REASONS } = require('./consts');
 const { createSiteContact } = require('./contacts-methods');
 const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { wixData } = require('./elevated-modules');
@@ -695,6 +696,15 @@ async function prepareMemberForSSOLogin(data) {
     const memberData = await findMemberById(Number(memberId));
     if (!memberData) {
       throw new Error(`Member data not found for memberId ${memberId}`);
+    }
+    // Checked before ensureWixMemberAndContactExist, which creates a Wix member and contact when
+    // they are missing. Refusing after that point would still provision an account for someone who
+    // cannot use it.
+    if (!isAssociationExpirationCurrent(memberData)) {
+      console.log(
+        `[prepareMemberForSSOLogin] refusing login, association membership expired for memberId ${memberId}`
+      );
+      throw new Error(LOGIN_REFUSAL_REASONS.ASSOCIATION_MEMBERSHIP_EXPIRED);
     }
     console.log('memberData', memberData);
     return await ensureWixMemberAndContactExist(memberData);

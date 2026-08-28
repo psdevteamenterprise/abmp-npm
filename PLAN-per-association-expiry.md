@@ -237,11 +237,23 @@ The random skip on the non-nearby path needed no change in the end: `count()` an
 `run()` both operate on the same filtered query, so the population they page over is already the
 correct one.
 
-### Item 6 is the expensive one, and it is separable
+### Item 6 — login and edit access
 
-Hiding a listing is a query change. Cutting login and edit access touches the members-area auth
-flow, not just the directory query and the profile router. If PAC wants the visible half sooner,
-items 1–5 ship without it.
+It turned out cheaper than costed. The members-area flow already refuses a dropped member in both
+places that matter, so the expiry check slots in beside those rather than needing new machinery:
+
+- **`prepareMemberForSSOLogin`** refuses before `ensureWixMemberAndContactExist`, which creates a
+  Wix member and contact when they are missing. Refusing later would still provision an account for
+  someone who cannot use it.
+- **`validateMemberToken`** ends a session that is already open, next to the existing `drop` check.
+  Without it, a member logged in before their expiry date keeps editing a listing the directory no
+  longer shows.
+
+The second is what covers "edit their details": `pages/personalDetails.js` calls
+`validateMemberToken`, so an invalid session closes the edit form too.
+
+**QA login is deliberately not gated.** It sits behind a shared secret and an allowlist, and QA
+needs to be able to sign in as an expired member to check this behaviour.
 
 ### Item 3 is the bulk of the work
 
