@@ -256,7 +256,10 @@ const TASKS = {
     getIdentifier: task => task.data,
     process: associationExpiryBackfillChunk,
     shouldSkipCheck: () => false,
-    estimatedDurationSec: 80,
+    // Measured at ~6.5s per chunk on the test sites. This is a packing budget, not a timeout: the
+    // manager fills each 240s cron tick with tasks costing estimate x 1.5, so 80 allowed only 2 per
+    // tick. 10 gives 16, about 104s of real work, leaving room for slower chunks under load.
+    estimatedDurationSec: 10,
   },
   [TASKS_NAMES.dailyPullExecutionCheck]: {
     name: TASKS_NAMES.dailyPullExecutionCheck,
