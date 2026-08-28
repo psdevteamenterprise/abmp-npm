@@ -335,21 +335,33 @@ the backfill runs as a scheduled task on Wix rather than over the REST API from 
 ## The interim spreadsheet
 
 `Non-renewing individual divisions.xlsx`, attached to the ticket and forwarded by Lara on
-2026-08-26. Column A is member ID, column D is the association to **keep**.
+2026-08-26. Column A is member ID, column D is the association to **keep**. 90 rows, 88 distinct
+(member, association) pairs — ABMP 22, ASCP 56, AHP 10.
 
-**90 rows, 88 distinct (member, association) pairs** — ABMP 22, ASCP 57, AHP 11. Lara's covering
-email described it as 110 members.
+Lara resolved the three data faults on 2026-08-27:
 
-Faults found on arrival, all raised with PAC rather than silently corrected:
+- **`1469959`** (Delcastillo Dixon, Dalexys), listed on both the ABMP and ASCP tabs — keep ABMP,
+  drop ASCP. The ABMP row was "bad data interpretation on our part".
+- **`836430`** (Mixer, Kayla), listed twice on the ASCP tab — keep ABMP, drop ASCP.
+- **`1440721`** (Akers, Lillian Rose), twice on the AHP tab with different associations to keep —
+  keep ASCP **and** ABMP, drop AHP. She is a triple.
 
-- **Member `1469959` (Delcastillo Dixon, Dalexys) contradicts itself.** The ABMP tab says remove
-  from ABMP and keep ASCP; the ASCP tab says remove from ASCP and keep ABMP. Obeying both removes
-  them from everything; obeying neither leaves them everywhere.
-- Member `836430` (Mixer, Kayla) is an exact duplicate row on the ASCP tab. Harmless.
-- Member `1440721` (Akers, Lillian Rose) appears twice on the AHP tab with different associations to
-  keep — probably a triple whose row was split. The action is the same either way.
-- Seven rows name **ANP** as the association to keep. There is no ANP Wix site, so those members end
-  up with no listing on any of our three.
+### The removals look unnecessary
+
+Checked against live production data on 2026-08-28. Of the 56 members on the ASCP list, 53 still
+exist on that site, and **all 53 have an ASCP expiration already in the past** — every one of them
+paired with a still-current membership on the association they kept. The ABMP list matches: every
+member found has a past ABMP date and a 2027 date on the association they kept.
+
+That is the pattern the gate is built for. Once release 2 is published, these members are hidden by
+their own dates, on the correct site only, with nothing manual to do and nothing to reverse later.
+
+This removes the mechanism question entirely. There is no need to choose between deleting the
+listings and marking them dropped, and no `optOut` flags to set and then remember to clear — which
+was the part of that plan most likely to strand someone after they renewed.
+
+The removals would only still be needed if PAC wants these listings gone **before** release 2 ships.
+Given the two steps run back to back, that window is about an hour.
 
 ---
 
