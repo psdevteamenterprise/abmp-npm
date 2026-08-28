@@ -119,17 +119,8 @@ const getTodayInAssociationTimeZone = (now = new Date()) => {
   }
 };
 
-/**
- * Whether a stored expiration is today or later. Mirrors the directory query's `.ge()` so search
- * results and the profile page cannot disagree about who is visible - the query cannot be reused
- * for a single record already in hand, so the rule is shared instead.
- *
- * A missing or unreadable value is not current, matching the query, which excludes rows that have
- * no value in the field.
- *
- * @param {Object} member - a stored CMS record
- * @param {Date} [now] injectable for tests
- */
+// Mirrors the directory query's `.ge()` for a record already in hand, so search, the profile page
+// and the members area cannot disagree. Missing or unreadable is not current, as in the query.
 const isAssociationExpirationCurrent = (member, now) => {
   const stored = member?.[ASSOCIATION_EXPIRATION_FIELD];
   const expiration = stored instanceof Date ? stored : stored ? new Date(stored) : null;

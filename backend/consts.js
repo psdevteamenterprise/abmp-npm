@@ -43,10 +43,8 @@ const LOGIN_EMAIL_SYNC_STATUS = {
   SKIPPED: 'skipped', // member has no wixMemberId, nothing to change
 };
 
-/**
- * Why a login was refused. Thrown by the data layer, recognised by the login layer, which turns it
- * into the ordinary error response rather than a 500.
- */
+// Thrown by the data layer, recognised by the login layer, which turns it into the ordinary error
+// response rather than a 500.
 const LOGIN_REFUSAL_REASONS = {
   ASSOCIATION_MEMBERSHIP_EXPIRED: 'ASSOCIATION_MEMBERSHIP_EXPIRED',
 };

@@ -239,8 +239,8 @@ correct one.
 
 ### Item 6 — login and edit access
 
-It turned out cheaper than costed. The members-area flow already refuses a dropped member in both
-places that matter, so the expiry check slots in beside those rather than needing new machinery:
+Cheaper than costed. The members-area flow already refuses a dropped member in both places that
+matter, so the expiry check slots in beside those rather than needing new machinery:
 
 - **`prepareMemberForSSOLogin`** refuses before `ensureWixMemberAndContactExist`, which creates a
   Wix member and contact when they are missing. Refusing later would still provision an account for
