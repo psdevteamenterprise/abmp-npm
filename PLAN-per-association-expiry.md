@@ -5,20 +5,21 @@ Monday ticket [12423706293](https://pac-crew.monday.com/boards/18414915876/pulse
 
 Raised by Lara Bracciante (PAC). Solution shape proposed by Drew Zarn (PAC) and endorsed by Lara.
 
-## Status — 2026-08-28
+## Status — 2026-08-28: **live on all three production sites**
 
 | Item                             | State                                                          |
 | -------------------------------- | -------------------------------------------------------------- |
 | 1. `associationExpiration` field | **Done** — all 6 sites, type `DATETIME`. Index not confirmed   |
-| 2. Derive on sync                | Built. **Not yet exercised anywhere**                          |
-| 3. Backfill + dry-run report     | Built, run on all 3 test sites                                 |
-| 4. Search gate                   | Built, verified on test                                        |
-| 5. Profile / router gate         | Built, verified on test                                        |
-| 6. Login / edit access gate      | Built, verified on test                                        |
+| 2. Derive on sync                | **Done** — daily pull exercised and correct                    |
+| 3. Backfill + dry-run report     | **Done** — all 3 test sites and all 3 production sites         |
+| 4. Search gate                   | **Done** — verified in production                              |
+| 5. Profile / router gate         | **Done** — verified in production                              |
+| 6. Login / edit access gate      | Verified on test; not exercised in production                  |
 | 7. The interim drops             | **Done** — 80 listings opted out on 2026-08-28. Must be undone |
 
-Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133); release 2 is
-[PR #134](https://github.com/psdevteamenterprise/abmp-npm/pull/134), stacked on it.
+Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133), published as
+`2.0.82`. Release 2 is [PR #134](https://github.com/psdevteamenterprise/abmp-npm/pull/134),
+published as `2.0.83`. Both are installed on ABMP, ASCP and AHP production.
 
 ### Verified on the test sites
 
@@ -31,32 +32,53 @@ Published under the `matheus` dist-tag and checked against real data:
 
 ### Measured, not assumed
 
-On Test ABMP, of **93,702 members currently visible** in the directory, **10,262 have an expiration
-already in the past** — roughly **11%, about one listing in nine**, would disappear the moment the
-gate goes live. Every record on that site has a value, so nothing is hidden for want of a date.
+The no-readable-date count we promised Drew came out at **zero on all six sites**: every member has
+a date, so nobody is hidden for want of one.
 
-That figure matters more than the no-readable-date count we promised Drew, which came out at zero.
-The production equivalent should be measured and sent to PAC **before** release 2 is published.
+Test ABMP suggested **11%** of listings would disappear. Production came in an order of magnitude
+lower — **about 1%** — so that test figure was an artefact of test data, not a forecast. Quoting it
+to PAC without measuring production first would have been alarming and wrong.
+
+### Production, transitioned and verified 2026-08-28
+
+| Site | Rows    | No value | Listed before | Listed now | Disappear      |
+| ---- | ------- | -------- | ------------- | ---------- | -------------- |
+| ABMP | 103,924 | **0**    | 83,574        | 82,899     | **675** (0.8%) |
+| ASCP | 69,755  | **0**    | 52,741        | 51,967     | **774** (1.5%) |
+| AHP  | 13,392  | **0**    | 10,321        | 10,272     | **49** (0.5%)  |
+
+1,498 of 146,636 listings, a little under 1%.
+
+**Values re-derived, not trusted.** A 400-row sample from AHP, drawn at four offsets, was recomputed
+from `memberships` and compared: **400 of 400 exact**, including **116 multies**. Multi-association
+rows are the only place picking the wrong array element shows up, and none did.
+
+**Read paths checked live.** Sixteen profile URLs: seven expired members 404 on the site they lapsed
+on, the same six people return 200 on the association they kept, three current members return 200 as
+controls. Directory search on ABMP zip 48183 lists eight current members from that zip and omits the
+expired one, alongside the dropped and opted-out members it already omitted.
+
+Three worked examples, all `action: 'update'` with `isVisible: true` and `optOut: false` — so the
+new rule is the only thing hiding them:
+
+| Member         | Lapsed on        | Kept              |
+| -------------- | ---------------- | ----------------- |
+| Allyson Haines | ABMP, 2026-02-12 | ASCP → 2026-11-28 |
+| Beverly Boyd   | ASCP, 2026-07-10 | ABMP → 2026-10-23 |
+| Lachlyn Fuller | AHP, 2026-05-26  | ASCP → 2026-11-12 |
+
+**Not exercised in production: the login gate.** Verified on the test sites; doing it live needs a
+real member's credentials.
+
+**One false alarm, run down.** Allyson Haines is also absent from ASCP search, where she is current.
+It is not this change: she is the only member in that zip with **no licenses**, and the ASCP
+directory requires one. Her ASCP profile page loads and her date is current.
 
 ### Still to do
 
-1. Exercise item 2 — the sync has never written this field anywhere. Run the daily pull on a test
-   site with `includeNone: true` and confirm a member's date is refreshed rather than nulled. Until
-   this is proven, a renewal silently fails to restore anyone.
-2. Production dry run per site, and send PAC the impact number.
-3. Production transition (release 1), verify.
-4. Re-run the backfill, then publish release 2.
-5. **Clear `optOut` on the 80 interim drops** once release 2 is live. Skip this and every one of
-   them stays hidden forever, including after they renew. The list is in
-   `pac-association-removals-backup-2026-08-28.csv`.
-
-### Known consequence, not yet addressed
-
-A refused member currently lands on the page's error state — _"There appears to be an issue with
-this page, please email expectmore@abmp.com"_ — rather than a message explaining that their
-membership has lapsed. That is pre-existing behaviour for dropped members, but release 2 turns it
-from a handful of people into potentially thousands, each of whom may raise a support ticket for
-something working as designed. Worth PAC deciding what those members should see.
+**Clear `optOut` on the 80 interim drops.** Release 2 now governs them, so the flags are redundant;
+leave them set and every one of those members stays hidden forever, including after they renew. The
+list is `pac-association-removals-backup-2026-08-28.csv`. This is the only outstanding item.
 
 ---
 
