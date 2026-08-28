@@ -7,15 +7,15 @@ Raised by Lara Bracciante (PAC). Solution shape proposed by Drew Zarn (PAC) and 
 
 ## Status — 2026-08-28: **live on all three production sites**
 
-| Item                             | State                                                          |
-| -------------------------------- | -------------------------------------------------------------- |
-| 1. `associationExpiration` field | **Done** — all 6 sites, type `DATETIME`. Index not confirmed   |
-| 2. Derive on sync                | **Done** — daily pull exercised and correct                    |
-| 3. Backfill + dry-run report     | **Done** — all 3 test sites and all 3 production sites         |
-| 4. Search gate                   | **Done** — verified in production                              |
-| 5. Profile / router gate         | **Done** — verified in production                              |
-| 6. Login / edit access gate      | Verified on test; not exercised in production                  |
-| 7. The interim drops             | **Done** — 80 listings opted out on 2026-08-28. Must be undone |
+| Item                             | State                                                        |
+| -------------------------------- | ------------------------------------------------------------ |
+| 1. `associationExpiration` field | **Done** — all 6 sites, type `DATETIME`. Index not confirmed |
+| 2. Derive on sync                | **Done** — daily pull exercised and correct                  |
+| 3. Backfill + dry-run report     | **Done** — all 3 test sites and all 3 production sites       |
+| 4. Search gate                   | **Done** — verified in production                            |
+| 5. Profile / router gate         | **Done** — verified in production                            |
+| 6. Login / edit access gate      | Verified on test; not exercised in production                |
+| 7. The interim drops             | **Done** — set, then reversed once release 2 took over       |
 
 Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133), published as
 `2.0.82`. Release 2 is [PR #134](https://github.com/psdevteamenterprise/abmp-npm/pull/134),
@@ -74,11 +74,18 @@ real member's credentials.
 It is not this change: she is the only member in that zip with **no licenses**, and the ASCP
 directory requires one. Her ASCP profile page loads and her date is current.
 
-### Still to do
+### The interim drops, reversed
 
-**Clear `optOut` on the 80 interim drops.** Release 2 now governs them, so the flags are redundant;
-leave them set and every one of those members stays hidden forever, including after they renew. The
-list is `pac-association-removals-backup-2026-08-28.csv`. This is the only outstanding item.
+**`optOut` cleared on 79 of the 80**, once release 2 was live everywhere and their own dates took
+over. The 80th, ABMP `132545`, was already opted out **before** any of this — that is the member's
+own directory setting, not ours to undo, so it was left alone. Three others had no `optOut` field at
+all and were restored to having none rather than to `false`.
+
+Every value was diffed against the pre-change export rather than blanket-set, which is what caught
+`132545`. Verified after: no divergence from the original values, no content drift, and none of the
+80 appear in a directory — each is held by their own past date now.
+
+Nothing outstanding.
 
 ---
 
