@@ -130,8 +130,6 @@ async function synchronizeSinglePage(taskObject) {
       }
       return isUpdatedMember(member);
     });
-    // Narrow each member to this site's association: licenses filtered to it, and its expiration
-    // lifted out of the memberships array into a scalar the directory query can filter on.
     const toSyncMembersWithFilteredLicenses = toSyncMembers.map(member => ({
       ...filterLicensesByAssociation(member, siteAssociation),
       [ASSOCIATION_EXPIRATION_FIELD]: resolveAssociationExpiration(member, siteAssociation),

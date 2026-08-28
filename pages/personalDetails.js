@@ -166,14 +166,10 @@ async function personalDetailsOnReady({
 
   try {
     const {
-      memberData: validatedMember,
+      memberData: { isStudent: _isStudent, ...memberDataResponse },
       isValid: isValidResponse,
       membersExternalPortalUrl: _membersExternalPortalUrl,
     } = await validateMemberToken(memberTokenId);
-    // validateMemberToken returns memberData: null for every rejection, expired and dropped
-    // included. Destructuring that directly threw, so the catch below showed the "something is
-    // broken" screen instead of the unauthorized one built for exactly this.
-    const { isStudent: _isStudent, ...memberDataResponse } = validatedMember ?? {};
     memberData = memberDataResponse;
     isValid = isValidResponse;
     isStudent = _isStudent;

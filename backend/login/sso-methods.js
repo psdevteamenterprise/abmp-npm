@@ -80,8 +80,6 @@ async function validateMemberToken(memberIdInput) {
       return invalidTokenResponse;
     }
 
-    // Ends an already-open session once the association lapses. Without this, a member logged in
-    // before their expiry date keeps editing a listing the directory no longer shows.
     if (!isAssociationExpirationCurrent(memberData)) {
       console.log(
         `[validateMemberToken] association membership expired for memberId ${memberData.memberId}`
