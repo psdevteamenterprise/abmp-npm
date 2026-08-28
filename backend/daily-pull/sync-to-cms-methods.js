@@ -1,5 +1,9 @@
 const { taskManager } = require('psdev-task-manager');
 
+const {
+  resolveAssociationExpiration,
+  ASSOCIATION_EXPIRATION_FIELD,
+} = require('../association-expiry');
 const { CONFIG_KEYS } = require('../consts');
 const { fetchPACMembers } = require('../pac-api-methods');
 const { TASKS_NAMES } = require('../tasks/consts');
@@ -126,9 +130,10 @@ async function synchronizeSinglePage(taskObject) {
       }
       return isUpdatedMember(member);
     });
-    const toSyncMembersWithFilteredLicenses = toSyncMembers.map(member =>
-      filterLicensesByAssociation(member, siteAssociation)
-    );
+    const toSyncMembersWithFilteredLicenses = toSyncMembers.map(member => ({
+      ...filterLicensesByAssociation(member, siteAssociation),
+      [ASSOCIATION_EXPIRATION_FIELD]: resolveAssociationExpiration(member, siteAssociation),
+    }));
     if (toSyncMembers.length === 0) {
       return {
         success: true,

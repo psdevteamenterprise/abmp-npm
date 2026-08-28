@@ -43,6 +43,10 @@ const LOGIN_EMAIL_SYNC_STATUS = {
   SKIPPED: 'skipped', // member has no wixMemberId, nothing to change
 };
 
+const LOGIN_REFUSAL_REASONS = {
+  ASSOCIATION_MEMBERSHIP_EXPIRED: 'ASSOCIATION_MEMBERSHIP_EXPIRED',
+};
+
 module.exports = {
   CONFIG_KEYS,
   MAX__MEMBERS_SEARCH_RESULTS,
@@ -55,4 +59,5 @@ module.exports = {
   SSO_TOKEN_AUTH_API_URL,
   BACKUP_API_URL,
   LOGIN_EMAIL_SYNC_STATUS,
+  LOGIN_REFUSAL_REASONS,
 };

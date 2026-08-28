@@ -5,6 +5,10 @@ const { findMainAddress } = require('../public/Utils/sharedUtils.js');
 const { calculateDistance, shuffleArray } = require('../public/Utils/sharedUtils.js');
 
 const {
+  getTodayInAssociationTimeZone,
+  ASSOCIATION_EXPIRATION_FIELD,
+} = require('./association-expiry');
+const {
   GEO_HASH_PRECISION,
   MAX__MEMBERS_SEARCH_RESULTS,
   WIX_QUERY_MAX_LIMIT,
@@ -34,6 +38,8 @@ function buildMembersSearchQuery(data) {
         .ne('action', 'drop')
         .ne('memberships.membertype', MEMBERSHIPS_TYPES.PAC_STAFF)
         .eq('isVisible', true);
+
+      query = query.ge(ASSOCIATION_EXPIRATION_FIELD, getTodayInAssociationTimeZone());
       let filterConfig = [
         {
           filterKey: 'practiceAreas',

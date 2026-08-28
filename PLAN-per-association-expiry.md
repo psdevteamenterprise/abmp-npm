@@ -7,15 +7,15 @@ Raised by Lara Bracciante (PAC). Solution shape proposed by Drew Zarn (PAC) and 
 
 ## Status — 2026-08-28
 
-| Item                             | State                                                        |
-| -------------------------------- | ------------------------------------------------------------ |
-| 1. `associationExpiration` field | **Done** — all 6 sites, type `DATETIME`. Index not confirmed |
-| 2. Derive on sync                | Built. **Not yet exercised anywhere**                        |
-| 3. Backfill + dry-run report     | Built, run on all 3 test sites                               |
-| 4. Search gate                   | Built, verified on test                                      |
-| 5. Profile / router gate         | Built, verified on test                                      |
-| 6. Login / edit access gate      | Built, verified on test                                      |
-| 7. The 90 interim removals       | Blocked on Lara: remove outright, or mark dropped?           |
+| Item                             | State                                                          |
+| -------------------------------- | -------------------------------------------------------------- |
+| 1. `associationExpiration` field | **Done** — all 6 sites, type `DATETIME`. Index not confirmed   |
+| 2. Derive on sync                | Built. **Not yet exercised anywhere**                          |
+| 3. Backfill + dry-run report     | Built, run on all 3 test sites                                 |
+| 4. Search gate                   | Built, verified on test                                        |
+| 5. Profile / router gate         | Built, verified on test                                        |
+| 6. Login / edit access gate      | Built, verified on test                                        |
+| 7. The interim drops             | **Done** — 80 listings opted out on 2026-08-28. Must be undone |
 
 Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133); release 2 is
 [PR #134](https://github.com/psdevteamenterprise/abmp-npm/pull/134), stacked on it.
@@ -46,6 +46,9 @@ The production equivalent should be measured and sent to PAC **before** release 
 2. Production dry run per site, and send PAC the impact number.
 3. Production transition (release 1), verify.
 4. Re-run the backfill, then publish release 2.
+5. **Clear `optOut` on the 80 interim drops** once release 2 is live. Skip this and every one of
+   them stays hidden forever, including after they renew. The list is in
+   `pac-association-removals-backup-2026-08-28.csv`.
 
 ### Known consequence, not yet addressed
 
@@ -202,7 +205,7 @@ after paying.
 | 4   | Search gate — add the date condition to the base query beside `.eq('isVisible', true)`                   | `backend/cms-data-methods.js`                                   |
 | 5   | Profile / router gate — same rule, so an expired profile 404s instead of rendering                       | `backend/members-data-methods.js`, `backend/routers/methods.js` |
 | 6   | Login / edit access gate                                                                                 | members-area flow                                               |
-| 7   | The 90 interim removals, plus the reversal list                                                          | data task                                                       |
+| 7   | The interim drops ahead of release 2, and clearing them after                                            | data task                                                       |
 
 ### Item 2 — the write path
 
@@ -237,11 +240,23 @@ The random skip on the non-nearby path needed no change in the end: `count()` an
 `run()` both operate on the same filtered query, so the population they page over is already the
 correct one.
 
-### Item 6 is the expensive one, and it is separable
+### Item 6 — login and edit access
 
-Hiding a listing is a query change. Cutting login and edit access touches the members-area auth
-flow, not just the directory query and the profile router. If PAC wants the visible half sooner,
-items 1–5 ship without it.
+Cheaper than costed. The members-area flow already refuses a dropped member in both places that
+matter, so the expiry check slots in beside those rather than needing new machinery:
+
+- **`prepareMemberForSSOLogin`** refuses before `ensureWixMemberAndContactExist`, which creates a
+  Wix member and contact when they are missing. Refusing later would still provision an account for
+  someone who cannot use it.
+- **`validateMemberToken`** ends a session that is already open, next to the existing `drop` check.
+  Without it, a member logged in before their expiry date keeps editing a listing the directory no
+  longer shows.
+
+The second is what covers "edit their details": `pages/personalDetails.js` calls
+`validateMemberToken`, so an invalid session closes the edit form too.
+
+**QA login is deliberately not gated.** It sits behind a shared secret and an allowlist, and QA
+needs to be able to sign in as an expired member to check this behaviour.
 
 ### Item 3 is the bulk of the work
 
@@ -251,9 +266,12 @@ The risk in this project sits in the backfill, not in the query.
 
 ## Sequencing
 
-Item 5 collides with **PR #126**, still open and unreviewed, which rewrites `getMemberBySlug` from
-`wixData.search().expression(slug)` to `wixData.query(...).contains('url', slug)`. Merge that first
-or item 5 rebases onto a moving target.
+The expected collision with **PR #126** did not materialise. That PR rewrites `getMemberBySlug`,
+but item 5 deliberately does not touch it: `getMemberBySlug` also backs URL uniqueness during the
+sync, where an expired member's slug must still count as taken or a new member could claim it and
+collide. The gate went into `getMemberProfileData` instead, so the two changes do not overlap.
+
+PR #126 is still worth merging on its own account.
 
 ---
 
@@ -269,22 +287,31 @@ it is already the 12th in UTC. A member whose membership runs to the 11th is sti
 grace period is baked into the date — but a UTC-derived "today" would compare them against the 12th
 and hide them hours early, every evening, for everyone expiring that day.
 
-### 2. The 90 interim removals are temporary by construction
+### 2. The interim drops are temporary by construction
 
-Once the backfill lands, those members are hidden by their own dates anyway. So whatever we do for
-them **must be reversible**.
+Once the backfill lands, those members are hidden by their own dates anyway, so whatever was done for
+them had to be reversible. PAC asked for drops rather than deletions precisely because these members
+may come back.
 
-The only durable manual mechanism is `optOut`: `isVisible: false` is recomputed away on the next
-sync, because `generateUpdatedMemberData` always rewrites it from `action`. `optOut` survives
-because it is written only in `getNewMemberOnlyFields`, which returns `{}` for existing members.
+Three mechanisms, only one of which holds:
 
-But `optOut` also never clears itself. **If those flags are not cleared when the permanent fix
-ships, all 90 stay hidden forever, including after they renew.** Keeping the list of exactly who was
-changed is a correctness requirement, not bookkeeping.
+- `isVisible: false` does not survive a sync — `generateUpdatedMemberData` rewrites it from `action`.
+- `action: 'drop'` does not survive either; it is overwritten from the feed.
+- `optOut: true` **does** survive. It is written only in `getNewMemberOnlyFields`, which returns `{}`
+  for members that already exist, and it is absent from the always-update list.
 
-Still awaiting Lara's choice between removing the listings outright and marking them dropped. We
-recommend marking them dropped: it takes them off the directory just the same, but keeps photos,
-services and testimonials, so a renewal restores everything rather than the member re-entering it.
+So `optOut` is the mechanism. Its cost is that it never clears itself: **every flag set has to be
+cleared by hand once release 2 ships, or those members stay hidden forever, including after they
+renew.** Keeping the list of exactly who was changed is a correctness requirement, not bookkeeping.
+
+Two limits worth stating. `optOut` is checked in the directory search query only, not in
+`getMemberBySlug`, so a dropped member is off the directory but their profile URL still resolves
+until release 2 lands. And `optOut` is the same flag the member controls on their own details page,
+so a member who logs in can turn it off.
+
+The rows were deleted first, then restored and opted out instead, after Lara asked for drops rather
+than deletions on 2026-08-28. Nothing was lost: every row went back under its original `_id` with
+`areasOfPractices`, `profileImage`, `website`, `bookingUrl` and the Wix member link intact.
 
 ---
 
@@ -346,22 +373,26 @@ Lara resolved the three data faults on 2026-08-27:
 - **`1440721`** (Akers, Lillian Rose), twice on the AHP tab with different associations to keep —
   keep ASCP **and** ABMP, drop AHP. She is a triple.
 
-### The removals look unnecessary
+### The drops, and what they were worth
 
 Checked against live production data on 2026-08-28. Of the 56 members on the ASCP list, 53 still
-exist on that site, and **all 53 have an ASCP expiration already in the past** — every one of them
-paired with a still-current membership on the association they kept. The ABMP list matches: every
-member found has a past ABMP date and a 2027 date on the association they kept.
+existed on that site, and **all 53 had an ASCP expiration already in the past** — every one of them
+paired with a still-current membership on the association they kept. The ABMP and AHP lists matched:
+every member found had a past date on the association being dropped and a future date on the one
+kept.
 
-That is the pattern the gate is built for. Once release 2 is published, these members are hidden by
-their own dates, on the correct site only, with nothing manual to do and nothing to reverse later.
+That is exactly the pattern the gate is built for, so release 2 would have hidden all of them on its
+own. They were actioned anyway, on 2026-08-28, because PAC wanted the listings gone ahead of the
+release.
 
-This removes the mechanism question entirely. There is no need to choose between deleting the
-listings and marking them dropped, and no `optOut` flags to set and then remember to clear — which
-was the part of that plan most likely to strand someone after they renewed.
+**80 listings are now `optOut: true`** — ABMP 18, ASCP 53, AHP 9. The other 7 (ABMP `1053865`,
+`1707324`, `1735642`; ASCP `268224`, `991699`, `1633973`; AHP `1682203`) do not exist on those sites,
+so there was nothing to action.
 
-The removals would only still be needed if PAC wants these listings gone **before** release 2 ships.
-Given the two steps run back to back, that window is about an hour.
+They were deleted first and restored the same day, once Lara confirmed she wanted drops rather than
+deletions. The full export taken before the delete —
+`pac-association-removals-backup-2026-08-28.csv`, one row per listing plus the complete record as
+JSON — is what made the restore exact, and it now doubles as the reversal list for step 5 above.
 
 ---
 
@@ -380,18 +411,18 @@ Wix sites at all, because the sync only ever acts on the `action` field.
 Re-costed 2026-08-28, after items 1-6 were built. The original estimate is kept beside it because
 two of its lines were wrong in ways worth remembering.
 
-| Item                       | Original   | Revised   | Note                                          |
-| -------------------------- | ---------- | --------- | --------------------------------------------- |
-| 1. Field + index           | _in 11-15_ | 2-3       | Fast, but the wrong field type cost rework    |
-| 2. Derive on sync          | _in 11-15_ | 4-6       | 17 lines; the cost was the shared rule module |
-| 3. Backfill + report       | 10-14      | 12-16     | Slightly under                                |
-| 4. Search gate             | _in 11-15_ | 2-3       | 9 lines, once the field exists                |
-| 5. Profile / router gate   | 4-6        | 2-3       | 8 lines                                       |
-| 6. Login / edit access     | 12-16      | 3-5       | **Over-estimated 3-4x**                       |
-| **Built so far**           |            | **25-36** |                                               |
-| 7. The 90 interim removals | 4-6        | 3-5       | Not started, waiting on Lara                  |
-| QA and rollout             | 8-10       | 10-14     | **Revised up** - now the largest item left    |
-| **Total**                  | **49-67**  | **38-55** |                                               |
+| Item                     | Original   | Revised   | Note                                          |
+| ------------------------ | ---------- | --------- | --------------------------------------------- |
+| 1. Field + index         | _in 11-15_ | 2-3       | Fast, but the wrong field type cost rework    |
+| 2. Derive on sync        | _in 11-15_ | 4-6       | 17 lines; the cost was the shared rule module |
+| 3. Backfill + report     | 10-14      | 12-16     | Slightly under                                |
+| 4. Search gate           | _in 11-15_ | 2-3       | 9 lines, once the field exists                |
+| 5. Profile / router gate | 4-6        | 2-3       | 8 lines                                       |
+| 6. Login / edit access   | 12-16      | 3-5       | **Over-estimated 3-4x**                       |
+| 7. The interim drops     | 4-6        | 4-6       | Export, delete, restore, opt out — one rework |
+| **Done so far**          |            | **27-39** |                                               |
+| QA and rollout           | 8-10       | 10-14     | **Revised up** - now the only item left       |
+| **Total**                | **49-67**  | **37-53** |                                               |
 
 **Item 6 was the big miss.** It was costed as "touches the members-area auth flow, not just a
 query" — pricing the area of the code rather than the shape of the change. The flow already refuses
@@ -401,4 +432,5 @@ a dropped member in exactly the two places that matter, so the expiry check slot
 to verify, production dry runs, three production transitions with run windows, and the reporting we
 owe PAC. Coordination time, which does not compress.
 
-Roughly **13-19 hours remain**, most of it rollout rather than code.
+Roughly **10-14 hours remain**, almost all of it rollout rather than code, plus the reversal pass
+on the 80 drops.

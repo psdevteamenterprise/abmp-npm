@@ -119,6 +119,15 @@ const getTodayInAssociationTimeZone = (now = new Date()) => {
   }
 };
 
+const isAssociationExpirationCurrent = (member, now) => {
+  const stored = member?.[ASSOCIATION_EXPIRATION_FIELD];
+  const expiration = stored instanceof Date ? stored : stored ? new Date(stored) : null;
+
+  if (!expiration || Number.isNaN(expiration.getTime())) return false;
+
+  return expiration.getTime() >= getTodayInAssociationTimeZone(now).getTime();
+};
+
 module.exports = {
   parseExpirationToUtcDate,
   classifyAssociationExpiration,
@@ -126,6 +135,7 @@ module.exports = {
   summarizeExpirationOutcomes,
   memberNeedsAssociationExpirationBackfill,
   getTodayInAssociationTimeZone,
+  isAssociationExpirationCurrent,
   ASSOCIATION_EXPIRATION_FIELD,
   ASSOCIATION_TIME_ZONE,
   EXPIRATION_OUTCOMES,
