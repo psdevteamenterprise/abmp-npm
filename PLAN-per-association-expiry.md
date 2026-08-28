@@ -7,15 +7,15 @@ Raised by Lara Bracciante (PAC). Solution shape proposed by Drew Zarn (PAC) and 
 
 ## Status — 2026-08-28
 
-| Item                             | State                                                        |
-| -------------------------------- | ------------------------------------------------------------ |
-| 1. `associationExpiration` field | **Done** — all 6 sites, type `DATETIME`. Index not confirmed |
-| 2. Derive on sync                | Built. **Not yet exercised anywhere**                        |
-| 3. Backfill + dry-run report     | Built, run on all 3 test sites                               |
-| 4. Search gate                   | Built, verified on test                                      |
-| 5. Profile / router gate         | Built, verified on test                                      |
-| 6. Login / edit access gate      | Built, verified on test                                      |
-| 7. The interim removals          | **Done** — 80 rows deleted on 2026-08-28, backup kept        |
+| Item                             | State                                                          |
+| -------------------------------- | -------------------------------------------------------------- |
+| 1. `associationExpiration` field | **Done** — all 6 sites, type `DATETIME`. Index not confirmed   |
+| 2. Derive on sync                | Built. **Not yet exercised anywhere**                          |
+| 3. Backfill + dry-run report     | Built, run on all 3 test sites                                 |
+| 4. Search gate                   | Built, verified on test                                        |
+| 5. Profile / router gate         | Built, verified on test                                        |
+| 6. Login / edit access gate      | Built, verified on test                                        |
+| 7. The interim drops             | **Done** — 80 listings opted out on 2026-08-28. Must be undone |
 
 Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133); release 2 is
 [PR #134](https://github.com/psdevteamenterprise/abmp-npm/pull/134), stacked on it.
@@ -46,6 +46,9 @@ The production equivalent should be measured and sent to PAC **before** release 
 2. Production dry run per site, and send PAC the impact number.
 3. Production transition (release 1), verify.
 4. Re-run the backfill, then publish release 2.
+5. **Clear `optOut` on the 80 interim drops** once release 2 is live. Skip this and every one of
+   them stays hidden forever, including after they renew. The list is in
+   `pac-association-removals-backup-2026-08-28.csv`.
 
 ### Known consequence, not yet addressed
 
@@ -202,7 +205,7 @@ after paying.
 | 4   | Search gate — add the date condition to the base query beside `.eq('isVisible', true)`                   | `backend/cms-data-methods.js`                                   |
 | 5   | Profile / router gate — same rule, so an expired profile 404s instead of rendering                       | `backend/members-data-methods.js`, `backend/routers/methods.js` |
 | 6   | Login / edit access gate                                                                                 | members-area flow                                               |
-| 7   | The interim removals ahead of release 2                                                                  | data task                                                       |
+| 7   | The interim drops ahead of release 2, and clearing them after                                            | data task                                                       |
 
 ### Item 2 — the write path
 
@@ -284,27 +287,31 @@ it is already the 12th in UTC. A member whose membership runs to the 11th is sti
 grace period is baked into the date — but a UTC-derived "today" would compare them against the 12th
 and hide them hours early, every evening, for everyone expiring that day.
 
-### 2. The interim removals are temporary by construction
+### 2. The interim drops are temporary by construction
 
-Once the backfill lands, those members are hidden by their own dates anyway, so whatever was done
-for them had to be reversible.
+Once the backfill lands, those members are hidden by their own dates anyway, so whatever was done for
+them had to be reversible. PAC asked for drops rather than deletions precisely because these members
+may come back.
 
-`isVisible: false` would not have held: `generateUpdatedMemberData` rewrites it from `action` on
-every sync. `optOut` would have held — it is written only in `getNewMemberOnlyFields`, which returns
-`{}` for existing members — but it never clears itself either, so every flag set would have had to
-be cleared by hand once release 2 shipped, or those members stay hidden forever, including after
-they renew.
+Three mechanisms, only one of which holds:
 
-Deleting the rows avoids that trap, at the cost of a different one: `isSiteAssociatedMember` matches
-on the presence of a membership entry, not on its date, so PAC's feed still returns these members for
-the site they left. Any sync that carries them with an action other than `none` re-creates the row.
-The removals therefore hold only until the next such sync, and only release 2 makes the state
-permanent.
+- `isVisible: false` does not survive a sync — `generateUpdatedMemberData` rewrites it from `action`.
+- `action: 'drop'` does not survive either; it is overwritten from the feed.
+- `optOut: true` **does** survive. It is written only in `getNewMemberOnlyFields`, which returns `{}`
+  for members that already exist, and it is absent from the always-update list.
 
-The rows were deleted rather than marked dropped. Deletion loses photos, services and testimonials
-for those members, which a renewal would not restore — acceptable here because every one of them is
-past expiry on the association they left and keeps a current membership elsewhere, and because
-release 2 is what governs them from now on.
+So `optOut` is the mechanism. Its cost is that it never clears itself: **every flag set has to be
+cleared by hand once release 2 ships, or those members stay hidden forever, including after they
+renew.** Keeping the list of exactly who was changed is a correctness requirement, not bookkeeping.
+
+Two limits worth stating. `optOut` is checked in the directory search query only, not in
+`getMemberBySlug`, so a dropped member is off the directory but their profile URL still resolves
+until release 2 lands. And `optOut` is the same flag the member controls on their own details page,
+so a member who logs in can turn it off.
+
+The rows were deleted first, then restored and opted out instead, after Lara asked for drops rather
+than deletions on 2026-08-28. Nothing was lost: every row went back under its original `_id` with
+`areasOfPractices`, `profileImage`, `website`, `bookingUrl` and the Wix member link intact.
 
 ---
 
@@ -366,7 +373,7 @@ Lara resolved the three data faults on 2026-08-27:
 - **`1440721`** (Akers, Lillian Rose), twice on the AHP tab with different associations to keep —
   keep ASCP **and** ABMP, drop AHP. She is a triple.
 
-### The removals, and what they were worth
+### The drops, and what they were worth
 
 Checked against live production data on 2026-08-28. Of the 56 members on the ASCP list, 53 still
 existed on that site, and **all 53 had an ASCP expiration already in the past** — every one of them
@@ -375,16 +382,17 @@ every member found had a past date on the association being dropped and a future
 kept.
 
 That is exactly the pattern the gate is built for, so release 2 would have hidden all of them on its
-own. They were removed anyway, on 2026-08-28, because PAC wanted the listings gone ahead of the
+own. They were actioned anyway, on 2026-08-28, because PAC wanted the listings gone ahead of the
 release.
 
-**80 rows deleted** — ABMP 18, ASCP 53, AHP 9. The other 7 (ABMP `1053865`, `1707324`, `1735642`;
-ASCP `268224`, `991699`, `1633973`; AHP `1682203`) were already absent from those sites, so there was
-nothing to remove. Every deleted record was exported first, full row and all, to
-`pac-association-removals-backup-2026-08-28.csv`.
+**80 listings are now `optOut: true`** — ABMP 18, ASCP 53, AHP 9. The other 7 (ABMP `1053865`,
+`1707324`, `1735642`; ASCP `268224`, `991699`, `1633973`; AHP `1682203`) do not exist on those sites,
+so there was nothing to action.
 
-The caveat above applies: the feed still returns these members for the site they left, so a sync that
-carries them with an action other than `none` puts the row back. Release 2 is what makes it stick.
+They were deleted first and restored the same day, once Lara confirmed she wanted drops rather than
+deletions. The full export taken before the delete —
+`pac-association-removals-backup-2026-08-28.csv`, one row per listing plus the complete record as
+JSON — is what made the restore exact, and it now doubles as the reversal list for step 5 above.
 
 ---
 
@@ -411,7 +419,7 @@ two of its lines were wrong in ways worth remembering.
 | 4. Search gate           | _in 11-15_ | 2-3       | 9 lines, once the field exists                |
 | 5. Profile / router gate | 4-6        | 2-3       | 8 lines                                       |
 | 6. Login / edit access   | 12-16      | 3-5       | **Over-estimated 3-4x**                       |
-| 7. The interim removals  | 4-6        | 2-3       | Scripted export, then bulk delete             |
+| 7. The interim drops     | 4-6        | 4-6       | Export, delete, restore, opt out — one rework |
 | **Done so far**          |            | **27-39** |                                               |
 | QA and rollout           | 8-10       | 10-14     | **Revised up** - now the only item left       |
 | **Total**                | **49-67**  | **37-53** |                                               |
@@ -424,4 +432,5 @@ a dropped member in exactly the two places that matter, so the expiry check slot
 to verify, production dry runs, three production transitions with run windows, and the reporting we
 owe PAC. Coordination time, which does not compress.
 
-Roughly **10-14 hours remain**, almost all of it rollout rather than code.
+Roughly **10-14 hours remain**, almost all of it rollout rather than code, plus the reversal pass
+on the 80 drops.
