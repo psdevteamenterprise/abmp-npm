@@ -10,15 +10,18 @@ Raised by Lara Bracciante (PAC). Solution shape proposed by Drew Zarn (PAC) and 
 | Item                             | State                                                          |
 | -------------------------------- | -------------------------------------------------------------- |
 | 1. `associationExpiration` field | **Done** — all 6 sites, type `DATETIME`. Index not confirmed   |
-| 2. Derive on sync                | Built. **Not yet exercised anywhere**                          |
-| 3. Backfill + dry-run report     | Built, run on all 3 test sites                                 |
+| 2. Derive on sync                | **Done** — daily pull exercised and correct                    |
+| 3. Backfill + dry-run report     | **Done** — 3 test sites, and AHP production transitioned       |
 | 4. Search gate                   | Built, verified on test                                        |
 | 5. Profile / router gate         | Built, verified on test                                        |
 | 6. Login / edit access gate      | Built, verified on test                                        |
 | 7. The interim drops             | **Done** — 80 listings opted out on 2026-08-28. Must be undone |
 
-Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133); release 2 is
-[PR #134](https://github.com/psdevteamenterprise/abmp-npm/pull/134), stacked on it.
+Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133), merged and
+published as `2.0.82`. Release 2 is
+[PR #134](https://github.com/psdevteamenterprise/abmp-npm/pull/134), merged; it ships as `2.0.83`.
+Publishing to npm changes nothing on its own — each site stays on `2.0.82` until it is installed
+there, so that install is the per-site gate.
 
 ### Verified on the test sites
 
@@ -36,17 +39,34 @@ already in the past** — roughly **11%, about one listing in nine**, would disa
 gate goes live. Every record on that site has a value, so nothing is hidden for want of a date.
 
 That figure matters more than the no-readable-date count we promised Drew, which came out at zero.
-The production equivalent should be measured and sent to PAC **before** release 2 is published.
+The production equivalent should be measured and sent to PAC **before** release 2 is installed on
+that site. AHP's came out at 0.5% — see below.
+
+### AHP production, transitioned and verified 2026-08-28
+
+| Check                                 | Result               |
+| ------------------------------------- | -------------------- |
+| Rows in the collection                | 13,392               |
+| `associationExpiration` with no value | **0**                |
+| Past today / today or later           | 2,948 / 10,444       |
+| Sample re-derived from `memberships`  | **400 of 400 exact** |
+| Multies in that sample                | 116, none mismatched |
+| Listed today → listed once gated      | 10,321 → 10,272      |
+| **Disappear when the gate goes live** | **49, or 0.5%**      |
+
+The multi-association rows are the ones that matter: picking the wrong array element shows up there
+and nowhere else. None did.
+
+0.5% is far below Test ABMP's 11%, and consistent — of the 2,948 past-dated rows only 49 are
+currently listed, the rest already hidden by `isVisible` or `action: 'drop'`. The nine AHP interim
+drops are inside that 49, not on top of it.
 
 ### Still to do
 
-1. Exercise item 2 — the sync has never written this field anywhere. Run the daily pull on a test
-   site with `includeNone: true` and confirm a member's date is refreshed rather than nulled. Until
-   this is proven, a renewal silently fails to restore anyone.
-2. Production dry run per site, and send PAC the impact number.
-3. Production transition (release 1), verify.
-4. Re-run the backfill, then publish release 2.
-5. **Clear `optOut` on the 80 interim drops** once release 2 is live. Skip this and every one of
+1. Production dry run on ABMP and ASCP, and send PAC the impact number for each.
+2. Production transition on ABMP and ASCP, verified the same way as AHP above.
+3. Install `2.0.83` per site once that site's data checks out.
+4. **Clear `optOut` on the 80 interim drops** once release 2 is live. Skip this and every one of
    them stays hidden forever, including after they renew. The list is in
    `pac-association-removals-backup-2026-08-28.csv`.
 
