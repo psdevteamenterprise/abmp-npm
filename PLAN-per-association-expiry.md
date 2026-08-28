@@ -335,16 +335,35 @@ Wix sites at all, because the sync only ever acts on the `action` field.
 
 ## Effort
 
-| Area                                                 | Hours     |
-| ---------------------------------------------------- | --------- |
-| Items 1, 2, 4 — schema, sync derivation, search gate | 11–15     |
-| Item 3 — backfill and reporting                      | 10–14     |
-| Item 5 — profile / router gate                       | 4–6       |
-| Item 7 — interim removals and reversal list          | 4–6       |
-| QA across three test sites, then prod rollout        | 8–10      |
-| **Subtotal, excluding login/edit access**            | **37–51** |
-| Item 6 — login / edit access                         | 12–16     |
-| **Total**                                            | **49–67** |
+Re-costed 2026-08-28, after items 1-6 were built. The original estimate is kept beside it because
+two of its lines were wrong in ways worth remembering.
 
-Ranges, not commitments. The spread is dominated by item 3 and by how much of the members-area flow
-item 6 turns out to touch.
+| Item                       | Original   | Revised   | Note                                          |
+| -------------------------- | ---------- | --------- | --------------------------------------------- |
+| 1. Field + index           | _in 11-15_ | 2-3       | Fast, but the wrong field type cost rework    |
+| 2. Derive on sync          | _in 11-15_ | 4-6       | 17 lines; the cost was the shared rule module |
+| 3. Backfill + report       | 10-14      | 12-16     | Slightly under                                |
+| 4. Search gate             | _in 11-15_ | 2-3       | 9 lines, once the field exists                |
+| 5. Profile / router gate   | 4-6        | 2-3       | 8 lines                                       |
+| 6. Login / edit access     | 12-16      | 3-5       | **Over-estimated 3-4x**                       |
+| **Built so far**           |            | **25-36** |                                               |
+| 7. The 90 interim removals | 4-6        | 3-5       | Not started, waiting on Lara                  |
+| QA and rollout             | 8-10       | 10-14     | **Revised up** - now the largest item left    |
+| **Total**                  | **49-67**  | **38-55** |                                               |
+
+**Item 6 was the big miss.** It was costed as "touches the members-area auth flow, not just a
+query" — pricing the area of the code rather than the shape of the change. The flow already refuses
+a dropped member in exactly the two places that matter, so the expiry check slotted in beside them.
+
+**QA and rollout went up** and is now the largest remaining item. It is two npm releases, six sites
+to verify, production dry runs, three production transitions with run windows, and the reporting we
+owe PAC. Coordination time, which does not compress.
+
+Roughly **13-19 hours remain**, most of it rollout rather than code.
+
+### Not in this scope
+
+The duplicate-member work — 404 duplicate rows across the test sites, 8 live double listings on
+production ASCP, and the cleanup — was about **3-4 hours** and belongs to the slug race that PR #126
+fixes, not to this change. It surfaced here only because the dry run's rows-versus-distinct-IDs gap
+exposed it. Keeping it separate keeps these figures comparable to what PAC was quoted.

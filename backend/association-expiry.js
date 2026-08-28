@@ -1,5 +1,5 @@
-// The per-association expiry rule. Shared by the daily sync, the backfill and the directory query
-// so they cannot drift on what "expired" means. No Wix imports.
+// The per-association expiry rule, shared by the sync, the backfill and the read paths so they
+// cannot drift on what "expired" means. Deliberately free of Wix imports.
 
 const ASSOCIATION_EXPIRATION_FIELD = 'associationExpiration';
 const ASSOCIATION_TIME_ZONE = 'America/Denver';
@@ -14,11 +14,8 @@ const EXPIRATION_OUTCOMES = {
   UNREADABLE_EXPIRATION: 'unreadableExpiration',
 };
 
-/**
- * PAC sends expirations as zoneless ISO strings ("2027-06-12T00:00:00"). `new Date()` would read
- * those as local time, so the same feed would mean different days depending on where it ran.
- * @returns {Date|null} UTC midnight, or null if absent or unreadable
- */
+// PAC sends zoneless ISO strings, which `new Date()` would read as local time - the same feed
+// would then mean different days depending on where it ran.
 const parseExpirationToUtcDate = expiration => {
   if (typeof expiration !== 'string') return null;
 
@@ -37,10 +34,8 @@ const parseExpirationToUtcDate = expiration => {
   return isRealDate ? parsed : null;
 };
 
-/**
- * @returns {{ date: Date|null, outcome: string }} outcome explains a null date, for the backfill
- *   report: no entry for this association is a different thing from a malformed date.
- */
+// outcome explains a null date for the backfill report: no entry for this association is a very
+// different thing from a malformed one.
 const classifyAssociationExpiration = (member, siteAssociation) => {
   if (!siteAssociation) {
     return { date: null, outcome: EXPIRATION_OUTCOMES.NO_SITE_ASSOCIATION };
@@ -96,11 +91,8 @@ const memberNeedsAssociationExpirationBackfill = (member, siteAssociation) => {
   return storedTime !== resolvedTime;
 };
 
-/**
- * Today in Denver, where PAC operates. UTC rolls over first, so a UTC-derived today would hide
- * everyone expiring that day up to seven hours early, every evening.
- * @param {Date} [now] injectable for tests
- */
+// Today in Denver, where PAC operates. UTC rolls over first, so a UTC-derived today would hide
+// everyone expiring that day up to seven hours early, every evening.
 const getTodayInAssociationTimeZone = (now = new Date()) => {
   try {
     const parts = new Intl.DateTimeFormat('en-US', {

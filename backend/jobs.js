@@ -134,7 +134,7 @@ async function runDailyPullExecutionCheck(options = {}) {
 }
 
 /**
- * One-off backfill of associationExpiration. Run with `{ dryRun: true }` first to get the count of
+ * One-off backfill of associationExpiration. Run with `{ dryRun: true }` first: it counts the
  * members that resolve to no date, and would therefore be hidden, without writing anything.
  * @param {Object} [options]
  * @param {boolean} [options.dryRun]

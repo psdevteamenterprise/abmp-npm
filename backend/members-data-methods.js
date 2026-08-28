@@ -561,8 +561,8 @@ const getAllMembersWithoutContactFormEmail = async () => {
 };
 
 /**
- * Every member, unfiltered. The expiry backfill has to count members with no readable expiration,
- * so filtering the query would hide the records its report exists to surface.
+ * Every member, unfiltered. Filtering would hide the very records the expiry backfill's report
+ * exists to surface - the ones with no readable expiration.
  * @returns {Promise<Array>} - Array of member data
  */
 const getAllMembers = async () => {
