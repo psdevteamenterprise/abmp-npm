@@ -7,15 +7,15 @@ Raised by Lara Bracciante (PAC). Solution shape proposed by Drew Zarn (PAC) and 
 
 ## Status — 2026-08-27
 
-| Item                             | State                                                             |
-| -------------------------------- | ----------------------------------------------------------------- |
-| 1. `associationExpiration` field | **Done** — all 3 production and 3 test sites. Index not confirmed |
-| 2. Derive on sync                | Built, in release 2                                               |
-| 3. Backfill + dry-run report     | Built, in release 1 — PR #133                                     |
-| 4. Search gate                   | Built, in release 2                                               |
-| 5. Profile / router gate         | **Not written**                                                   |
-| 6. Login / edit access gate      | **Not written** — separable, costed on its own                    |
-| 7. The 90 interim removals       | Blocked on Lara: remove outright, or mark dropped?                |
+| Item                             | State                                                        |
+| -------------------------------- | ------------------------------------------------------------ |
+| 1. `associationExpiration` field | **Done** — all 6 sites, type `DATETIME`. Index not confirmed |
+| 2. Derive on sync                | Built, in release 2                                          |
+| 3. Backfill + dry-run report     | Built, in release 1 — PR #133                                |
+| 4. Search gate                   | Built, in release 2                                          |
+| 5. Profile / router gate         | **Not written**                                              |
+| 6. Login / edit access gate      | **Not written** — separable, costed on its own               |
+| 7. The 90 interim removals       | Blocked on Lara: remove outright, or mark dropped?           |
 
 Release 1 is [PR #133](https://github.com/psdevteamenterprise/abmp-npm/pull/133), branch
 `feat/association-expiry-transition`. Release 2 is `feat/association-expiry-flow`, stacked on it and
@@ -100,7 +100,7 @@ Because each association is a separate Wix site with its own collection, that fa
 
 ## Design
 
-Add a scalar **`associationExpiration` (Date)** to `MembersDataLatest` on each site, holding the
+Add a scalar **`associationExpiration` (Date and Time)** to `MembersDataLatest` on each site, holding the
 expiration for _that site's_ association only. ABMP's copy holds the ABMP date, ASCP's the ASCP
 date, AHP's the AHP date.
 
@@ -119,15 +119,33 @@ paying members. It is also unindexable on a collection this size.
 flip for them. A stored date needs nothing to happen — today advances by itself. Wix also documents
 boolean fields as poor index candidates.
 
-### Why `Date` and not the raw ISO string
+### Why `Date and Time` and not `Date`
 
-A real Date gives a proper indexed range scan, and a record with no date is excluded by `.ge()`
-naturally, which is exactly the behaviour Drew asked for.
+Wix has two date types and they take **different shapes**:
 
-This exclusion is **assumed, not measured**. The collection has form here — `{"$ne": ""}` also
-matches rows where the field is absent — so it is worth knowing which way the risk runs. If `.ge()`
-turned out to include absent-field rows, members with no date would stay visible, which is today's
-behaviour rather than a regression. The dry-run report gives the size of that group either way.
+| Field type        | Value it expects                               |
+| ----------------- | ---------------------------------------------- |
+| **Date**          | plain string `"YYYY-MM-DD"`                    |
+| **Date and Time** | object `{"$date": "YYYY-MM-DDTHH:mm:ss.sssZ"}` |
+
+The field was first created as **Date**, on the reasoning that a date-only type carries no
+timezone. But the code writes a JavaScript `Date`, which Wix stores as the `$date` object form, so
+every written value tripped the CMS warning _"This value doesn't match the Date field type."_
+Changed to **Date and Time** on all six sites on 2026-08-28; the values already written were
+already in the right shape, so nothing needed migrating and no code changed.
+
+The timezone concern that motivated `Date` is handled in code instead: expirations are pinned to
+UTC midnight and "today" is Denver's calendar day, also at UTC midnight, so the comparison is exact.
+
+A record with no date is excluded by `.ge()`, which is the behaviour Drew asked for. That exclusion
+is **assumed, not measured** — the collection has form here, since `{"$ne": ""}` also matches rows
+where the field is absent. If `.ge()` turned out to include absent-field rows, members with no date
+would stay visible, which is today's behaviour rather than a regression. The dry-run report gives
+the size of that group either way.
+
+**Check a stored value, not just the docs.** This is exactly how the type mismatch was missed: the
+data-types page states the rule plainly, and it still took reading a real record to notice that what
+we wrote did not match the column.
 
 ### Index headroom
 
