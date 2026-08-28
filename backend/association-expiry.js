@@ -119,8 +119,6 @@ const getTodayInAssociationTimeZone = (now = new Date()) => {
   }
 };
 
-// Mirrors the directory query's `.ge()` for a record already in hand, so search, the profile page
-// and the members area cannot disagree. Missing or unreadable is not current, as in the query.
 const isAssociationExpirationCurrent = (member, now) => {
   const stored = member?.[ASSOCIATION_EXPIRATION_FIELD];
   const expiration = stored instanceof Date ? stored : stored ? new Date(stored) : null;

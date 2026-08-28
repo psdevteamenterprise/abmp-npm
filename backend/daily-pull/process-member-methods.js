@@ -199,8 +199,6 @@ async function createCoreMemberData(inputMemberData, existingDbMember, currentPa
     memberships: inputMemberData.memberships,
     pageNumber: currentPageNumber,
     isVisible: inputMemberData.action !== MEMBER_ACTIONS.DROP,
-    // Not in getNewMemberOnlyFields, which returns {} for existing members - the date would never
-    // refresh on renewal. null means hidden.
     [ASSOCIATION_EXPIRATION_FIELD]: inputMemberData[ASSOCIATION_EXPIRATION_FIELD] ?? null,
 
     // Handle Member emails

@@ -697,8 +697,6 @@ async function prepareMemberForSSOLogin(data) {
     if (!memberData) {
       throw new Error(`Member data not found for memberId ${memberId}`);
     }
-    // Before ensureWixMemberAndContactExist, which creates the Wix member and contact when they are
-    // missing - refusing later would still provision an account for someone who cannot use it.
     if (!isAssociationExpirationCurrent(memberData)) {
       console.log(
         `[prepareMemberForSSOLogin] refusing login, association membership expired for memberId ${memberId}`

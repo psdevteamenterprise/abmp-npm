@@ -39,9 +39,6 @@ function buildMembersSearchQuery(data) {
         .ne('memberships.membertype', MEMBERSHIPS_TYPES.PAC_STAFF)
         .eq('isVisible', true);
 
-      // Filter in the query, not after it: count() and skip() in run() then page over the
-      // filtered set. Do not publish this to a site whose backfill has not run - members with no
-      // date are excluded, and before the backfill that is all of them.
       query = query.ge(ASSOCIATION_EXPIRATION_FIELD, getTodayInAssociationTimeZone());
       let filterConfig = [
         {
