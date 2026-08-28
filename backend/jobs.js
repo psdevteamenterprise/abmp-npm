@@ -133,6 +133,27 @@ async function runDailyPullExecutionCheck(options = {}) {
   }
 }
 
+/**
+ * One-off backfill of associationExpiration. Run with `{ dryRun: true }` first: it counts the
+ * members that resolve to no date, and would therefore be hidden, without writing anything.
+ * @param {Object} [options]
+ * @param {boolean} [options.dryRun]
+ */
+async function scheduleAssociationExpiryBackfillTask(options = {}) {
+  try {
+    const { dryRun = false } = options || {};
+    console.log(`scheduleAssociationExpiryBackfill started! dryRun=${dryRun}`);
+    return await taskManager().schedule({
+      name: TASKS_NAMES.scheduleAssociationExpiryBackfill,
+      data: { dryRun },
+      type: 'scheduled',
+    });
+  } catch (error) {
+    console.error(`Failed to scheduleAssociationExpiryBackfill: ${error.message}`);
+    throw new Error(`Failed to scheduleAssociationExpiryBackfill: ${error.message}`);
+  }
+}
+
 async function updateSiteMapS3() {
   try {
     return await taskManager().schedule({
@@ -154,5 +175,6 @@ module.exports = {
   scheduleFixUrlsWithSpacesTask,
   scheduleNormalizeMemberEmailsTask,
   scheduleSetAddressesToCityStateTask,
+  scheduleAssociationExpiryBackfillTask,
   runDailyPullExecutionCheck,
 };

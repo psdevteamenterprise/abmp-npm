@@ -12,6 +12,10 @@ const {
   scheduleSetAddressesToCityState,
   setAddressesToCityStateChunk,
 } = require('./address-visibility-methods');
+const {
+  scheduleAssociationExpiryBackfill,
+  associationExpiryBackfillChunk,
+} = require('./association-expiry-backfill-methods');
 const { TASKS_NAMES } = require('./consts');
 const { dailyPullExecutionCheck } = require('./daily-pull-check-methods');
 const {
@@ -238,6 +242,23 @@ const TASKS = {
     process: normalizeMemberEmailsChunk,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 80,
+  },
+  [TASKS_NAMES.scheduleAssociationExpiryBackfill]: {
+    name: TASKS_NAMES.scheduleAssociationExpiryBackfill,
+    // Must pass task.data through - process() receives this, and the backfill needs its dryRun.
+    getIdentifier: task => task.data,
+    process: scheduleAssociationExpiryBackfill,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 120,
+  },
+  [TASKS_NAMES.associationExpiryBackfillChunk]: {
+    name: TASKS_NAMES.associationExpiryBackfillChunk,
+    getIdentifier: task => task.data,
+    process: associationExpiryBackfillChunk,
+    shouldSkipCheck: () => false,
+    // A packing budget, not a timeout: the manager fills each 240s tick with tasks costing
+    // estimate x 1.5. Chunks measured at ~6.5s, so 10 gives 16 per tick with room to spare.
+    estimatedDurationSec: 10,
   },
   [TASKS_NAMES.dailyPullExecutionCheck]: {
     name: TASKS_NAMES.dailyPullExecutionCheck,
