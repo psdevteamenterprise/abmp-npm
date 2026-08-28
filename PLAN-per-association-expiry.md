@@ -251,9 +251,13 @@ The risk in this project sits in the backfill, not in the query.
 
 ## Sequencing
 
-Item 5 collides with **PR #126**, still open and unreviewed, which rewrites `getMemberBySlug` from
-`wixData.search().expression(slug)` to `wixData.query(...).contains('url', slug)`. Merge that first
-or item 5 rebases onto a moving target.
+The expected collision with **PR #126** did not materialise. That PR rewrites `getMemberBySlug`,
+but item 5 deliberately does not touch it: `getMemberBySlug` also backs URL uniqueness during the
+sync, where an expired member's slug must still count as taken or a new member could claim it and
+collide. The gate went into `getMemberProfileData` instead, so the two changes do not overlap.
+
+PR #126 is still worth merging on its own account — it is the fix for the race that produced the
+duplicate rows found on ASCP.
 
 ---
 

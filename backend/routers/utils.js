@@ -1,4 +1,5 @@
 const { getMainAddress } = require('../../public/Utils/sharedUtils');
+const { isAssociationExpirationCurrent } = require('../association-expiry');
 const { getMemberBySlug } = require('../members-data-methods');
 const {
   getMoreAddressesToDisplay,
@@ -110,6 +111,13 @@ const getMemberProfileData = async (slug, siteAssociation) => {
 
     if (!member) {
       console.log(`[getMemberProfileData] Member not found for slug: ${slug}`);
+      return null;
+    }
+
+    // Gated here rather than in getMemberBySlug: that also backs URL uniqueness during the sync,
+    // where an expired member's slug must still count as taken or a new member could claim it.
+    if (!isAssociationExpirationCurrent(member)) {
+      console.log(`[getMemberProfileData] Association membership expired for slug: ${slug}`);
       return null;
     }
 
