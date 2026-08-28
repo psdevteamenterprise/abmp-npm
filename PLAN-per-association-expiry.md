@@ -360,10 +360,3 @@ to verify, production dry runs, three production transitions with run windows, a
 owe PAC. Coordination time, which does not compress.
 
 Roughly **13-19 hours remain**, most of it rollout rather than code.
-
-### Not in this scope
-
-The duplicate-member work — 404 duplicate rows across the test sites, 8 live double listings on
-production ASCP, and the cleanup — was about **3-4 hours** and belongs to the slug race that PR #126
-fixes, not to this change. It surfaced here only because the dry run's rows-versus-distinct-IDs gap
-exposed it. Keeping it separate keeps these figures comparable to what PAC was quoted.
