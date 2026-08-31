@@ -5,18 +5,18 @@ Change request from Lara Bracciante (PAC), raised 2026-08-04. Contracted 2026-08
 
 Listings a member has actually filled out rank above listings still in their post-migration state.
 
-## Status — 2026-08-31: **not started**
+## Status — 2026-08-31: **stage 1 in progress**
 
-| Item                              | State       |
-| --------------------------------- | ----------- |
-| 1. `memberUpdated` field, 3 sites | Not started |
-| 2. Set it on save                 | Not started |
-| 3. Backfill + dry-run report      | Not started |
-| 4. Typed search ordering          | Not started |
-| 5. "Near me" ordering + radius    | Not started |
-| 6. Radius as site config          | Not started |
-| 7. Pagination stability           | Not started |
-| 8. QA across 3 sites, deploy      | Not started |
+| Item                              | State                                                        |
+| --------------------------------- | ------------------------------------------------------------ |
+| 1. `memberUpdated` field, 3 sites | Code done — field not yet added to the collections           |
+| 2. Set it on save                 | **Done** — one write in `saveRegistrationData`, tests pin it |
+| 3. Backfill + dry-run report      | Not started                                                  |
+| 4. Typed search ordering          | Not started                                                  |
+| 5. "Near me" ordering + radius    | Not started                                                  |
+| 6. Radius as site config          | Not started                                                  |
+| 7. Pagination stability           | Not started                                                  |
+| 8. QA across 3 sites, deploy      | Not started                                                  |
 
 ---
 
@@ -124,6 +124,11 @@ has these two the wrong way round.
 present. These are the five fields with no migration counterpart, so they can only have been
 entered by the member.
 
+Field names and types verified against the live ABMP collection on 2026-08-31: `profileImage`
+IMAGE and `businessName` TEXT hold strings; `gallery` MEDIA_GALLERY, `bannerImages` ARRAY and
+`testimonial` ARRAY hold arrays. `testimonial` is singular on the collection — `Profile.js` reads
+`profileData.testimonials`, which is the plural alias `backend/routers/utils.js` maps it to.
+
 The migration wrote exactly nine fields — `opted_out`, `show_member_since`, `website`,
 `addressinfo`, `interests`, `logo_url`, `detailtext`, `schedule_code`, `show_phone` — mapping onto
 `website`, `logoImage`, `areasOfPractices`, `aboutService`, `bookingUrl`, `addressInfo`,
@@ -151,11 +156,10 @@ Ordering:
 `public/consts.js` so it comes back in the search projection — without that the tier is invisible
 to the ordering code.
 
-Needs an index for the typed path's tier filter at 83k rows. Headroom was confirmed on
-`MembersDataLatest` on 2026-08-05: quota is 8 single-field regular / 2 unique / 15 total, with 3
-user-created indexes in use (`firstName`, `memberId`, `url` unique) plus whatever
-`associationExpiration` took. **Re-confirm before committing to this shape** — if there is no room,
-the typed-search approach changes.
+Needs an index for the typed path's tier filter at 83k rows. **Headroom re-confirmed against live
+ABMP on 2026-08-31**: 17 indexes exist, of which 4 are user-created — `firstName`, `memberId`,
+`memberId + _createdDate + _id`, and `url` unique. Quota is 8 single-field regular / 2 unique / 15
+total, so 3 of 8 regular are in use. There is room. `associationExpiration` never got one.
 
 ### Why a stored boolean and not a computed check
 
