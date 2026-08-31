@@ -5,18 +5,18 @@ Change request from Lara Bracciante (PAC), raised 2026-08-04. Contracted 2026-08
 
 Listings a member has actually filled out rank above listings still in their post-migration state.
 
-## Status — 2026-08-31: **stage 1 in progress**
+## Status — 2026-08-31: **stage 1 complete in code, pending merge and release**
 
-| Item                              | State                                                        |
-| --------------------------------- | ------------------------------------------------------------ |
-| 1. `memberUpdated` field, 3 sites | Code done — field not yet added to the collections           |
-| 2. Set it on save                 | **Done** — one write in `saveRegistrationData`, tests pin it |
-| 3. Backfill + dry-run report      | Code done — not yet run anywhere                             |
-| 4. Typed search ordering          | Not started                                                  |
-| 5. "Near me" ordering + radius    | Not started                                                  |
-| 6. Radius as site config          | Not started                                                  |
-| 7. Pagination stability           | Not started                                                  |
-| 8. QA across 3 sites, deploy      | Not started                                                  |
+| Item                              | State                                                                 |
+| --------------------------------- | --------------------------------------------------------------------- |
+| 1. `memberUpdated` field, 6 sites | **Done** — field + compound index, ACTIVE everywhere                  |
+| 2. Set it on save                 | **Done** — verified writing on all 3 test sites                       |
+| 3. Backfill + dry-run report      | **Done** — ran on 3 test sites, flagged exactly the non-empty members |
+| 4. Typed search ordering          | Not started                                                           |
+| 5. "Near me" ordering + radius    | Not started                                                           |
+| 6. Radius as site config          | Not started                                                           |
+| 7. Pagination stability           | Not started                                                           |
+| 8. QA across 3 sites, deploy      | Not started                                                           |
 
 ---
 
