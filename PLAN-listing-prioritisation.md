@@ -162,19 +162,23 @@ Needs an index for the typed path's tier filter at 83k rows.
 collection**, not the 8/2/15 recorded during the expiry work — that figure was wrong. Only indexes
 with `source: USER` count; the auto-added and system ones do not.
 
-| Site      | User regular | Unique | After `memberUpdated` |
-| --------- | ------------ | ------ | --------------------- |
-| ABMP prod | 2 of 3       | 1 of 1 | **3 of 3 — full**     |
-| ASCP prod | 2 of 3       | 1 of 1 | **3 of 3 — full**     |
-| AHP prod  | 2 of 3       | 1 of 1 | **3 of 3 — full**     |
+Each site held `firstName` and `memberId` as regular indexes plus `url` as the unique one, leaving
+one slot. Rather than spend it on `memberUpdated` alone, one compound index covers both it and the
+expiry gate, since a regular index takes up to three fields:
 
-Each site currently holds `firstName` and `memberId` as regular indexes and `url` as the unique
-one. There is exactly one slot left, and this change spends it. That is affordable — but it means
-`associationExpiration` can never have its own index, and any future field needing one will require
-dropping or combining an existing index first. Worth knowing before it is discovered under
-pressure.
+**`Search gate and listing tier`** → `(isVisible, memberUpdated, associationExpiration)`
 
-Created on all three test sites on 2026-08-31 alongside the field.
+Equality fields first, range last. The base query filters `isVisible` and `associationExpiration`
+on every search already, and Stage 2 adds `memberUpdated`, so all three are covered together.
+
+Created and **ACTIVE on all six sites, 2026-08-31**. Production accepted the index on
+`memberUpdated` before that field existed there — Wix indexes a path, not a declared column — so
+the index is already built for when the field lands, rather than needing a rebuild over 83k live
+rows.
+
+**Every collection is now at 3 of 3 regular indexes.** There is no slot left anywhere. The next
+field needing one means dropping or reshaping this compound index first, which is a rebuild on a
+live collection.
 
 ### Why a stored boolean and not a computed check
 
