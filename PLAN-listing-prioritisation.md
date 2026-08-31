@@ -176,6 +176,15 @@ Created and **ACTIVE on all six sites, 2026-08-31**. Production accepted the ind
 the index is already built for when the field lands, rather than needing a rebuild over 83k live
 rows.
 
+The field itself was created on all six collections on 2026-08-31 and reads `memberUpdated=true`
+on 0 rows everywhere, as expected — nothing writes to it until this release ships.
+
+| Site      | Rows    | Flagged |
+| --------- | ------- | ------- |
+| ABMP prod | 104,029 | 0       |
+| ASCP prod | 69,827  | 0       |
+| AHP prod  | 13,421  | 0       |
+
 **Every collection is now at 3 of 3 regular indexes.** There is no slot left anywhere. The next
 field needing one means dropping or reshaping this compound index first, which is a rebuild on a
 live collection.
