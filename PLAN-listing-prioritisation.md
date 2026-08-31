@@ -60,21 +60,36 @@ the launch matches what she remembers agreeing to.
 
 ## Size of the effect
 
-Measured against live ABMP, 2026-08-04.
+**Measured against all three live production sites, 2026-08-31**, against the searchable
+population — visible, not opted out, not dropped, expiration current — which is the denominator
+that matters for what appears in a result set.
 
-| Population                                    | Count  | Share |
-| --------------------------------------------- | ------ | ----- |
-| Directory-eligible listings                   | 83,006 | 100%  |
-| Have any content the PAC sync doesn't write   | 20,936 | 25.2% |
-| Have content migration could not have written | 7,038  | 8.5%  |
-| Have a profile photo                          | 6,737  | 8.1%  |
+| Site | Listed | Tier 1 | Share     | Per 120-row result set |
+| ---- | ------ | ------ | --------- | ---------------------- |
+| ABMP | 82,850 | 7,125  | **8.60%** | ~10                    |
+| ASCP | 51,758 | 1,049  | **2.03%** | ~2.4                   |
+| AHP  | 10,289 | 16     | **0.16%** | ~0.2                   |
 
-A 120-row result set therefore holds roughly 10 tier-1 listings — enough to transform page one of
-twelve. **Narrow searches may have no tier-1 listings at all**, and the feature will do nothing
-visible there. Say this to PAC before launch.
+Counts use a field-presence filter, which slightly over-counts: a sample of AHP's rows found 17 of
+19 genuinely non-empty, the rest holding only empty arrays. Treat these as upper bounds. The
+backfill itself applies the stricter non-empty rule and will flag fewer.
 
-These figures are four weeks old and were only ever taken on ABMP. The dry run re-measures all
-three sites before anything is written.
+### The 8.5% was ABMP only, and it does not generalise
+
+The August measurement was taken on ABMP alone and has been carried through the scoping doc, the
+estimate and the mail to PAC as though it described the change request as a whole. ABMP holds:
+8.60% against a projected 8.5%.
+
+The other two sites do not. **On AHP the feature will be invisible** — 16 listings out of 10,289,
+so a 120-row result set contains a tier-1 listing about one time in five, and most searches will
+look exactly as they do today. ASCP is marginal at roughly two per page.
+
+PAC is buying one feature across three sites and it only visibly changes one of them. That belongs
+in the release notes, and arguably in a conversation before launch rather than after — it does not
+change what we build, but it changes what PAC should expect to see.
+
+The caveat already noted for narrow searches on ABMP is therefore the normal case on AHP, not the
+edge case.
 
 ## What we already have
 
