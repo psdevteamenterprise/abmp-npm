@@ -6,6 +6,7 @@ const { MEMBERSHIPS_TYPES, LOGIN_REFUSAL_REASONS } = require('./consts');
 const { createSiteContact } = require('./contacts-methods');
 const { MEMBER_ACTIONS } = require('./daily-pull/consts');
 const { wixData } = require('./elevated-modules');
+const { MEMBER_UPDATED_FIELD } = require('./listing-priority');
 const { updateMemberContactInfo } = require('./member-contact-orchestration');
 const { createSiteMember, getCurrentMember } = require('./members-area-methods');
 const {
@@ -424,6 +425,9 @@ async function saveRegistrationData(data, id) {
     const mergedData = {
       ...existingMemberData,
       ...data,
+      // Every member-facing save funnels through here, and PAC asked for any save to count.
+      // Never set back to false: it records that the member has been in, not what they left behind.
+      [MEMBER_UPDATED_FIELD]: true,
     };
 
     if (data.addresses && Array.isArray(data.addresses)) {
