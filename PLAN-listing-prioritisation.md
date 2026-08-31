@@ -11,7 +11,7 @@ Listings a member has actually filled out rank above listings still in their pos
 | --------------------------------- | ------------------------------------------------------------ |
 | 1. `memberUpdated` field, 3 sites | Code done — field not yet added to the collections           |
 | 2. Set it on save                 | **Done** — one write in `saveRegistrationData`, tests pin it |
-| 3. Backfill + dry-run report      | Not started                                                  |
+| 3. Backfill + dry-run report      | Code done — not yet run anywhere                             |
 | 4. Typed search ordering          | Not started                                                  |
 | 5. "Near me" ordering + radius    | Not started                                                  |
 | 6. Radius as site config          | Not started                                                  |

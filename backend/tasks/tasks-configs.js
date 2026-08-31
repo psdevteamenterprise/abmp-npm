@@ -23,6 +23,10 @@ const {
   normalizeMemberEmailsChunk,
 } = require('./email-normalize-methods');
 const {
+  scheduleMemberUpdatedBackfill,
+  memberUpdatedBackfillChunk,
+} = require('./member-updated-backfill-methods');
+const {
   scheduleTaskForEmptyAboutYouMembers,
   convertAboutYouHtmlToRichContent,
   compileFiltersOptions,
@@ -250,6 +254,23 @@ const TASKS = {
     process: scheduleAssociationExpiryBackfill,
     shouldSkipCheck: () => false,
     estimatedDurationSec: 120,
+  },
+  [TASKS_NAMES.scheduleMemberUpdatedBackfill]: {
+    name: TASKS_NAMES.scheduleMemberUpdatedBackfill,
+    // Must pass task.data through - process() receives this, and the backfill needs its dryRun.
+    getIdentifier: task => task.data,
+    process: scheduleMemberUpdatedBackfill,
+    shouldSkipCheck: () => false,
+    estimatedDurationSec: 120,
+  },
+  [TASKS_NAMES.memberUpdatedBackfillChunk]: {
+    name: TASKS_NAMES.memberUpdatedBackfillChunk,
+    getIdentifier: task => task.data,
+    process: memberUpdatedBackfillChunk,
+    shouldSkipCheck: () => false,
+    // A packing budget, not a timeout. Same shape of write as the expiry chunks, which measured
+    // at ~6.5s, so 10 leaves the manager room in each 240s tick.
+    estimatedDurationSec: 10,
   },
   [TASKS_NAMES.associationExpiryBackfillChunk]: {
     name: TASKS_NAMES.associationExpiryBackfillChunk,
