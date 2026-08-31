@@ -156,10 +156,25 @@ Ordering:
 `public/consts.js` so it comes back in the search projection — without that the tier is invisible
 to the ordering code.
 
-Needs an index for the typed path's tier filter at 83k rows. **Headroom re-confirmed against live
-ABMP on 2026-08-31**: 17 indexes exist, of which 4 are user-created — `firstName`, `memberId`,
-`memberId + _createdDate + _id`, and `url` unique. Quota is 8 single-field regular / 2 unique / 15
-total, so 3 of 8 regular are in use. There is room. `associationExpiration` never got one.
+Needs an index for the typed path's tier filter at 83k rows.
+
+**Headroom, corrected 2026-08-31.** The real quota is **3 regular indexes and 1 unique per
+collection**, not the 8/2/15 recorded during the expiry work — that figure was wrong. Only indexes
+with `source: USER` count; the auto-added and system ones do not.
+
+| Site      | User regular | Unique | After `memberUpdated` |
+| --------- | ------------ | ------ | --------------------- |
+| ABMP prod | 2 of 3       | 1 of 1 | **3 of 3 — full**     |
+| ASCP prod | 2 of 3       | 1 of 1 | **3 of 3 — full**     |
+| AHP prod  | 2 of 3       | 1 of 1 | **3 of 3 — full**     |
+
+Each site currently holds `firstName` and `memberId` as regular indexes and `url` as the unique
+one. There is exactly one slot left, and this change spends it. That is affordable — but it means
+`associationExpiration` can never have its own index, and any future field needing one will require
+dropping or combining an existing index first. Worth knowing before it is discovered under
+pressure.
+
+Created on all three test sites on 2026-08-31 alongside the field.
 
 ### Why a stored boolean and not a computed check
 
