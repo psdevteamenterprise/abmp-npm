@@ -14,7 +14,6 @@ const {
   sortByUrlCounterDescending,
   queryAllItems,
   generateGeoHash,
-  searchAllItems,
   runIf,
   withTransientErrorRetry,
 } = require('./utils');
@@ -240,7 +239,20 @@ async function getMemberBySlug({
   if (!slug) return null;
 
   try {
-    let query = wixData.search(COLLECTIONS.MEMBERS_DATA).expression(slug);
+    // Uses query().contains() rather than search().expression().
+    //
+    // search() reads the full-text index, which Wix documents as eventually
+    // consistent: a member who just saved a change can still be served the
+    // previous indexed copy. That is invisible on read paths (a stale profile
+    // page) but harmful on the uniqueness paths - ensureUniqueUrl and
+    // checkUrlUniqueness both call this, and a stale read there can hand out a
+    // slug that is already taken.
+    //
+    // query() is strongly consistent. contains() is case-insensitive on this
+    // field, so it returns the same superset the client-side filter below was
+    // recreating, and it filters in the database instead of scanning up to
+    // 1000 full-text hits.
+    let query = wixData.query(COLLECTIONS.MEMBERS_DATA).contains('url', slug);
 
     if (excludeDropped) {
       query = query.ne('action', 'drop');
@@ -250,10 +262,12 @@ async function getMemberBySlug({
       query = query.ne('memberId', memberId);
     }
     query = query.limit(1000);
-    const searchResult = await searchAllItems(query);
-    const membersList = searchResult.filter(
+    const queryResult = await queryAllItems(query);
+    // Kept as a defensive narrowing: contains() is case-insensitive, so this
+    // re-checks the same condition rather than widening it.
+    const membersList = queryResult.filter(
       item => item.url && item.url.toLowerCase().includes(slug.toLowerCase())
-    ); //replacement for contains - case insensitive
+    );
     let matchingMembers = membersList.filter(
       item => item.url && item.url.toLowerCase() === slug.toLowerCase()
     );
