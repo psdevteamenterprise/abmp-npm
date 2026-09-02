@@ -12,9 +12,9 @@ Listings a member has actually filled out rank above listings still in their pos
 | 1. `memberUpdated` field, 6 sites | **Done** — field + compound index, ACTIVE everywhere                  |
 | 2. Set it on save                 | **Done** — verified writing on all 3 test sites                       |
 | 3. Backfill + dry-run report      | **Done** — ran on 3 test sites, flagged exactly the non-empty members |
-| 4. Typed search ordering          | Not started                                                           |
-| 5. "Near me" ordering + radius    | Not started                                                           |
-| 6. Radius as site config          | Not started                                                           |
+| 4. Typed search ordering          | **Done in code** — two tiers, independent random windows              |
+| 5. "Near me" ordering + radius    | **Done in code** — tier 1 inside the radius, then nearest             |
+| 6. Radius as site config          | **Done in code** — `LISTING_PRIORITY_RADIUS_MILES`, defaults to 25    |
 | 7. Pagination stability           | Not started                                                           |
 | 8. QA across 3 sites, deploy      | Not started                                                           |
 
