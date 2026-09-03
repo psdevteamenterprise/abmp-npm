@@ -244,9 +244,15 @@ async function fetchAllItemsInParallel(query) {
   const batchSize = WIX_QUERY_MAX_LIMIT;
   const allItems = [];
 
-  const firstResult = await query.skip(0).limit(batchSize).find();
+  // @wix/data leaves totalPages undefined unless the count is requested explicitly, so reading it
+  // off the first page silently stopped this at 1,000 rows. Count first; count() is already what
+  // the typed search relies on.
+  const [totalCount, firstResult] = await Promise.all([
+    query.count(),
+    query.skip(0).limit(batchSize).find(),
+  ]);
 
-  const totalBatches = firstResult.totalPages;
+  const totalBatches = Math.ceil(totalCount / batchSize);
   allItems.push(...firstResult.items);
 
   if (totalBatches > 1) {

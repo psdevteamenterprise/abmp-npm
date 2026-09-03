@@ -39,7 +39,9 @@ const makeCollection = rows => {
     async find() {
       const all = this._rows();
       const from = this._skip || 0;
-      return { items: all.slice(from, from + (this._limit ?? all.length)), totalPages: 1 };
+      // Deliberately no totalPages: @wix/data does not populate it, which is the bug this double
+      // has to be able to reproduce.
+      return { items: all.slice(from, from + (this._limit ?? all.length)) };
     },
   });
   return build();
@@ -231,6 +233,17 @@ describe('"near me" ordering', () => {
     ]);
 
     expect(items.map(item => item.memberId)).toEqual([2, 1]);
+  });
+
+  // fetchAllItemsInParallel used to read totalPages off the first page. @wix/data never sets
+  // it, so near-me silently searched only the first 1,000 candidates. With 4,500 in Denver's
+  // geohash cells, an updated listing on page three never reached the partition.
+  test('near me loads every page, not just the first 1,000 candidates', async () => {
+    const crowd = Array.from({ length: 2400 }, (_, i) => member(i + 1000, { ...midway }));
+    const onLastPage = member(1, { updated: true, ...near });
+    const { items } = await nearbySearch([...crowd, onLastPage]);
+
+    expect(items[0].memberId).toBe(1);
   });
 
   test('members with no usable coordinates are still dropped', async () => {
