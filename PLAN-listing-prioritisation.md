@@ -7,16 +7,16 @@ Listings a member has actually filled out rank above listings still in their pos
 
 ## Status — 2026-08-31: **stage 1 complete in code, pending merge and release**
 
-| Item                              | State                                                                 |
-| --------------------------------- | --------------------------------------------------------------------- |
-| 1. `memberUpdated` field, 6 sites | **Done** — field + compound index, ACTIVE everywhere                  |
-| 2. Set it on save                 | **Done** — verified writing on all 3 test sites                       |
-| 3. Backfill + dry-run report      | **Done** — ran on 3 test sites, flagged exactly the non-empty members |
-| 4. Typed search ordering          | Not started                                                           |
-| 5. "Near me" ordering + radius    | Not started                                                           |
-| 6. Radius as site config          | Not started                                                           |
-| 7. Pagination stability           | Not started                                                           |
-| 8. QA across 3 sites, deploy      | Not started                                                           |
+| Item                              | State                                                                        |
+| --------------------------------- | ---------------------------------------------------------------------------- |
+| 1. `memberUpdated` field, 6 sites | **Done** — field + compound index, ACTIVE everywhere                         |
+| 2. Set it on save                 | **Done** — verified writing on all 3 test sites                              |
+| 3. Backfill + dry-run report      | **Done** — ran on 3 test sites, flagged exactly the non-empty members        |
+| 4. Typed search ordering          | **Done in code** — two tiers, independent random windows                     |
+| 5. "Near me" ordering + radius    | **Done in code** — plus a fix for near-me only ever loading 1,000 candidates |
+| 6. Radius as site config          | **Done in code** — `LISTING_PRIORITY_RADIUS_MILES`, defaults to 25           |
+| 7. Pagination stability           | Not started                                                                  |
+| 8. QA across 3 sites, deploy      | Not started                                                                  |
 
 ---
 
@@ -132,6 +132,22 @@ slices 120. Tiering there is pure JS over data we already hold.
 The typed path is the hard one. It runs `count()` → random offset → `limit(120)` → shuffle, and
 two-tier ordering means two counts and two queries with independent offsets. The original estimate
 has these two the wrong way round.
+
+### A pre-existing bug that the tiering exposed
+
+`fetchAllItemsInParallel` — the near-me loader — read `totalPages` off the first page to decide how
+many more to fetch. `@wix/data` only populates that when `returnTotalCount` is requested, so it was
+always undefined and the loop never ran. **Near-me has been choosing its 120 results from the first
+1,000 candidates in the geohash cells**, since the search moved into the package. Denver has 4,500
+candidates; the true 120th-nearest is 2.1 miles and the site was returning out to 5.9.
+
+Nobody noticed because nearest-first over a random fifth of the map still looks like nearest-first.
+The tiering made it visible: an updated listing on page three never reached the partition, so only
+4 of 22 flagged members led the list.
+
+Fixed in `48d6952` by counting first — the same `count()` call the typed path already depends on —
+and paging from that. The test double no longer returns `totalPages`, so it reproduces the bug, and
+a regression test puts the flagged member on page three.
 
 ## The rule
 
