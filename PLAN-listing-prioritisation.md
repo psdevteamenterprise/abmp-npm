@@ -5,15 +5,15 @@ Change request from Lara Bracciante (PAC), raised 2026-08-04. Contracted 2026-08
 
 Listings a member has actually filled out rank above listings still in their post-migration state.
 
-## Status — 2026-08-31: **stage 1 complete in code, pending merge and release**
+## Status — 2026-09-08: **stages 1 and 2 verified on test ABMP, awaiting PAC green light for production**
 
 | Item                              | State                                                                        |
 | --------------------------------- | ---------------------------------------------------------------------------- |
 | 1. `memberUpdated` field, 6 sites | **Done** — field + compound index, ACTIVE everywhere                         |
-| 2. Set it on save                 | **Done** — verified writing on all 3 test sites                              |
+| 2. Set it on save                 | **Done** — verified on 3 test sites, and via a real form save on test ABMP   |
 | 3. Backfill + dry-run report      | **Done** — ran on 3 test sites, flagged exactly the non-empty members        |
-| 4. Typed search ordering          | **Done in code** — two tiers, independent random windows                     |
-| 5. "Near me" ordering + radius    | **Done in code** — plus a fix for near-me only ever loading 1,000 candidates |
+| 4. Typed search ordering          | **Verified on test ABMP** — 11/11 flagged lead a `massage` search            |
+| 5. "Near me" ordering + radius    | **Verified on test ABMP** — 22/22 flagged lead, rest nearest-first to 1.98mi |
 | 6. Radius as site config          | **Done in code** — `LISTING_PRIORITY_RADIUS_MILES`, defaults to 25           |
 | 7. Pagination stability           | Not started                                                                  |
 | 8. QA across 3 sites, deploy      | Not started                                                                  |
@@ -132,6 +132,32 @@ slices 120. Tiering there is pure JS over data we already hold.
 The typed path is the hard one. It runs `count()` → random offset → `limit(120)` → shuffle, and
 two-tier ordering means two counts and two queries with independent offsets. The original estimate
 has these two the wrong way round.
+
+### Test-site verification — 2026-09-08, test ABMP on 10.3.22
+
+Denver, 24 non-student members flagged by hand (16 in Denver, 6 in suburbs at ~12 miles, 2 at
+~45 miles). Every path checked from the published site, not from the sandbox.
+
+| Search                       | Flagged first      | Rest ordered                      |
+| ---------------------------- | ------------------ | --------------------------------- |
+| Near me, 39.7392 / -104.9903 | 22 of 22, shuffled | nearest-first, 0.42 to 1.98 miles |
+| City, "Denver"               | 16 of 16, shuffled | random window                     |
+| Typed, "massage"             | 11 of 11, shuffled | random window                     |
+
+The two ~45-mile members are correctly absent from near-me: flagged but outside the radius. The
+typed search shows 11 rather than 16 because the term filters before the tiering does — five of
+the Denver flagged members list no practice areas or only reflexology.
+
+**Form save**: Samara-Raine Money (memberId 1488994) had never had the flag written and had no
+member-entered content, so neither the backfill nor a fixture could have set it. Saving her
+profile with a business name flipped `memberUpdated` to `true` at 15:32 UTC with her address
+untouched. That is the path real members hit.
+
+One pre-existing characteristic, unchanged by this work: the typed path orders by first name and
+takes a single random-offset window of consecutive rows, so tier 2 on a typed search is a page of
+alphabetically adjacent names (a run of Suzannes). `main` does the same. The shuffle hides the
+sort order but not the slice. Out of scope here; worth mentioning to PAC alongside the near-me
+finding.
 
 ### A pre-existing bug that the tiering exposed
 
