@@ -76,6 +76,8 @@ const MEMBERS_FIELDS = {
   memberships: 'memberships',
   showWebsite: 'showWebsite',
   addressDisplayOption: 'addressDisplayOption',
+  // Search projects only these fields, so the tier is invisible to the ordering code without it.
+  memberUpdated: 'memberUpdated',
 };
 
 const LIGHTBOX_NAMES = {

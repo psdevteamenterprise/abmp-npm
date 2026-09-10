@@ -29,6 +29,8 @@ const TASKS_NAMES = {
   dailyPullExecutionCheck: 'dailyPullExecutionCheck',
   scheduleAssociationExpiryBackfill: 'scheduleAssociationExpiryBackfill',
   associationExpiryBackfillChunk: 'associationExpiryBackfillChunk',
+  scheduleMemberUpdatedBackfill: 'scheduleMemberUpdatedBackfill',
+  memberUpdatedBackfillChunk: 'memberUpdatedBackfillChunk',
 };
 
 module.exports = {

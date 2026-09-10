@@ -154,6 +154,27 @@ async function scheduleAssociationExpiryBackfillTask(options = {}) {
   }
 }
 
+/**
+ * One-off backfill of memberUpdated. Run with `{ dryRun: true }` first: it reports the tier split
+ * across the whole collection without writing anything.
+ * @param {Object} [options]
+ * @param {boolean} [options.dryRun]
+ */
+async function scheduleMemberUpdatedBackfillTask(options = {}) {
+  try {
+    const { dryRun = false } = options || {};
+    console.log(`scheduleMemberUpdatedBackfill started! dryRun=${dryRun}`);
+    return await taskManager().schedule({
+      name: TASKS_NAMES.scheduleMemberUpdatedBackfill,
+      data: { dryRun },
+      type: 'scheduled',
+    });
+  } catch (error) {
+    console.error(`Failed to scheduleMemberUpdatedBackfill: ${error.message}`);
+    throw new Error(`Failed to scheduleMemberUpdatedBackfill: ${error.message}`);
+  }
+}
+
 async function updateSiteMapS3() {
   try {
     return await taskManager().schedule({
@@ -176,5 +197,6 @@ module.exports = {
   scheduleNormalizeMemberEmailsTask,
   scheduleSetAddressesToCityStateTask,
   scheduleAssociationExpiryBackfillTask,
+  scheduleMemberUpdatedBackfillTask,
   runDailyPullExecutionCheck,
 };
