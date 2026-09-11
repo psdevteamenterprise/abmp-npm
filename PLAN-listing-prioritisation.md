@@ -5,20 +5,41 @@ Change request from Lara Bracciante (PAC), raised 2026-08-04. Contracted 2026-08
 
 Listings a member has actually filled out rank above listings still in their post-migration state.
 
-## Status — 2026-09-08: **stages 1 and 2 verified on test ABMP, awaiting PAC green light for production**
+## Status — 2026-09-11: **stage 1 live on all three production sites; stage 2 (PR #139) awaits its own go-ahead**
 
-| Item                              | State                                                                        |
-| --------------------------------- | ---------------------------------------------------------------------------- |
-| 1. `memberUpdated` field, 6 sites | **Done** — field + compound index, ACTIVE everywhere                         |
-| 2. Set it on save                 | **Done** — verified on 3 test sites, and via a real form save on test ABMP   |
-| 3. Backfill + dry-run report      | **Done** — ran on 3 test sites, flagged exactly the non-empty members        |
-| 4. Typed search ordering          | **Verified on test ABMP** — 11/11 flagged lead a `massage` search            |
-| 5. "Near me" ordering + radius    | **Verified on test ABMP** — 22/22 flagged lead, rest nearest-first to 1.98mi |
-| 6. Radius as site config          | **Done in code** — `LISTING_PRIORITY_RADIUS_MILES`, defaults to 25           |
-| 7. Pagination stability           | Not started                                                                  |
-| 8. QA across 3 sites, deploy      | Not started                                                                  |
+| Item                              | State                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| 1. `memberUpdated` field, 6 sites | **Done** — field + compound index, ACTIVE everywhere                          |
+| 2. Set it on save                 | **Done** — verified on 3 test sites, and via a real form save on test ABMP    |
+| 3. Backfill + dry-run report      | **Done in production** — 2026-09-11, 12/12 chunks succeeded, counts reconcile |
+| 4. Typed search ordering          | **Verified on test ABMP** — 11/11 flagged lead a `massage` search             |
+| 5. "Near me" ordering + radius    | **Verified on test ABMP** — 22/22 flagged lead, rest nearest-first to 1.98mi  |
+| 6. Radius as site config          | **Done in code** — `LISTING_PRIORITY_RADIUS_MILES`, defaults to 25            |
+| 7. Pagination stability           | Not started                                                                   |
+| 8. QA across 3 sites, deploy      | Stage 1 deployed as `2.0.84`; stage 2 QA done on test ABMP, ASCP/AHP pending  |
 
 ---
+
+## Production rollout — stage 1, 2026-09-11
+
+Lara approved on 2026-09-10. `abmp-npm@2.0.84` (PR #137 squashed to `main` as `1e47f62`) was
+installed on the three production repos, the backfill wrapper added, sites published, and the
+backfill run from the editor sandbox at 17:53–17:56 UTC. Read back from the collections and the
+`Tasks` records afterwards:
+
+| Site | Chunks | Flagged | Searchable | Searchable & flagged | Share     | Per 120-row page |
+| ---- | ------ | ------- | ---------- | -------------------- | --------- | ---------------- |
+| ABMP | 8/8 ok | 7,672   | 82,968     | 6,895                | **8.31%** | ~10              |
+| ASCP | 2/2 ok | 1,095   | 51,906     | 1,038                | **2.00%** | ~2.4             |
+| AHP  | 1/1 ok | 18      | 10,375     | 16                   | **0.15%** | ~0.2             |
+
+Every memberId the scheduler queued is now flagged, no more and — on ABMP and AHP — no fewer.
+ASCP has one flagged member the backfill never queued: **Esthetics By Rachel (1826579), saved at
+18:13 UTC**, 17 minutes after the last chunk. That is the on-save path working on a live site with
+a real member, unprompted. Zero retries, zero errors across the 12 chunks.
+
+The shares are a touch under the 2026-08-31 estimate (8.60 / 2.03 / 0.16), as predicted there: the
+backfill applies the non-empty rule, the estimate used field presence. Visitors see no change yet.
 
 ## The problem
 
