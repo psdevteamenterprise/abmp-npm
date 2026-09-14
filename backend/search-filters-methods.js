@@ -15,10 +15,9 @@ const getNonCompiledFiltersOptions = async () => {
   ]);
   return { completeStateList, areasOfPracticesList, stateCityMapList };
 };
-const filterProfiles = async data => {
+const filterProfiles = data => {
   const membersSearchQuery = buildMembersSearchQuery({ ...data, includeStudents: false });
-  const query = await membersSearchQuery.get();
-  return membersSearchQuery.run(query);
+  return membersSearchQuery.run();
 };
 
 async function getAreasOfPracticeList() {
