@@ -5,20 +5,47 @@ Change request from Lara Bracciante (PAC), raised 2026-08-04. Contracted 2026-08
 
 Listings a member has actually filled out rank above listings still in their post-migration state.
 
-## Status — 2026-09-11: **stage 1 live on all three production sites; stage 2 (PR #139) awaits its own go-ahead**
+## Status — 2026-09-14: **both stages live on all three production sites, verified from the live directories**
 
-| Item                              | State                                                                         |
-| --------------------------------- | ----------------------------------------------------------------------------- |
-| 1. `memberUpdated` field, 6 sites | **Done** — field + compound index, ACTIVE everywhere                          |
-| 2. Set it on save                 | **Done** — verified on 3 test sites, and via a real form save on test ABMP    |
-| 3. Backfill + dry-run report      | **Done in production** — 2026-09-11, 12/12 chunks succeeded, counts reconcile |
-| 4. Typed search ordering          | **Verified on test ABMP** — 11/11 flagged lead a `massage` search             |
-| 5. "Near me" ordering + radius    | **Verified on test ABMP** — 22/22 flagged lead, rest nearest-first to 1.98mi  |
-| 6. Radius as site config          | **Done in code** — `LISTING_PRIORITY_RADIUS_MILES`, defaults to 25            |
-| 7. Pagination stability           | Not started                                                                   |
-| 8. QA across 3 sites, deploy      | Stage 1 deployed as `2.0.84`; stage 2 QA done on test ABMP, ASCP/AHP pending  |
+| Item                              | State                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| 1. `memberUpdated` field, 6 sites | **Done** — field + compound index, ACTIVE everywhere                            |
+| 2. Set it on save                 | **Done** — verified on 3 test sites, and via a real form save on test ABMP      |
+| 3. Backfill + dry-run report      | **Done in production** — 2026-09-11, 12/12 chunks succeeded, counts reconcile   |
+| 4. Typed search ordering          | **Live, verified on prod ABMP** — Denver city search: 62 flagged, then the rest |
+| 5. "Near me" ordering + radius    | **Live, verified on all 3 prod sites** — boundary exact, pagination fix held    |
+| 6. Radius as site config          | **Live** — no config set, so the 25-mile default is in force on all sites       |
+| 7. Pagination stability           | Client-side paging within a search is stable; a reload re-shuffles, as before   |
+| 8. QA across 3 sites, deploy      | **Done** — `2.0.85` on all 3 sites, near-me checked on each from the live UI    |
 
 ---
+
+## Production rollout — stage 2, 2026-09-14
+
+Lara approved stage 2 on 2026-09-14. PR #139 squashed to `main` as `7e23040`, released as
+`abmp-npm@2.0.85` (the first publish attempt failed on OTP and left a pushed version commit; the
+same version was then published), installed on the three production repos and published. No
+`SiteConfigs` entry was added, so the 25-mile default applies.
+
+Verified from the **live directories**, not the sandbox, by driving each site's own search UI with
+geolocation overridden to downtown Denver (39.7392, -104.9903) and checking every listed name
+against the collection:
+
+| Site | Path         | Expected from the collection            | Seen on the site                                   |
+| ---- | ------------ | --------------------------------------- | -------------------------------------------------- |
+| ABMP | City, Denver | 62 flagged of 596 searchable            | positions 1–62 flagged, 63–72 not (page 6 checked) |
+| ABMP | Near me      | 239 flagged within 25 mi, more than 120 | pages 1 and 10 all flagged, all ≤ 25 mi, shuffled  |
+| ASCP | Near me      | 26 flagged within 25 mi                 | 1–26 flagged shuffled, 27+ nearest-first from 0.2  |
+| AHP  | Near me      | 0 flagged within 25 mi                  | nearest-first from 0.3 mi; 120th at 14.4 mi        |
+
+Displayed distances match a haversine from the main address to the decimal. ABMP page 10 being
+tier one is the proof the near-me pagination fix is live: Denver has ~4,500 candidates and under
+the old 1,000-row cap only ~50 flagged members would have been found.
+
+Two things that looked wrong and were not: Nathalie Grossen (AHP, flagged, 8.4 mi) is absent
+because the search excludes `PAC STAFF` memberships; and the last position on AHP differs by one
+from a main-address computation because a member with several addresses is measured from a
+different one. Neither is an ordering fault.
 
 ## Production rollout — stage 1, 2026-09-11
 
