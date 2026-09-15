@@ -2,6 +2,7 @@
 // cannot drift on what "expired" means. Deliberately free of Wix imports.
 
 const ASSOCIATION_EXPIRATION_FIELD = 'associationExpiration';
+const PAC_STAFF_MEMBERTYPE = 'PAC STAFF';
 const ASSOCIATION_TIME_ZONE = 'America/Denver';
 
 const EXPIRATION_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})/;
@@ -128,7 +129,20 @@ const isAssociationExpirationCurrent = (member, now) => {
   return expiration.getTime() >= getTodayInAssociationTimeZone(now).getTime();
 };
 
+// PAC staff accounts carry a rolling "expiration" equal to the date of the feed that last mentioned
+// them, so the association gate would lock a staff member out on any day the feed did not resend
+// them (ticket 13031107600). Staff are already excluded from the directory and have no public
+// profile; login is the one place the gate reaches them, and it should not.
+const isPacStaff = member =>
+  Array.isArray(member?.memberships) &&
+  member.memberships.some(membership => membership?.membertype === PAC_STAFF_MEMBERTYPE);
+
+const isLoginAllowedByExpiration = (member, now) =>
+  isPacStaff(member) || isAssociationExpirationCurrent(member, now);
+
 module.exports = {
+  isPacStaff,
+  isLoginAllowedByExpiration,
   parseExpirationToUtcDate,
   classifyAssociationExpiration,
   resolveAssociationExpiration,
