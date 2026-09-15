@@ -1,7 +1,7 @@
 const { COLLECTIONS } = require('../public/consts');
 const { isWixHostedImage, emailsMatch, normalizeEmail } = require('../public/Utils/sharedUtils');
 
-const { isAssociationExpirationCurrent } = require('./association-expiry');
+const { isLoginAllowedByExpiration } = require('./association-expiry');
 const { MEMBERSHIPS_TYPES, LOGIN_REFUSAL_REASONS } = require('./consts');
 const { createSiteContact } = require('./contacts-methods');
 const { MEMBER_ACTIONS } = require('./daily-pull/consts');
@@ -701,7 +701,7 @@ async function prepareMemberForSSOLogin(data) {
     if (!memberData) {
       throw new Error(`Member data not found for memberId ${memberId}`);
     }
-    if (!isAssociationExpirationCurrent(memberData)) {
+    if (!isLoginAllowedByExpiration(memberData)) {
       console.log(
         `[prepareMemberForSSOLogin] refusing login, association membership expired for memberId ${memberId}`
       );

@@ -3,7 +3,7 @@ const { createHmac } = require('crypto');
 const axios = require('axios');
 const { decode } = require('jwt-js-decode');
 
-const { isAssociationExpirationCurrent } = require('../association-expiry');
+const { isLoginAllowedByExpiration } = require('../association-expiry');
 const { CONFIG_KEYS, SSO_TOKEN_AUTH_API_URL, LOGIN_REFUSAL_REASONS } = require('../consts');
 const { MEMBER_ACTIONS } = require('../daily-pull/consts');
 const { getCurrentMember } = require('../members-area-methods');
@@ -80,7 +80,7 @@ async function validateMemberToken(memberIdInput) {
       return invalidTokenResponse;
     }
 
-    if (!isAssociationExpirationCurrent(memberData)) {
+    if (!isLoginAllowedByExpiration(memberData)) {
       console.log(
         `[validateMemberToken] association membership expired for memberId ${memberData.memberId}`
       );
