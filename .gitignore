@@ -3,3 +3,4 @@ node_modules
 
 # Husky auto-generated files
 .husky/_reconcile-reports/
+reconcile-reports/

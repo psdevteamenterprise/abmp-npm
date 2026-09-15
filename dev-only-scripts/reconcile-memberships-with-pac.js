@@ -23,8 +23,9 @@ const {
  * which touches only the named fields, so a member saving their form at the same moment is not
  * overwritten.
  *
- * Who it selects: visible, not opted out, not dropped rows whose stored values differ from the
- * feed. PAC STAFF are reported but skipped unless --include-staff: their "expiration" is the date
+ * Who it selects: visible, not opted out, not dropped rows whose stored memberships or expiration
+ * differ from the feed (licenses are written too, but a licenses-only difference is format drift
+ * and does not select a row). PAC STAFF are reported but skipped unless --include-staff: their "expiration" is the date
  * of the feed, so patching them buys a day; the staff gate needs its own fix.
  *
  * Default is a DRY RUN. Nothing is written without --apply.
@@ -185,7 +186,21 @@ const licensesForSite = (licenses, association) =>
     license => !license || !license.association || license.association === association
   );
 
-const normalize = value => JSON.stringify(value ?? null);
+// Order-insensitive comparison: the feed and the CMS serialise the same object with different key
+// orders, and a bare JSON.stringify would flag every row as changed.
+const canonical = value => {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((acc, key) => {
+        if (value[key] !== undefined && value[key] !== null) acc[key] = canonical(value[key]);
+        return acc;
+      }, {});
+  }
+  return value ?? null;
+};
+const normalize = value => JSON.stringify(canonical(value));
 const storedDate = value => (value && typeof value === 'object' ? value.$date : value) || null;
 const isStaff = memberships => (memberships || []).some(m => m?.membertype === PAC_STAFF);
 
@@ -228,7 +243,10 @@ const planPatches = ({ rows, feed, association, args }) => {
       [ASSOCIATION_EXPIRATION_FIELD]:
         (currentExpiration || '').slice(0, 10) !== (desiredExpiration || '').slice(0, 10),
     };
-    if (!Object.values(changed).some(Boolean)) {
+    // Licenses are written alongside, as the sync would, but never select a row on their own: the
+    // feed now carries an `association` key on each license that older stored rows lack, which is
+    // format drift on ~11k ASCP rows, not lost data.
+    if (!changed.memberships && !changed[ASSOCIATION_EXPIRATION_FIELD]) {
       skipped.unchanged += 1;
       continue;
     }

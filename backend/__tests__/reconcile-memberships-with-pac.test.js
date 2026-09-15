@@ -43,6 +43,34 @@ describe('planPatches', () => {
     expect(fields).toEqual(['memberships', 'licenses', 'associationExpiration']);
   });
 
+  test('the same membership serialised in a different key order is not a change', () => {
+    const stored = row(9, {
+      memberships: [
+        {
+          expiration: '2026-03-21T00:00:00',
+          membersince: '2011-03-12T00:00:00',
+          association: ASSOC,
+          membertype: 'Professional',
+        },
+      ],
+    });
+    const feed = feedOf({
+      memberid: 9,
+      memberships: [
+        {
+          association: ASSOC,
+          membertype: 'Professional',
+          expiration: '2026-03-21T00:00:00',
+          membersince: '2011-03-12T00:00:00',
+        },
+      ],
+      licenses: [],
+    });
+    const { candidates, skipped } = plan([stored], feed);
+    expect(candidates).toHaveLength(0);
+    expect(skipped.unchanged).toBe(1);
+  });
+
   test('a row that already matches the feed is left alone', () => {
     const { candidates, skipped } = plan([row(1)], feedOf(feedMember(1, '2026-03-21T00:00:00')));
     expect(candidates).toHaveLength(0);
@@ -105,6 +133,20 @@ describe('planPatches', () => {
       licenses: false,
       associationExpiration: false,
     });
+  });
+
+  test('a licenses-only difference does not select a row', () => {
+    const feed = feedOf(
+      feedMember(4, '2026-03-21T00:00:00', {
+        licenses: [{ association: ASSOC, license: 'x', state: 'TX' }],
+      })
+    );
+    const { candidates, skipped } = plan(
+      [row(4, { licenses: [{ license: 'x', state: 'TX' }] })],
+      feed
+    );
+    expect(candidates).toHaveLength(0);
+    expect(skipped.unchanged).toBe(1);
   });
 
   test('licenses are written filtered to the site association, as the sync does', () => {
