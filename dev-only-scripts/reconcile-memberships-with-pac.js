@@ -41,6 +41,9 @@ const {
  *   --member-id <id>   restrict to one member (use this for the first live check)
  *   --limit <n>        patch at most n rows
  *   --include-staff    also patch PAC STAFF rows
+ *   --scope lost|all   lost (default): only rows whose expiration moves LATER or whose membership
+ *                      type/association set changed — the lost-update cases. all: every row that
+ *                      differs from the feed, including one-day-earlier expiration offsets.
  *   --feed-dir <dir>   reuse previously downloaded feed pages instead of fetching
  *
  * Auth: the site token comes from `wix token -s <siteId>` (override with WIX_TOKEN). The PAC key
@@ -65,7 +68,7 @@ const PATCH_BATCH = 100;
 const PAC_STAFF = 'PAC STAFF';
 
 const parseArgs = argv => {
-  const args = { apply: false, includeStaff: false };
+  const args = { apply: false, includeStaff: false, scope: 'lost' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--apply') args.apply = true;
@@ -74,8 +77,10 @@ const parseArgs = argv => {
     else if (a === '--member-id') args.memberId = String(argv[++i]);
     else if (a === '--limit') args.limit = Number(argv[++i]);
     else if (a === '--feed-dir') args.feedDir = argv[++i];
+    else if (a === '--scope') args.scope = argv[++i];
     else throw new Error(`Unknown argument: ${a}`);
   }
+  if (!['lost', 'all'].includes(args.scope)) throw new Error('--scope must be lost or all');
   if (!args.site || !SITES[args.site]) {
     throw new Error(`--site must be one of: ${Object.keys(SITES).join(', ')}`);
   }
@@ -207,7 +212,15 @@ const isStaff = memberships => (memberships || []).some(m => m?.membertype === P
 const planPatches = ({ rows, feed, association, args }) => {
   const today = new Date().toISOString().slice(0, 10);
   const candidates = [];
-  const skipped = { notVisible: 0, optOut: 0, dropped: 0, notInFeed: 0, unchanged: 0, staff: 0 };
+  const skipped = {
+    notVisible: 0,
+    optOut: 0,
+    dropped: 0,
+    notInFeed: 0,
+    unchanged: 0,
+    outOfScope: 0,
+    staff: 0,
+  };
   for (const row of rows) {
     if (args.memberId && String(Math.trunc(row.memberId)) !== args.memberId) continue;
     if (row.isVisible !== true) {
@@ -248,6 +261,17 @@ const planPatches = ({ rows, feed, association, args }) => {
     // format drift on ~11k ASCP rows, not lost data.
     if (!changed.memberships && !changed[ASSOCIATION_EXPIRATION_FIELD]) {
       skipped.unchanged += 1;
+      continue;
+    }
+
+    const movesLater =
+      (desiredExpiration || '').slice(0, 10) > (currentExpiration || '').slice(0, 10);
+    const membershipSet = list =>
+      normalize((list || []).map(m => [m?.association, m?.membertype]).sort());
+    const typeOrAssociationChanged =
+      membershipSet(row.memberships) !== membershipSet(desired.memberships);
+    if (args.scope === 'lost' && !movesLater && !typeOrAssociationChanged) {
+      skipped.outOfScope += 1;
       continue;
     }
 
@@ -343,6 +367,7 @@ const main = async () => {
     site: args.site,
     association,
     mode: args.apply ? 'apply' : 'dry-run',
+    scope: args.scope,
     ranAt: new Date().toISOString(),
     rowsInCollection: rows.length,
     membersInFeed: feed.size,

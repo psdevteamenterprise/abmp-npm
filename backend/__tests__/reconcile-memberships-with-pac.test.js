@@ -28,7 +28,12 @@ const feedMember = (memberid, expiration, overrides = {}) => ({
 });
 const feedOf = (...members) => new Map(members.map(m => [String(m.memberid), m]));
 const plan = (rows, feed, args = {}) =>
-  planPatches({ rows, feed, association: ASSOC, args: { includeStaff: false, ...args } });
+  planPatches({
+    rows,
+    feed,
+    association: ASSOC,
+    args: { includeStaff: false, scope: 'lost', ...args },
+  });
 
 describe('planPatches', () => {
   test('a renewal PAC sent that we never stored becomes a patch of the three sync fields only', () => {
@@ -147,6 +152,19 @@ describe('planPatches', () => {
     );
     expect(candidates).toHaveLength(0);
     expect(skipped.unchanged).toBe(1);
+  });
+
+  test('an expiration that moves earlier is out of scope unless --scope all', () => {
+    const stored = row(6, {
+      associationExpiration: { $date: '2027-08-29T00:00:00Z' },
+      memberships: [
+        { association: ASSOC, membertype: 'Professional', expiration: '2027-08-29T00:00:00' },
+      ],
+    });
+    const feed = feedOf(feedMember(6, '2027-08-28T00:00:00'));
+    expect(plan([stored], feed).candidates).toHaveLength(0);
+    expect(plan([stored], feed).skipped.outOfScope).toBe(1);
+    expect(plan([stored], feed, { scope: 'all' }).candidates).toHaveLength(1);
   });
 
   test('licenses are written filtered to the site association, as the sync does', () => {
