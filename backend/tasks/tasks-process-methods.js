@@ -200,6 +200,9 @@ const updateSiteMapS3 = async () => {
     console.log('All sitemap files uploaded successfully');
   } catch (e) {
     console.error('Sitemap upload failed:', e?.message || e);
+    // Rethrow so the task manager marks the run failed and retries it, instead of recording a
+    // success while S3 still holds the previous sitemap (or nothing, if the bucket is missing).
+    throw e;
   }
 };
 
