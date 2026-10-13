@@ -36,7 +36,7 @@ const {
  *   node dev-only-scripts/reconcile-memberships-with-pac.js --site ascp --apply
  *
  * Options:
- *   --site <abmp|ascp|ahp|test-abmp|test-ascp|test-ahp>   required
+ *   --site <abmp|ascp|ahp|anp|test-abmp|test-ascp|test-ahp>   required
  *   --apply            write the patches (default: report only)
  *   --member-id <id>   restrict to one member (use this for the first live check)
  *   --limit <n>        patch at most n rows
@@ -55,6 +55,7 @@ const SITES = {
   abmp: { siteId: '384d680a-2870-4086-bda0-9894ce4503b8', association: 'ABMP' },
   ascp: { siteId: '1cb02bba-3a36-45e0-bdb4-1a1a2cfe2fdc', association: 'ASCP' },
   ahp: { siteId: '5553798e-c71e-4a58-9b9e-515803823429', association: 'AHP' },
+  anp: { siteId: '45362980-fe21-4132-a5eb-e27789f6010f', association: 'ANP' },
   'test-abmp': { siteId: 'cd9fca47-63d3-4538-b26c-1f91ad0a9420', association: 'ABMP' },
   'test-ascp': { siteId: '8c031731-3f58-4d5f-b7dc-6ccabd1b5722', association: 'ASCP' },
   'test-ahp': { siteId: '4535a35f-439d-4558-8e68-9000258e2a2a', association: 'AHP' },
