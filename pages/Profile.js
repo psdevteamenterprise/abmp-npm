@@ -2,6 +2,7 @@ const { location: wixLocation } = require('@wix/site-location');
 const { window: wixWindow } = require('@wix/site-window');
 
 const { LIGHTBOX_NAMES } = require('../public/consts');
+const { hasCopyrightYear, withCurrentCopyrightYear } = require('../public/Utils/copyrightYear');
 const {
   generateId,
   formatPracticeAreasForDisplay,
@@ -19,6 +20,26 @@ const BREAKPOINTS = {
   DESKTOP: 1301,
   TABLET: 750,
 };
+
+// The footer reads "© <year> <name>. All rights reserved.": the name goes into #fullNameTextFoter,
+// but the year was typed into each site's editor and has no nickname of its own, so ABMP stayed on
+// 2025 while ASCP and AHP said 2026 (PAC ticket 12914830766). The three profile pages declare the
+// same plain text elements; the copyright notice is found among them by content and its year kept
+// current, so no editor needs touching now or next January.
+const PLAIN_TEXT_ELEMENT_IDS = [
+  '#text389',
+  '#text178',
+  '#text150',
+  '#text155',
+  '#text157',
+  '#text158',
+  '#text164',
+  '#text169',
+  '#text171',
+  '#text175',
+  '#text177',
+  '#text179',
+];
 
 async function profileOnReady({ $w: _$w }) {
   const profileData = await wixWindow.getRouterData();
@@ -97,6 +118,23 @@ async function profileOnReady({ $w: _$w }) {
     bindStudentBadge();
     bindProfileImages();
     bindFullName();
+    bindCopyrightYear();
+  }
+
+  function bindCopyrightYear() {
+    PLAIN_TEXT_ELEMENT_IDS.forEach(id => {
+      try {
+        const element = _$w(id);
+        // .html keeps the element's formatting; fall back to .text for elements without markup.
+        if (hasCopyrightYear(element.html)) {
+          element.html = withCurrentCopyrightYear(element.html);
+        } else if (hasCopyrightYear(element.text)) {
+          element.text = withCurrentCopyrightYear(element.text);
+        }
+      } catch {
+        // The element does not exist on this site's page: nothing to update.
+      }
+    });
   }
 
   function bindMemberSince() {
