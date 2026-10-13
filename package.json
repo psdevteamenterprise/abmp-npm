@@ -19,7 +19,8 @@
     "prepare": "husky",
     "find-duplicates": "node dev-only-scripts/find-duplicate-urls.js",
     "extract-duplicate-url-groups": "node dev-only-scripts/extract-duplicate-url-groups.js",
-    "find-duplicate-ids": "node dev-only-scripts/find-duplicate-ids.js"
+    "find-duplicate-ids": "node dev-only-scripts/find-duplicate-ids.js",
+    "reconcile-memberships": "node dev-only-scripts/reconcile-memberships-with-pac.js"
   },
   "author": "",
   "license": "ISC",
