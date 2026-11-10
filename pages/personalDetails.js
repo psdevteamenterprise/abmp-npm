@@ -8,6 +8,7 @@ const {
   FREE_WEBSITE_TEXT_STATES,
   LIGHTBOX_NAMES,
 } = require('../public/consts');
+const { describeOptChange } = require('../public/Utils/optChangeTracking');
 const { handleOnCustomValidation, isNotValidUrl } = require('../public/Utils/personalDetailsUtils');
 const {
   generateId,
@@ -440,17 +441,30 @@ async function personalDetailsOnReady({
     }
   }
 
+  // Opt in/out changes save straight from their confirmation dialog, so they never passed through
+  // the Save buttons that feed ButtonClicks. PAC asked for that history (ticket 13052192386).
+  // Recording must never break the save itself, so failures are only logged.
+  function recordOptChange(change) {
+    const event = describeOptChange(change);
+    if (!event) return;
+    Promise.resolve()
+      .then(() => trackClick({ pageName: PAGE_NAME, ...event }))
+      .catch(error => console.warn('[recordOptChange] could not record the opt change', error));
+  }
+
   async function handleOptConfirmation(confirmed, optCheckbox, optConfirmationBox, field) {
     const checkbox = _$w(optCheckbox);
     const box = _$w(optConfirmationBox);
     if (confirmed) {
       const toSaveOptValue = optCheckbox === '#optCheckbox' ? !checkbox.checked : checkbox.checked;
+      const previousOptValue = itemMemberObj[field];
       const formData = {
         ...itemMemberObj,
         [field]: toSaveOptValue,
       };
 
-      await saveData(formData);
+      const { success: saved } = await saveData(formData);
+      recordOptChange({ field, previousValue: previousOptValue, nextValue: toSaveOptValue, saved });
       if (field === 'showWixUrl') {
         const showExistingUrl = _$w('#showExsistingUrlCheckbox').checked;
         if (toSaveOptValue) {
