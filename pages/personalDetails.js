@@ -8,6 +8,11 @@ const {
   FREE_WEBSITE_TEXT_STATES,
   LIGHTBOX_NAMES,
 } = require('../public/consts');
+const {
+  mergeTypedSuite,
+  resolveCity,
+  suiteFromFormatted,
+} = require('../public/Utils/addressInputParsing');
 const { describeOptChange } = require('../public/Utils/optChangeTracking');
 const { handleOnCustomValidation, isNotValidUrl } = require('../public/Utils/personalDetailsUtils');
 const {
@@ -1530,32 +1535,17 @@ async function personalDetailsOnReady({
     }
 
     // If line2 is still empty, try to extract building/suite info from formatted address
-    if (!line2 && addressInputValue.formatted) {
-      const formattedParts = addressInputValue.formatted.split(',').map(part => part.trim());
-      // Look for BLDG/STE/APT/UNIT/SUITE info in the formatted parts
-      for (let i = 1; i < formattedParts.length; i++) {
-        const part = formattedParts[i];
-        const lowerPart = part.toLowerCase();
-        if (
-          lowerPart.includes('bldg') ||
-          lowerPart.includes('ste') ||
-          lowerPart.includes('apt') ||
-          lowerPart.includes('unit') ||
-          lowerPart.includes('suite') ||
-          lowerPart.includes('#') ||
-          lowerPart.includes('building')
-        ) {
-          line2 = part;
-          break;
-        }
-      }
+    if (!line2) {
+      line2 = suiteFromFormatted(addressInputValue.formatted);
     }
 
     return {
       key: existingAddress?.key || generateId(),
       line1,
       line2: line2 || existingAddress?.line2 || '',
-      city: addressInputValue.city || '',
+      // Google's structured city can be a county (townships) or a parent city
+      // (neighbourhoods); the suggestion text the member picked is what they expect to see.
+      city: resolveCity(addressInputValue),
       state: addressInputValue.subdivision || '',
       postalcode: addressInputValue.postalCode || '',
       country: addressInputValue.country || 'US',
@@ -1563,6 +1553,28 @@ async function personalDetailsOnReady({
       longitude: addressInputValue.location?.longitude || existingAddress?.longitude || 0,
       addressStatus: existingAddress?.addressStatus || FALLBACK_ADDRESS_STATUS,
     };
+  }
+
+  /**
+   * The last suggestion the member picked for each address item. Suggestions never
+   * carry a suite, so members add it by typing after the picked text; the picker then
+   * hands us free text and we rebuild the structured value from what was picked.
+   */
+  const lastPickedAddressValues = new Map();
+
+  function rememberPickedAddress(itemId, value) {
+    if (value && value.streetAddress) {
+      lastPickedAddressValues.set(itemId, value);
+    }
+  }
+
+  function readAddressInputValue($item, itemId) {
+    const value = $item('#addressEditInput').value;
+    if (value && value.streetAddress) {
+      rememberPickedAddress(itemId, value);
+      return value;
+    }
+    return mergeTypedSuite(value, lastPickedAddressValues.get(itemId)) || value;
   }
 
   function setupAddressRepeater() {
@@ -1655,6 +1667,7 @@ async function personalDetailsOnReady({
       $item('#addressItemStates').changeState(ADDRESS_STATES.EDIT);
       const addressInputValue = convertToAddressInputFormat(clickedItemData.address);
       $item('#addressEditInput').value = addressInputValue;
+      rememberPickedAddress(clickedItemData._id, addressInputValue);
     });
 
     _$w('#addressItemRemoveBtn').onClick(async event => {
@@ -1671,7 +1684,7 @@ async function personalDetailsOnReady({
 
     _$w('#addressEditInput').onChange(event => {
       const $item = _$w.at(event.context);
-      validateAddressCompleteness($item);
+      validateAddressCompleteness($item, event.context.itemId);
     });
 
     _$w('#addressEditCancelBtn').onClick(event => {
@@ -1769,16 +1782,16 @@ async function personalDetailsOnReady({
 
     const addressInputValue = convertToAddressInputFormat(itemData.address);
     $item('#addressEditInput').value = addressInputValue;
+    rememberPickedAddress(itemData._id, addressInputValue);
 
     $item('#addressValidationMessage').hide();
   }
 
-  function validateAddressCompleteness($item) {
-    const addressInput = $item('#addressEditInput');
+  function validateAddressCompleteness($item, itemId) {
     const saveBtn = $item('#addressEditSaveBtn');
     const validationMessage = $item('#addressValidationMessage');
 
-    const addressValue = addressInput.value;
+    const addressValue = readAddressInputValue($item, itemId);
 
     if (!addressValue) {
       showAddressValidationError(validationMessage, saveBtn, 'Please provide a complete address');
@@ -1833,12 +1846,11 @@ async function personalDetailsOnReady({
   }
 
   function saveAddressFromSingleInput($item, itemData) {
-    if (!validateAddressCompleteness($item)) {
+    if (!validateAddressCompleteness($item, itemData._id)) {
       return;
     }
 
-    const addressInput = $item('#addressEditInput');
-    const addressValue = addressInput.value;
+    const addressValue = readAddressInputValue($item, itemData._id);
 
     const convertedAddress = parseAddressInput(addressValue, itemData.address);
 
